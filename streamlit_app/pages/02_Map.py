@@ -57,7 +57,7 @@ def bounds_of(gj: dict):
     for f in feats(gj):
         extract_ring_points(f.get("geometry"), pts)
     if not pts:
-        return [[52.00, 5.58], [52.08, 5.74]]  # fallback box around Ede
+        return [[52.00, 5.58], [52.08, 5.74]]
     xs, ys = zip(*pts)  # lon, lat
     return [[float(min(ys)), float(min(xs))], [float(max(ys)), float(max(xs))]]
 
@@ -93,6 +93,22 @@ def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
 
 # -------------------- UI --------------------
 st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
+
+# 🔒 Remove focus outline on the outer iframe created by streamlit-folium
+st.markdown("""
+<style>
+/* Streamlit component iframe often gets focus on click; hide its outline */
+div[data-testid="stIFrame"],
+div[data-testid="stIFrame"]:focus,
+div[data-testid="stIFrame"] iframe,
+div[data-testid="stIFrame"] iframe:focus,
+iframe:focus,
+iframe:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 missing = [p for p in [CATALOG_CSV, GJ_NEIGH, GJ_MUNI] if not p.exists()]
 if missing:
@@ -160,7 +176,6 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
-        # de-duplicate edges
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -173,7 +188,6 @@ else:
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
 # -------------------- Tooltip fields --------------------
-# Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     p["buurtnaam"] = (
@@ -184,7 +198,6 @@ vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
-# Per-feature formatted values (neighbourhoods)
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     try:
@@ -195,7 +208,6 @@ for f in feats(neigh_gj):
     except Exception:
         valtxt = "n/a"
     metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
-    # EXACT text you asked: name + "Neighbourhood in Veldhuizen (Ede)" + metric + value
     p["_tt"] = (
         "<div style='font-size:12px'>"
         f"<b>{p.get('buurtnaam','')}</b><br>"
@@ -203,9 +215,8 @@ for f in feats(neigh_gj):
         f"{metric}: {valtxt}"
         "</div>"
     )
-    p["_valtxt"] = valtxt  # keep if you still need the simple popup style
+    p["_valtxt"] = valtxt
 
-# Municipality formatted value + HTML tooltip content
 if feats(muni_gj):
     p = feats(muni_gj)[0].setdefault("properties", {})
     try:
@@ -216,7 +227,6 @@ if feats(muni_gj):
     except Exception:
         mvaltxt = "n/a"
     metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
-    # EXACT text you asked: "Ede (municipality)" + metric + value
     p["_tt"] = (
         "<div style='font-size:12px'>"
         "<b>Ede (municipality)</b><br>"
@@ -228,13 +238,14 @@ if feats(muni_gj):
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=[52.04, 5.66],  # fallback; we’ll fit to Ede next
+    location=[52.04, 5.66],
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
     scrollWheelZoom=True,
     doubleClickZoom=True,
     zoom_control=True,
+    keyboard=False,  # 🚫 prevent Leaflet container from taking focus
 )
 
 # CSS & panes (keep tooltips above, outlines non-interactive)
@@ -251,8 +262,7 @@ m.get_root().header.add_child(Element("""
   white-space: nowrap;
   pointer-events: none !important;
 }
-
-/* --- remove focus rectangle on click/focus --- */
+/* Remove focus styles inside the Leaflet doc too */
 .leaflet-container:focus,
 .leaflet-container .leaflet-interactive:focus,
 .leaflet-container .leaflet-marker-icon:focus,
@@ -263,13 +273,12 @@ m.get_root().header.add_child(Element("""
 </style>
 """))
 
-# Layer panes (order matters)
-folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # lower
-folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
+# Layer panes
+folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)
+folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -288,7 +297,6 @@ muni_layer = folium.GeoJson(
 )
 muni_layer.add_to(m)
 
-# Neighbourhoods (on top, interactive with hover + highlight)
 neigh_layer = folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -310,15 +318,14 @@ neigh_layer = folium.GeoJson(
 )
 neigh_layer.add_to(m)
 
-# Optional outlines (top, non-interactive)
-if show_wijk and feats(wijk_gj):
-    add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
-if show_muni_outline:
-    add_outline(muni_gj, m, "Municipality outline", color="#000", weight=1.6, pane="outline-pane")
-if show_veld_outline and feats(veld_gj):
-    add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
+# Optional outlines
+def add_outline_if(show, gj, name, color, weight):
+    if show and feats(gj):
+        add_outline(gj, m, name, color=color, weight=weight, pane="outline-pane")
+add_outline_if(show_wijk, wijk_gj, "Wijk boundaries", "#222", 1.0)
+add_outline_if(show_muni_outline, muni_gj, "Municipality outline", "#000", 1.6)
+add_outline_if(show_veld_outline, veld_gj, "Veldhuizen outline", "#1f77b4", 2.2)
 
-# Perimeter label (above everything)
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -328,14 +335,11 @@ if tp:
         pane="label-pane",
     ).add_to(m)
 
-# Legend (branca colormap)
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# Fit to municipality bounds (center/frame like before)
 m.fit_bounds(bounds_of(muni_gj))
 
-# Info line
 mode_str = "gradient" if color_mode == "Continuous gradient" else f"{classes.lower()}, k={k}"
 st.markdown(
     "**Variable:** " + f"{sel_label}"
@@ -344,5 +348,5 @@ st.markdown(
 )
 
 # Render
-st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
+st_folium(m, height=MAP_HEIGHTS[size], width=None, returned_objects=[], key="map_static")
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
