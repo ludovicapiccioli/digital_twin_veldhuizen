@@ -40,6 +40,9 @@ def feats(gj: dict): return gj.get("features", [])
 def get_prop(f: dict, key: str, default=None):
     return f.get("properties", {}).get(key, default)
 
+def set_prop(f: dict, key: str, value):
+    f.setdefault("properties", {})[key] = value
+
 def extract_ring_points(geom: dict, out_list: list):
     if not geom: return
     t, c = geom.get("type"), geom.get("coordinates")
@@ -160,7 +163,6 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
-        # de-duplicate edges
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -172,7 +174,7 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Tooltip fields --------------------
+# -------------------- Build EXACT HTML tooltips like local --------------------
 # Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
@@ -180,36 +182,55 @@ for f in feats(neigh_gj):
         p.get("buurtnaam") or p.get("Buurtnaam") or p.get("name") or p.get("NAAM") or "Unknown"
     )
 
+# Decide decimals for formatting
 vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
-# per-feature formatted values (neighbourhoods)
-for f in feats(neigh_gj):
+# Neighbourhood tooltip HTML (_tt)
+for f in feats(neigh_gj)):
     p = f.setdefault("properties", {})
     try:
         val = float(p.get(var_col, None))
-        if not np.isfinite(val):
-            raise ValueError
-        p["_valtxt"] = f"{val:,.{decimals}f}"
+        valtxt = f"{val:,.{decimals}f}" if np.isfinite(val) else "n/a"
     except Exception:
-        p["_valtxt"] = "n/a"
+        valtxt = "n/a"
+    title = str(p.get("buurtnaam", ""))
+    subtitle = "Neighbourhood in Veldhuizen (Ede)"
+    metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
+    html = (
+        "<div style='font-size:12px;background:#fff;color:#111;padding:6px 8px;"
+        "border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.25);'>"
+        f"<b>{title}</b><br>"
+        f"<span style='opacity:.8'>{subtitle}</span><br>"
+        f"{metric}: {valtxt}"
+        "</div>"
+    )
+    set_prop(f, "_tt", html)
 
-# municipality formatted value + a readable name
+# Municipality tooltip HTML (_tt)
 if feats(muni_gj):
-    p = feats(muni_gj)[0].setdefault("properties", {})
+    f = feats(muni_gj)[0]
+    p = f.setdefault("properties", {})
+    mname = p.get("gemeentenaam", "Ede (municipality)")
     try:
         mval = float(p.get(var_col, None))
-        if not np.isfinite(mval):
-            raise ValueError
-        p["_valtxt"] = f"{mval:,.{decimals}f}"
+        mtxt = f"{mval:,.{decimals}f}" if np.isfinite(mval) else "n/a"
     except Exception:
-        p["_valtxt"] = "n/a"
-    p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
+        mtxt = "n/a"
+    metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
+    html = (
+        "<div style='font-size:12px;background:#fff;color:#111;padding:6px 8px;"
+        "border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.25);'>"
+        f"<b>{mname}</b><br>"
+        f"{metric}: {mtxt}"
+        "</div>"
+    )
+    set_prop(f, "_tt", html)
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=[52.04, 5.66],  # fallback; we’ll fit to Ede next
+    location=[52.04, 5.66],  # fallback; will fit to municipality bounds below
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
@@ -218,7 +239,7 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS & panes (keep tooltips above, outlines non-interactive)
+# CSS & panes
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -235,13 +256,13 @@ m.get_root().header.add_child(Element("""
 </style>
 """))
 
-# Layer panes (order matters)
+# Panes to control order/hover
 folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # lower
 folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
+# Municipality (interactive so you can hover when not over a neighbourhood)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -251,20 +272,17 @@ muni_layer = folium.GeoJson(
         "fillColor": color_for_value(get_prop(feat, var_col, None), cmap),
         "color": "#555555",
         "weight": 0.7,
-        "interactive": True,   # <-- allow hover
+        "interactive": True,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_muniname", "_valtxt"],
-        aliases=[
-            "Region",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        sticky=True, labels=False, localize=False
+        fields=["_tt"], aliases=[""], sticky=True, labels=False,
+        parse_html=True,
+        style=("background-color:transparent; border:none; box-shadow:none; padding:0;")
     ),
 )
 muni_layer.add_to(m)
 
-# Neighbourhoods (on top, interactive with hover + highlight)
+# Neighbourhoods (on top, with same HTML hover)
 neigh_layer = folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -277,20 +295,12 @@ neigh_layer = folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        sticky=True, labels=False, localize=False
+        fields=["_tt"], aliases=[""], sticky=True, labels=False,
+        parse_html=True,
+        style=("background-color:transparent; border:none; box-shadow:none; padding:0;")
     ),
     popup=folium.GeoJsonPopup(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        labels=False, localize=False
+        fields=["_tt"], aliases=[""], labels=False, parse_html=True, localize=False
     ),
 )
 neigh_layer.add_to(m)
@@ -303,7 +313,7 @@ if show_muni_outline:
 if show_veld_outline and feats(veld_gj):
     add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
-# Perimeter label (above everything)
+# Perimeter label
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -313,11 +323,11 @@ if tp:
         pane="label-pane",
     ).add_to(m)
 
-# Legend (branca colormap)
+# Legend
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# Fit to municipality bounds (center/frame like before)
+# Fit to municipality bounds (center like local)
 m.fit_bounds(bounds_of(muni_gj))
 
 # Info line
