@@ -40,9 +40,6 @@ def feats(gj: dict): return gj.get("features", [])
 def get_prop(f: dict, key: str, default=None):
     return f.get("properties", {}).get(key, default)
 
-def set_prop(f: dict, key: str, value):
-    f.setdefault("properties", {})[key] = value
-
 def extract_ring_points(geom: dict, out_list: list):
     if not geom: return
     t, c = geom.get("type"), geom.get("coordinates")
@@ -96,15 +93,6 @@ def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
 
 # -------------------- UI --------------------
 st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
-
-# Remove Streamlit iframe border around the folium component
-st.markdown("""
-<style>
-/* Streamlit iframe wrapper (no border/outline) */
-[data-testid="stIFrame"] { border: 0 !important; }
-[data-testid="stIFrame"] iframe { border: 0 !important; outline: none !important; box-shadow: none !important; }
-</style>
-""", unsafe_allow_html=True)
 
 missing = [p for p in [CATALOG_CSV, GJ_NEIGH, GJ_MUNI] if not p.exists()]
 if missing:
@@ -172,6 +160,7 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
+        # de-duplicate edges
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -183,7 +172,7 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Build EXACT HTML tooltips (local style) --------------------
+# -------------------- Tooltip fields --------------------
 # Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
@@ -195,50 +184,51 @@ vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
-# Neighbourhood tooltip HTML (_tt)
+# Per-feature formatted values (neighbourhoods)
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     try:
         val = float(p.get(var_col, None))
-        valtxt = f"{val:,.{decimals}f}" if np.isfinite(val) else "n/a"
+        if not np.isfinite(val):
+            raise ValueError
+        valtxt = f"{val:,.{decimals}f}"
     except Exception:
         valtxt = "n/a"
-    title = str(p.get("buurtnaam", ""))
-    subtitle = "Neighbourhood in Veldhuizen (Ede)"
     metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
-    html = (
-        "<div style='font-size:12px;background:#fff;color:#111;padding:6px 8px;"
-        "border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.25);'>"
-        f"<b>{title}</b><br>"
-        f"<span style='opacity:.8'>{subtitle}</span><br>"
+    # EXACT text you asked: name + "Neighbourhood in Veldhuizen (Ede)" + metric + value
+    p["_tt"] = (
+        "<div style='font-size:12px'>"
+        f"<b>{p.get('buurtnaam','')}</b><br>"
+        "<span style='opacity:.8'>Neighbourhood in Veldhuizen (Ede)</span><br>"
         f"{metric}: {valtxt}"
         "</div>"
     )
-    set_prop(f, "_tt", html)
+    p["_valtxt"] = valtxt  # keep if you still need the simple popup style
 
-# Municipality tooltip HTML (_tt)
+# Municipality formatted value + HTML tooltip content
 if feats(muni_gj):
-    f = feats(muni_gj)[0]
-    p = f.setdefault("properties", {})
-    mname = p.get("gemeentenaam", "Ede (municipality)")
+    p = feats(muni_gj)[0].setdefault("properties", {})
     try:
         mval = float(p.get(var_col, None))
-        mtxt = f"{mval:,.{decimals}f}" if np.isfinite(mval) else "n/a"
+        if not np.isfinite(mval):
+            raise ValueError
+        mvaltxt = f"{mval:,.{decimals}f}"
     except Exception:
-        mtxt = "n/a"
+        mvaltxt = "n/a"
     metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
-    html = (
-        "<div style='font-size:12px;background:#fff;color:#111;padding:6px 8px;"
-        "border-radius:4px;box-shadow:0 1px 2px rgba(0,0,0,0.25);'>"
-        f"<b>{mname}</b><br>"
-        f"{metric}: {mtxt}"
+    # EXACT text you asked: "Ede (municipality)" + metric + value
+    p["_tt"] = (
+        "<div style='font-size:12px'>"
+        "<b>Ede (municipality)</b><br>"
+        f"{metric}: {mvaltxt}"
         "</div>"
     )
-    set_prop(f, "_tt", html)
+    p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
+    p["_valtxt"] = mvaltxt
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=[52.04, 5.66],  # fallback; will fit to municipality bounds below
+    location=[52.04, 5.66],  # fallback; we’ll fit to Ede next
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
@@ -247,42 +237,30 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS & panes (restore local look: no focus rectangle; nice perimeter label)
+# CSS & panes (keep tooltips above, outlines non-interactive)
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
 .leaflet-control-attribution { display:none !important; }
 .leaflet-control-layers { display:none !important; }
 .leaflet-tooltip-pane { z-index: 10050 !important; }
-.leaflet-marker-pane  { z-index: 10040 !important; }  /* labels below tooltips */
-
-/* Label style exactly as before */
+.leaflet-marker-pane  { z-index: 10040 !important; }
 .map-perimeter-label {
   font-size: 14px; font-weight: 700; color: #111;
   text-shadow: 0 1px 2px rgba(255,255,255,0.85), 0 -1px 2px rgba(255,255,255,0.65);
   white-space: nowrap;
   pointer-events: none !important;
 }
-
-/* Kill the black focus rectangle on click/drag (Leaflet) */
-.leaflet-container:focus,
-.leaflet-overlay-pane svg:focus,
-.leaflet-interactive:focus,
-.leaflet-marker-icon:focus,
-.leaflet-control a:focus {
-  outline: none !important;
-  box-shadow: none !important;
-}
 </style>
 """))
 
-# Panes to control order/hover
+# Layer panes (order matters)
 folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # lower
 folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive hover)
+# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -296,13 +274,12 @@ muni_layer = folium.GeoJson(
     },
     tooltip=folium.GeoJsonTooltip(
         fields=["_tt"], aliases=[""], sticky=True, labels=False,
-        parse_html=True,
-        style=("background-color:transparent; border:none; box-shadow:none; padding:0;")
+        parse_html=True, localize=False
     ),
 )
 muni_layer.add_to(m)
 
-# Neighbourhoods (on top, with same HTML hover)
+# Neighbourhoods (on top, interactive with hover + highlight)
 neigh_layer = folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -316,8 +293,7 @@ neigh_layer = folium.GeoJson(
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
         fields=["_tt"], aliases=[""], sticky=True, labels=False,
-        parse_html=True,
-        style=("background-color:transparent; border:none; box-shadow:none; padding:0;")
+        parse_html=True, localize=False
     ),
     popup=folium.GeoJsonPopup(
         fields=["_tt"], aliases=[""], labels=False, parse_html=True, localize=False
@@ -333,7 +309,7 @@ if show_muni_outline:
 if show_veld_outline and feats(veld_gj):
     add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
-# Perimeter label (same look/placement as your local version)
+# Perimeter label (above everything)
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -343,11 +319,11 @@ if tp:
         pane="label-pane",
     ).add_to(m)
 
-# Legend
+# Legend (branca colormap)
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# Fit to municipality bounds (center like local)
+# Fit to municipality bounds (center/frame like before)
 m.fit_bounds(bounds_of(muni_gj))
 
 # Info line
