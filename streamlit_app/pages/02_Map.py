@@ -251,6 +251,15 @@ m.get_root().header.add_child(Element("""
   white-space: nowrap;
   pointer-events: none !important;
 }
+
+/* --- remove focus rectangle on click/focus --- */
+.leaflet-container:focus,
+.leaflet-container .leaflet-interactive:focus,
+.leaflet-container .leaflet-marker-icon:focus,
+.leaflet-container .leaflet-pane *:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
 </style>
 """))
 
