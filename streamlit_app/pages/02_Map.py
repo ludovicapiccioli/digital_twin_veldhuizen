@@ -97,6 +97,15 @@ def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
 # -------------------- UI --------------------
 st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
 
+# Remove Streamlit iframe border around the folium component
+st.markdown("""
+<style>
+/* Streamlit iframe wrapper (no border/outline) */
+[data-testid="stIFrame"] { border: 0 !important; }
+[data-testid="stIFrame"] iframe { border: 0 !important; outline: none !important; box-shadow: none !important; }
+</style>
+""", unsafe_allow_html=True)
+
 missing = [p for p in [CATALOG_CSV, GJ_NEIGH, GJ_MUNI] if not p.exists()]
 if missing:
     st.error("Missing required files: " + ", ".join(p.name for p in missing))
@@ -174,7 +183,7 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Build EXACT HTML tooltips like local --------------------
+# -------------------- Build EXACT HTML tooltips (local style) --------------------
 # Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
@@ -182,7 +191,6 @@ for f in feats(neigh_gj):
         p.get("buurtnaam") or p.get("Buurtnaam") or p.get("name") or p.get("NAAM") or "Unknown"
     )
 
-# Decide decimals for formatting
 vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
@@ -239,19 +247,31 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS & panes
+# CSS & panes (restore local look: no focus rectangle; nice perimeter label)
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
 .leaflet-control-attribution { display:none !important; }
 .leaflet-control-layers { display:none !important; }
 .leaflet-tooltip-pane { z-index: 10050 !important; }
-.leaflet-marker-pane  { z-index: 10040 !important; }
+.leaflet-marker-pane  { z-index: 10040 !important; }  /* labels below tooltips */
+
+/* Label style exactly as before */
 .map-perimeter-label {
   font-size: 14px; font-weight: 700; color: #111;
   text-shadow: 0 1px 2px rgba(255,255,255,0.85), 0 -1px 2px rgba(255,255,255,0.65);
   white-space: nowrap;
   pointer-events: none !important;
+}
+
+/* Kill the black focus rectangle on click/drag (Leaflet) */
+.leaflet-container:focus,
+.leaflet-overlay-pane svg:focus,
+.leaflet-interactive:focus,
+.leaflet-marker-icon:focus,
+.leaflet-control a:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 </style>
 """))
@@ -262,7 +282,7 @@ folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive so you can hover when not over a neighbourhood)
+# Municipality (interactive hover)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -313,7 +333,7 @@ if show_muni_outline:
 if show_veld_outline and feats(veld_gj):
     add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
-# Perimeter label
+# Perimeter label (same look/placement as your local version)
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -341,4 +361,3 @@ st.markdown(
 # Render
 st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
-
