@@ -157,6 +157,10 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
+        # Avoid duplicate edges from tied quantiles
+        for i in range(1, len(bins)):
+            if bins[i] <= bins[i-1]:
+                bins[i] = bins[i-1] + 1e-9
     else:
         bins = list(np.linspace(vmin, vmax, k + 1))
     rng = abs(bins[-1]-bins[0])
@@ -165,12 +169,29 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
+# -------------------- Robust tooltip fields --------------------
+# Guarantee 'buurtnaam' exists for every feature and build _valtxt safely
+for f in feats(neigh_gj):
+    props = f.setdefault("properties", {})
+    props["buurtnaam"] = (
+        props.get("buurtnaam")
+        or props.get("Buurtnaam")
+        or props.get("name")
+        or props.get("NAAM")
+        or "Unknown"
+    )
+
 # Precompute a plain-text value column for robust tooltips
-decimals = 0 if (np.nanmax([v for v in neigh_vals if v is not None]) or 0) >= 100 else 2
+vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
+maxv = max(vals_clean) if vals_clean else None
+decimals = 0 if (maxv is not None and maxv >= 100) else 2
+
 for f in feats(neigh_gj):
     props = f.setdefault("properties", {})
     try:
         val = float(props.get(var_col, None))
+        if not np.isfinite(val):
+            raise ValueError
         props["_valtxt"] = f"{val:,.{decimals}f}"
     except Exception:
         props["_valtxt"] = "n/a"
@@ -179,13 +200,22 @@ if feats(muni_gj):
     props = feats(muni_gj)[0].setdefault("properties", {})
     try:
         mval = float(props.get(var_col, None))
+        if not np.isfinite(mval):
+            raise ValueError
         props["_valtxt"] = f"{mval:,.{decimals}f}"
     except Exception:
         props["_valtxt"] = "n/a"
 
 # -------------------- Map --------------------
-m = folium.Map(location=center_of(muni_gj), zoom_start=11, tiles="cartodbpositron",
-               control_scale=False, scrollWheelZoom=True, doubleClickZoom=True, zoom_control=True)
+m = folium.Map(
+    location=center_of(muni_gj),
+    zoom_start=11,
+    tiles="cartodbpositron",
+    control_scale=False,
+    scrollWheelZoom=True,
+    doubleClickZoom=True,
+    zoom_control=True,
+)
 
 # CSS: keep outlines non-hit, label above fill, tooltips topmost
 m.get_root().header.add_child(Element("""
@@ -195,16 +225,15 @@ m.get_root().header.add_child(Element("""
 .leaflet-control-layers { display:none !important; }
 /* Tooltips above everything */
 .leaflet-tooltip-pane { z-index: 10050 !important; }
-/* Perimeter label above polygons but below tooltips */
+/* Custom label pane (via class) above polygons but below tooltips */
 .custom-label-pane { z-index: 1000 !important; pointer-events: none !important; }
 </style>
 """))
 
-# Panes: backdrop (non-interactive fill), neighbourhoods, outlines, label
-folium.map.CustomPane("backdrop-pane", z_index=300, pointer_events="none").add_to(m)      # municipality fill (no hit)
-folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)                       # interactive hover
-folium.map.CustomPane("outline-pane", z_index=500, pointer_events="none").add_to(m)       # outlines
-# custom label pane using DivOverlay's 'pane' arg isn't universal; use custom CSS class on DivIcon instead.
+# Panes: backdrop (non-interactive fill), neighbourhoods, outlines
+folium.map.CustomPane("backdrop-pane", z_index=300, pointer_events="none").add_to(m)   # municipality fill (no hit)
+folium.map.CustomPane("neighbourhoods-pane", z_index=410).add_to(m)                   # interactive hover
+folium.map.CustomPane("outline-pane", z_index=500, pointer_events="none").add_to(m)   # outlines
 
 # Municipality (non-interactive fill so it never blocks hover)
 folium.GeoJson(
@@ -233,12 +262,18 @@ folium.GeoJson(
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
         fields=["buurtnaam", "_valtxt"],
-        aliases=["Neighbourhood", f"{sel_label}" + (f" ({unit})" if unit else "")],
+        aliases=[
+            "Neighbourhood",
+            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
+        ],
         sticky=True, labels=False, localize=False
     ),
     popup=folium.GeoJsonPopup(
         fields=["buurtnaam", "_valtxt"],
-        aliases=["Neighbourhood", f"{sel_label}" + (f" ({unit})" if unit else "")],
+        aliases=[
+            "Neighbourhood",
+            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
+        ],
         labels=False, localize=False
     ),
 ).add_to(m)
