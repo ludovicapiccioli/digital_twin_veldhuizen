@@ -11,6 +11,7 @@ from streamlit_folium import st_folium
 from branca.colormap import LinearColormap, StepColormap
 from branca.element import Element
 from folium.features import DivIcon
+import streamlit.components.v1 as components  # <- for the iframe focus fix
 
 # -------------------- Paths --------------------
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -57,7 +58,7 @@ def bounds_of(gj: dict):
     for f in feats(gj):
         extract_ring_points(f.get("geometry"), pts)
     if not pts:
-        return [[52.00, 5.58], [52.08, 5.74]]
+        return [[52.00, 5.58], [52.08, 5.74]]  # fallback box around Ede
     xs, ys = zip(*pts)  # lon, lat
     return [[float(min(ys)), float(min(xs))], [float(max(ys)), float(max(xs))]]
 
@@ -93,22 +94,6 @@ def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
 
 # -------------------- UI --------------------
 st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
-
-# 🔒 Remove focus outline on the outer iframe created by streamlit-folium
-st.markdown("""
-<style>
-/* Streamlit component iframe often gets focus on click; hide its outline */
-div[data-testid="stIFrame"],
-div[data-testid="stIFrame"]:focus,
-div[data-testid="stIFrame"] iframe,
-div[data-testid="stIFrame"] iframe:focus,
-iframe:focus,
-iframe:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-}
-</style>
-""", unsafe_allow_html=True)
 
 missing = [p for p in [CATALOG_CSV, GJ_NEIGH, GJ_MUNI] if not p.exists()]
 if missing:
@@ -176,6 +161,7 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
+        # de-duplicate edges
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -188,6 +174,7 @@ else:
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
 # -------------------- Tooltip fields --------------------
+# Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     p["buurtnaam"] = (
@@ -198,6 +185,7 @@ vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
+# Per-feature formatted values (neighbourhoods)
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     try:
@@ -217,6 +205,7 @@ for f in feats(neigh_gj):
     )
     p["_valtxt"] = valtxt
 
+# Municipality formatted value + HTML tooltip content
 if feats(muni_gj):
     p = feats(muni_gj)[0].setdefault("properties", {})
     try:
@@ -238,14 +227,14 @@ if feats(muni_gj):
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=[52.04, 5.66],
+    location=[52.04, 5.66],  # fallback; we’ll fit to Ede next
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
     scrollWheelZoom=True,
     doubleClickZoom=True,
     zoom_control=True,
-    keyboard=False,  # 🚫 prevent Leaflet container from taking focus
+    keyboard=False,  # 🚫 prevent Leaflet container from taking focus (hover still works)
 )
 
 # CSS & panes (keep tooltips above, outlines non-interactive)
@@ -262,7 +251,7 @@ m.get_root().header.add_child(Element("""
   white-space: nowrap;
   pointer-events: none !important;
 }
-/* Remove focus styles inside the Leaflet doc too */
+/* Remove focus styles inside the Leaflet doc */
 .leaflet-container:focus,
 .leaflet-container .leaflet-interactive:focus,
 .leaflet-container .leaflet-marker-icon:focus,
@@ -273,12 +262,13 @@ m.get_root().header.add_child(Element("""
 </style>
 """))
 
-# Layer panes
-folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)
-folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)
+# Layer panes (order matters)
+folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # lower
+folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
+# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -297,6 +287,7 @@ muni_layer = folium.GeoJson(
 )
 muni_layer.add_to(m)
 
+# Neighbourhoods (hover tooltips + hover highlight kept)
 neigh_layer = folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -318,14 +309,15 @@ neigh_layer = folium.GeoJson(
 )
 neigh_layer.add_to(m)
 
-# Optional outlines
-def add_outline_if(show, gj, name, color, weight):
-    if show and feats(gj):
-        add_outline(gj, m, name, color=color, weight=weight, pane="outline-pane")
-add_outline_if(show_wijk, wijk_gj, "Wijk boundaries", "#222", 1.0)
-add_outline_if(show_muni_outline, muni_gj, "Municipality outline", "#000", 1.6)
-add_outline_if(show_veld_outline, veld_gj, "Veldhuizen outline", "#1f77b4", 2.2)
+# Optional outlines (top, non-interactive)
+if show_wijk and feats(wijk_gj):
+    add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
+if show_muni_outline:
+    add_outline(muni_gj, m, "Municipality outline", color="#000", weight=1.6, pane="outline-pane")
+if show_veld_outline and feats(veld_gj):
+    add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
+# Perimeter label (above everything)
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -335,11 +327,14 @@ if tp:
         pane="label-pane",
     ).add_to(m)
 
+# Legend (branca colormap)
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
+# Fit to municipality bounds (center/frame like before)
 m.fit_bounds(bounds_of(muni_gj))
 
+# Info line
 mode_str = "gradient" if color_mode == "Continuous gradient" else f"{classes.lower()}, k={k}"
 st.markdown(
     "**Variable:** " + f"{sel_label}"
@@ -347,6 +342,48 @@ st.markdown(
     + f"  •  **Color mode:** {mode_str}"
 )
 
-# Render
-st_folium(m, height=MAP_HEIGHTS[size], width=None, returned_objects=[], key="map_static")
+# Render (hover preserved)
+st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
+
+# 🚫 Remove the black focus rectangle on the map iframe (cross-browser)
+components.html("""
+<style>
+  /* Streamlit's component iframe often receives focus; hide any outline/ring */
+  div[data-testid="stIFrame"], div[data-testid="stIFrame"]:focus,
+  div[data-testid="stIFrame"] iframe, div[data-testid="stIFrame"] iframe:focus,
+  iframe:focus, iframe:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+</style>
+<script>
+  (function () {
+    function patch() {
+      const iframe = document.querySelector('div[data-testid="stIFrame"] iframe');
+      if (!iframe) return false;
+      // Make it non-focusable and blur if focus somehow lands there
+      iframe.setAttribute('tabindex','-1');
+      iframe.style.outline = 'none';
+      iframe.addEventListener('focus', function(e){ try { e.target.blur(); } catch(_){} }, true);
+      // Also blur when content loads or user clicks inside
+      iframe.addEventListener('load', function(){
+        try {
+          const doc = iframe.contentWindow.document;
+          doc.addEventListener('mousedown', function(){ try { iframe.blur(); } catch(_){} }, true);
+          doc.addEventListener('focus', function(){ try { iframe.blur(); } catch(_){} }, true);
+        } catch(_) {}
+      });
+      return true;
+    }
+    if (!patch()) {
+      let tries = 0;
+      const id = setInterval(function(){
+        tries += 1;
+        if (patch() || tries > 40) clearInterval(id); // ~2s max
+      }, 50);
+    }
+  })();
+</script>
+""", height=0, width=0)
+
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
