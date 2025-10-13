@@ -1,0 +1,35 @@
+﻿dimension,label,column,unit
+environment and living conditions,Population density,pop_dens_inhab_km2,per km2
+general demographics,% aged 65+,perc_65y_plus,%
+social relationships and community,% single person households,perc_1p_households,%
+social relationships and community,Average household size,avg_household_size,persons/household
+general demographics,% with country of origin NL,perc_country_origin_nl,%
+general demographics,% with country of origin europe excl. NL,perc_country_origin_eu_excl_nl,%
+general demographics,% with country of origin outside europe,perc_country_origin_outside_eu,%
+physical health,% self-rated health good/very good (65+),health_self_rated_health_good_very_good,%
+physical health,Meets physical activity guidelines (65+),health_meets_phys_activ_guidel,%
+physical health,Weekly sport participation (65+),health_weekly_sport_particip,%
+physical health,% obese (65+),health_obesity,%
+physical health,Meets alcohol guideline (65+),health_meets_alcohol_guideline,%
+physical health,Excessive drinker (65+),health_excessive_drinker,%
+physical health,Limited in daily activity due to health (65+),health_limited_daily_activ_due_to_health,%
+physical health,Long term severe limitation (65+),health_long_term_severe_limit,%
+psychological health,Psychological complaints (65+),health_psychological_complaints,%
+psychological health,Very low resilience (65+),health_very_low_resilience,%
+psychological health,Very high resilience (65+),health_very_high_resilience,%
+social relationships and community,Lacks emotional support (65+),health_lacks_emotional_support,%
+psychological health,Suicidal thoughts (65+),health_suicidal_thoughts,%
+social relationships and community,Lonely (65+),health_lonely,%
+social relationships and community,Severe/very severe loneliness (65+),health_severe_very_severe_loneliness,%
+social relationships and community,Does volunteer work (65+),health_does_volunteer_work,%
+environment and living conditions,Difficulty making ends meet (65+),health_financial_strain,%
+environment and living conditions,average distance to GP practice,prox_dist_gp_practice_km,km
+environment and living conditions,average distance to pharmacy,prox_dist_pharmacy_km,km
+environment and living conditions,average distance to hospital,prox_dist_hospital_km,km
+environment and living conditions,average distance to large supermarket,prox_dist_large_supermaket_km,km
+social relationships and community,average distance to café,prox_dist_cafe_km,km
+social relationships and community,number of cafes within 1 km,prox_num_cafes_1km,count
+environment and living conditions,average distance to swimming pool,prox_dist_swimming_pool_km,km
+environment and living conditions,average distance to library,prox_dist_library_km,km
+environment and living conditions,number of museums within 5 km,prox_museums_within_5km,count
+environment and living conditions,average distance to movie theatre,prox_dist_cinema_km,km
