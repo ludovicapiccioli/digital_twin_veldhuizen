@@ -50,22 +50,12 @@ def extract_ring_points(geom: dict, out_list: list):
             if isinstance(pt, (list, tuple)) and len(pt) >= 2:
                 out_list.append((float(pt[0]), float(pt[1])))  # (lon, lat)
 
-def center_of(gj: dict):
-    pts = []
-    for f in feats(gj):
-        extract_ring_points(f.get("geometry"), pts)
-    if not pts: return [52.04, 5.66]  # fallback near Ede
-    xs, ys = zip(*pts)  # lon, lat
-    return [float(np.mean(ys)), float(np.mean(xs))]  # (lat, lon)
-
 def bounds_of(gj: dict):
-    """Return Leaflet-style bounds [[south, west], [north, east]] for the collection."""
     pts = []
     for f in feats(gj):
         extract_ring_points(f.get("geometry"), pts)
     if not pts:
-        # small box around Ede as a safe fallback
-        return [[52.00, 5.58], [52.08, 5.74]]
+        return [[52.00, 5.58], [52.08, 5.74]]  # fallback box around Ede
     xs, ys = zip(*pts)  # lon, lat
     return [[float(min(ys)), float(min(xs))], [float(max(ys)), float(max(xs))]]
 
@@ -92,12 +82,11 @@ def color_for_value(x, cmap):
         return "#cccccc"
     return str(cmap(xx))
 
-def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, dash=None, pane=None):
+def add_outline(gj: dict, fmap, name, color="#111", weight=1.2):
     if not gj or not feats(gj): return
-    style = {"fillOpacity": 0, "color": color, "weight": weight, "className": "nohit-outline"}
-    if dash: style["dashArray"] = dash
-    kw = {"pane": pane} if pane else {}
-    folium.GeoJson(data=gj, name=name, style_function=lambda f: style, **kw).add_to(fmap)
+    style = {"fillOpacity": 0, "color": color, "weight": weight,
+             "className": "nohit-outline", "interactive": False}
+    folium.GeoJson(data=gj, name=name, style_function=lambda f: style).add_to(fmap)
 
 # -------------------- UI --------------------
 st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
@@ -216,7 +205,7 @@ if feats(muni_gj):
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=center_of(muni_gj),   # initial center near Ede
+    location=[52.04, 5.66],  # fallback; we'll fit to Ede next
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
@@ -225,40 +214,33 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS
+# Keep tooltips above everything (safe CSS only)
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
 .leaflet-control-attribution { display:none !important; }
 .leaflet-control-layers { display:none !important; }
 .leaflet-tooltip-pane { z-index: 10050 !important; }
-.custom-label-pane { z-index: 1000 !important; pointer-events: none !important; }
 </style>
 """))
 
-# Panes
-folium.map.CustomPane("backdrop-pane", z_index=300, pointer_events="none").add_to(m)
-folium.map.CustomPane("neighbourhoods-pane", z_index=410).add_to(m)
-folium.map.CustomPane("outline-pane", z_index=500, pointer_events="none").add_to(m)
-
-# Municipality (non-interactive fill so it never blocks hover)
+# Municipality (NON-interactive so it can't steal hover)
 folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
-    pane="backdrop-pane",
     style_function=lambda feat: {
         "fillOpacity": 0.55,
         "fillColor": color_for_value(get_prop(feat, var_col, None), cmap),
         "color": "#555555",
         "weight": 0.7,
+        "interactive": False,  # <-- critical
     },
 ).add_to(m)
 
-# Neighbourhoods (hover tooltip + popup)
-folium.GeoJson(
+# Neighbourhoods (hover tooltip + highlight)
+neigh_layer = folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
-    pane="neighbourhoods-pane",
     style_function=lambda feat: {
         "fillOpacity": 0.85,
         "fillColor": color_for_value(get_prop(feat, var_col, None), cmap),
@@ -282,15 +264,16 @@ folium.GeoJson(
         ],
         labels=False, localize=False
     ),
-).add_to(m)
+)
+neigh_layer.add_to(m)
 
-# Outlines
+# Outlines (also non-interactive)
 if show_wijk and feats(wijk_gj):
-    add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
+    add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0)
 if show_muni_outline:
-    add_outline(muni_gj, m, "Municipality outline", color="#000", weight=1.6, pane="outline-pane")
+    add_outline(muni_gj, m, "Municipality outline", color="#000", weight=1.6)
 if show_veld_outline and feats(veld_gj):
-    add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
+    add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2)
 
 # Perimeter label
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
@@ -298,21 +281,18 @@ if tp:
     lat, lon = tp
     folium.Marker(
         location=[lat, lon],
-        icon=folium.DivIcon(
-            class_name="custom-label-pane",
-            html=(
-                "<div style=\"font-size:14px;font-weight:700;color:#111;"
-                "text-shadow:0 1px 2px rgba(255,255,255,0.85),0 -1px 2px rgba(255,255,255,0.65);"
-                "white-space:nowrap;\">Ede–Veldhuizen</div>"
-            ),
-        ),
+        icon=folium.DivIcon(html=(
+            "<div style=\"font-size:14px;font-weight:700;color:#111;"
+            "text-shadow:0 1px 2px rgba(255,255,255,0.85),0 -1px 2px rgba(255,255,255,0.65);"
+            "white-space:nowrap;\">Ede–Veldhuizen</div>"
+        )),
     ).add_to(m)
 
 # Legend
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# >>> Ensure the map view defaults to the municipality of Ede
+# Default view = municipality extent
 m.fit_bounds(bounds_of(muni_gj))
 
 # Info line
