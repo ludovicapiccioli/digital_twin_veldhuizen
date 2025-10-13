@@ -44,19 +44,30 @@ def extract_ring_points(geom: dict, out_list: list):
     if t == "Polygon" and c and c[0]:
         for pt in c[0]:
             if isinstance(pt, (list, tuple)) and len(pt) >= 2:
-                out_list.append((float(pt[0]), float(pt[1])))
+                out_list.append((float(pt[0]), float(pt[1])))  # (lon, lat)
     elif t == "MultiPolygon" and c and c[0] and c[0][0]:
         for pt in c[0][0]:
             if isinstance(pt, (list, tuple)) and len(pt) >= 2:
-                out_list.append((float(pt[0]), float(pt[1])))
+                out_list.append((float(pt[0]), float(pt[1])))  # (lon, lat)
 
 def center_of(gj: dict):
     pts = []
     for f in feats(gj):
         extract_ring_points(f.get("geometry"), pts)
-    if not pts: return [52.04, 5.66]  # fallback
-    xs, ys = zip(*pts)
-    return [float(np.mean(ys)), float(np.mean(xs))]
+    if not pts: return [52.04, 5.66]  # fallback near Ede
+    xs, ys = zip(*pts)  # lon, lat
+    return [float(np.mean(ys)), float(np.mean(xs))]  # (lat, lon)
+
+def bounds_of(gj: dict):
+    """Return Leaflet-style bounds [[south, west], [north, east]] for the collection."""
+    pts = []
+    for f in feats(gj):
+        extract_ring_points(f.get("geometry"), pts)
+    if not pts:
+        # small box around Ede as a safe fallback
+        return [[52.00, 5.58], [52.08, 5.74]]
+    xs, ys = zip(*pts)  # lon, lat
+    return [[float(min(ys)), float(min(xs))], [float(max(ys)), float(max(xs))]]
 
 def top_label_point(gj: dict):
     pts = []
@@ -157,7 +168,6 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
-        # Avoid duplicate edges from tied quantiles
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -169,46 +179,44 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Robust tooltip fields --------------------
-# Guarantee 'buurtnaam' exists for every feature and build _valtxt safely
+# -------------------- Normalize tooltip fields --------------------
 for f in feats(neigh_gj):
-    props = f.setdefault("properties", {})
-    props["buurtnaam"] = (
-        props.get("buurtnaam")
-        or props.get("Buurtnaam")
-        or props.get("name")
-        or props.get("NAAM")
+    p = f.setdefault("properties", {})
+    p["buurtnaam"] = (
+        p.get("buurtnaam")
+        or p.get("Buurtnaam")
+        or p.get("name")
+        or p.get("NAAM")
         or "Unknown"
     )
 
-# Precompute a plain-text value column for robust tooltips
 vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
 for f in feats(neigh_gj):
-    props = f.setdefault("properties", {})
+    p = f.setdefault("properties", {})
     try:
-        val = float(props.get(var_col, None))
+        val = float(p.get(var_col, None))
         if not np.isfinite(val):
             raise ValueError
-        props["_valtxt"] = f"{val:,.{decimals}f}"
+        p["_valtxt"] = f"{val:,.{decimals}f}"
     except Exception:
-        props["_valtxt"] = "n/a"
+        p["_valtxt"] = "n/a"
 
 if feats(muni_gj):
-    props = feats(muni_gj)[0].setdefault("properties", {})
+    p = feats(muni_gj)[0].setdefault("properties", {})
     try:
-        mval = float(props.get(var_col, None))
+        mval = float(p.get(var_col, None))
         if not np.isfinite(mval):
             raise ValueError
-        props["_valtxt"] = f"{mval:,.{decimals}f}"
+        p["_valtxt"] = f"{mval:,.{decimals}f}"
     except Exception:
-        props["_valtxt"] = "n/a"
+        p["_valtxt"] = "n/a"
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=center_of(muni_gj),
+    location=center_of(muni_gj),   # initial center near Ede
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
@@ -217,23 +225,21 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS: keep outlines non-hit, label above fill, tooltips topmost
+# CSS
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
 .leaflet-control-attribution { display:none !important; }
 .leaflet-control-layers { display:none !important; }
-/* Tooltips above everything */
 .leaflet-tooltip-pane { z-index: 10050 !important; }
-/* Custom label pane (via class) above polygons but below tooltips */
 .custom-label-pane { z-index: 1000 !important; pointer-events: none !important; }
 </style>
 """))
 
-# Panes: backdrop (non-interactive fill), neighbourhoods, outlines
-folium.map.CustomPane("backdrop-pane", z_index=300, pointer_events="none").add_to(m)   # municipality fill (no hit)
-folium.map.CustomPane("neighbourhoods-pane", z_index=410).add_to(m)                   # interactive hover
-folium.map.CustomPane("outline-pane", z_index=500, pointer_events="none").add_to(m)   # outlines
+# Panes
+folium.map.CustomPane("backdrop-pane", z_index=300, pointer_events="none").add_to(m)
+folium.map.CustomPane("neighbourhoods-pane", z_index=410).add_to(m)
+folium.map.CustomPane("outline-pane", z_index=500, pointer_events="none").add_to(m)
 
 # Municipality (non-interactive fill so it never blocks hover)
 folium.GeoJson(
@@ -278,7 +284,7 @@ folium.GeoJson(
     ),
 ).add_to(m)
 
-# Outlines (never intercept mouse)
+# Outlines
 if show_wijk and feats(wijk_gj):
     add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
 if show_muni_outline:
@@ -286,7 +292,7 @@ if show_muni_outline:
 if show_veld_outline and feats(veld_gj):
     add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
-# Perimeter label (Ede–Veldhuizen) ABOVE polygons (use DivIcon with higher z via CSS class)
+# Perimeter label
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -305,6 +311,9 @@ if tp:
 # Legend
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
+
+# >>> Ensure the map view defaults to the municipality of Ede
+m.fit_bounds(bounds_of(muni_gj))
 
 # Info line
 mode_str = "gradient" if color_mode == "Continuous gradient" else f"{classes.lower()}, k={k}"
