@@ -1,312 +1,295 @@
 # pages/02_Map.py
+
+from __future__ import annotations
 from pathlib import Path
 import json
-import math
 import numpy as np
 import pandas as pd
 import streamlit as st
 import folium
+from streamlit_folium import st_folium
 from branca.colormap import LinearColormap, StepColormap
 from branca.element import Element
-from streamlit_folium import st_folium
 
 # --------------------------------------------------------------------------------------
 # PATHS
 # --------------------------------------------------------------------------------------
 APP_ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = APP_ROOT / "data"
-
-NEIGH_PATH = DATA_DIR / "neighbourhoods_veld.geojson"
-MUNI_PATH  = DATA_DIR / "municipality_ede.geojson"
-WIJK_PATH  = DATA_DIR / "wijkenbuurtenwijken.geojson"        # outlines (optional)
-VELD_PATH  = DATA_DIR / "wijk_boundary_veld.geojson"         # outline (optional)
 CATALOG_CSV = DATA_DIR / "variables_catalog.csv"
+
+GJ_NEIGH = DATA_DIR / "neighbourhoods_veld.geojson"
+GJ_MUNI  = DATA_DIR / "municipality_ede.geojson"
+GJ_WIJK  = DATA_DIR / "wijkenbuurtenwijken.geojson"       # optional
+GJ_VELD  = DATA_DIR / "wijk_boundary_veld.geojson"        # optional
 
 MAP_HEIGHTS = {"Half-page": 460, "Normal": 700, "Full-page": 1000}
 
-# --------------------------------------------------------------------------------------
-# GEOJSON HELPERS (no GeoPandas needed)
-# --------------------------------------------------------------------------------------
-def load_geojson(path: Path):
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+# Same red palette you used before (light -> dark)
+PALETTE_RED = ["#fff5f0","#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#99000d","#67000d","#3b0008"]
 
-def features(gj):
-    return gj.get("features", []) if isinstance(gj, dict) else []
+# --------------------------------------------------------------------------------------
+# HELPERS (pure-GeoJSON, no GeoPandas)
+# --------------------------------------------------------------------------------------
+def load_geojson(p: Path) -> dict:
+    with p.open("r", encoding="utf-8") as f:
+        gj = json.load(f)
+    if gj.get("type") != "FeatureCollection":
+        raise ValueError(f"{p.name} must be a FeatureCollection")
+    # Ensure 'features' exists
+    gj.setdefault("features", [])
+    return gj
 
-def get_bounds_of_feature(feat):
-    """Compute [minx, miny, maxx, maxy] of a single GeoJSON feature (Polygon/MultiPolygon)."""
-    geom = feat.get("geometry", {})
-    gtype = geom.get("type", "")
-    coords = geom.get("coordinates", [])
-    xs, ys = [], []
-    if gtype == "Polygon":
-        rings = coords
+def features(gj: dict):
+    return gj.get("features", [])
+
+def get_prop(f: dict, key: str, default=None):
+    return f.get("properties", {}).get(key, default)
+
+def fmt_num(x, hi_hint=100.0) -> str:
+    try:
+        xx = float(x)
+    except Exception:
+        return "n/a"
+    if not np.isfinite(xx):
+        return "n/a"
+    return f"{xx:,.0f}" if hi_hint >= 100 else f"{xx:,.2f}"
+
+def extract_all_coords(geom: dict, out_list: list):
+    """Collect all [lon,lat] pairs from (Multi)Polygon/LineString shells (no shapely)."""
+    if geom is None:
+        return
+    gtype = geom.get("type")
+    coords = geom.get("coordinates")
+    if gtype in ("Point", "MultiPoint", "LineString"):
+        for pt in (coords if gtype != "Point" else [coords]):
+            if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                out_list.append((float(pt[0]), float(pt[1])))
+    elif gtype == "MultiLineString":
+        for line in coords or []:
+            for pt in line or []:
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    out_list.append((float(pt[0]), float(pt[1])))
+    elif gtype == "Polygon":
+        # take exterior ring (coords[0]) for label/centroid heuristics
+        if coords and isinstance(coords[0], list):
+            for pt in coords[0]:
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    out_list.append((float(pt[0]), float(pt[1])))
     elif gtype == "MultiPolygon":
-        rings = [ring for poly in coords for ring in poly]
-    else:
-        rings = []
-    for ring in rings:
-        for x, y in ring:
-            xs.append(x); ys.append(y)
-    if not xs:
-        return None
-    return [min(xs), min(ys), max(xs), max(ys)]
+        # take first polygon's exterior ring for heuristics
+        if coords and isinstance(coords[0], list) and coords[0] and isinstance(coords[0][0], list):
+            for pt in coords[0][0]:
+                if isinstance(pt, (list, tuple)) and len(pt) >= 2:
+                    out_list.append((float(pt[0]), float(pt[1])))
+    # (Other geometry types ignored here for simplicity)
 
-def bounds_union(gj):
-    """Union bounds of a GeoJSON FeatureCollection."""
-    b = None
+def rough_center(gj: dict) -> list[float]:
+    """Heuristic center: average of exterior coordinates from all features."""
+    pts = []
     for f in features(gj):
-        fb = get_bounds_of_feature(f)
-        if fb is None:
-            continue
-        if b is None:
-            b = fb
-        else:
-            b = [min(b[0], fb[0]), min(b[1], fb[1]), max(b[2], fb[2]), max(b[3], fb[3])]
-    return b
+        extract_all_coords(f.get("geometry"), pts)
+    if not pts:
+        # fallback to Ede-ish center if empty
+        return [52.04, 5.66]
+    xs, ys = zip(*pts)
+    return [float(np.mean(ys)), float(np.mean(xs))]  # [lat, lon]
 
-def centroid_of_bounds(bounds):
-    """Center of a bbox [minx,miny,maxx,maxy] -> (lat, lon)."""
-    minx, miny, maxx, maxy = bounds
-    return [(miny + maxy) / 2.0, (minx + maxx) / 2.0]
+def top_label_point(gj: dict) -> tuple[float,float] | None:
+    """Find the 'highest' (max lat) point from the Veldhuizen outline for the label."""
+    pts = []
+    for f in features(gj):
+        extract_all_coords(f.get("geometry"), pts)
+    if not pts:
+        return None
+    # pts are (lon, lat); pick max lat
+    lon, lat = max(pts, key=lambda xy: xy[1])
+    return (lat, lon)
 
-def largest_polygon_centroid(gj):
-    """
-    Approximate label point for Veldhuizen outline:
-    pick largest polygon by area and return centroid of its outer ring (no shapely).
-    """
-    best_area = -1.0
-    best_centroid = None
+def build_catalog(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path)
+    need = {"dimension","label","column","unit"}
+    miss = need - set(df.columns)
+    if miss:
+        raise ValueError(f"variables_catalog.csv missing columns: {miss}")
+    return df
 
-    for feat in features(gj):
-        geom = feat.get("geometry", {})
-        gtype = geom.get("type", "")
-        if gtype not in ("Polygon", "MultiPolygon"):
-            continue
-        polys = []
-        if gtype == "Polygon":
-            polys = [geom.get("coordinates", [])]
-        elif gtype == "MultiPolygon":
-            polys = geom.get("coordinates", [])
+def combined_min_max(values: list[float]) -> tuple[float,float]:
+    arr = np.array([v for v in values if v is not None and np.isfinite(v)], dtype=float)
+    if arr.size == 0:
+        return 0.0, 1.0
+    vmin, vmax = float(arr.min()), float(arr.max())
+    if vmin == vmax:
+        vmin -= 0.5
+        vmax += 0.5
+    return vmin, vmax
 
-        for poly in polys:
-            if not poly:
-                continue
-            ring = poly[0]  # exterior
-            if len(ring) < 3:
-                continue
-            # polygon signed area + centroid (shoelace formula)
-            area = 0.0
-            cx = 0.0
-            cy = 0.0
-            n = len(ring)
-            for i in range(n):
-                x1, y1 = ring[i]
-                x2, y2 = ring[(i + 1) % n]
-                cross = x1 * y2 - x2 * y1
-                area += cross
-                cx += (x1 + x2) * cross
-                cy += (y1 + y2) * cross
-            area *= 0.5
-            if abs(area) < 1e-12:
-                continue
-            cx /= (6.0 * area)
-            cy /= (6.0 * area)
-            if abs(area) > best_area:
-                best_area = abs(area)
-                best_centroid = (cy, cx)  # (lat, lon)
-
-    return best_centroid  # (lat, lon) or None
-
-# --------------------------------------------------------------------------------------
-# COLORING / BINS
-# --------------------------------------------------------------------------------------
-PALETTE_BASE = ["#fff5f0","#fcbba1","#fc9272","#fb6a4a","#ef3b2c","#cb181d","#99000d","#67000d","#3b0008"]
-
-def collect_values_from_neigh_and_muni(neigh_gj, muni_gj, var):
-    vals = []
-    for f in features(neigh_gj):
-        v = f.get("properties", {}).get(var)
-        try:
-            v = float(v)
-            if math.isfinite(v):
-                vals.append(v)
-        except Exception:
-            pass
-    # municipal value is single feature
-    if features(muni_gj):
-        v = features(muni_gj)[0].get("properties", {}).get(var)
-        try:
-            v = float(v)
-            if math.isfinite(v):
-                vals.append(v)
-        except Exception:
-            pass
-    return vals
-
-def make_discrete_bins(vals, mode="Equal interval", k=7):
-    if not vals:
-        return [0.0, 1.0]
-    v = np.array(vals, dtype=float)
-    v = v[np.isfinite(v)]
-    if v.size == 0:
-        return [0.0, 1.0]
-
-    if mode.lower().startswith("quantile"):
-        qs = np.linspace(0, 1, k + 1)
-        bins = list(np.quantile(v, qs))
-        # if repeated quantiles (flat data), fallback to equal interval
-        if len(pd.unique(bins)) < 3:
-            bins = list(np.linspace(v.min(), v.max(), k + 1))
-    else:
-        bins = list(np.linspace(v.min(), v.max(), k + 1))
-
-    rng = abs(bins[-1] - bins[0])
-    if rng >= 100:  bins = [round(b, 0) for b in bins]
-    elif rng >= 10: bins = [round(b, 1) for b in bins]
-    else:           bins = [round(b, 2) for b in bins]
-    return bins
-
-def colormap_and_range(neigh_vals, discrete=False, mode="Equal interval", k=7):
-    if not neigh_vals:
-        vmin, vmax = 0.0, 1.0
-    else:
-        v = np.array(neigh_vals, dtype=float)
-        v = v[np.isfinite(v)]
-        if v.size == 0:
-            vmin, vmax = 0.0, 1.0
-        else:
-            vmin, vmax = float(v.min()), float(v.max())
-            if vmin == vmax:
-                vmin -= 0.5
-                vmax += 0.5
-
-    if not discrete:
-        cmap = LinearColormap(colors=PALETTE_BASE, vmin=vmin, vmax=vmax)
-        return cmap, (vmin, vmax)
-
-    # discrete
-    bins = make_discrete_bins(neigh_vals, mode=mode, k=k)
-    colors = PALETTE_BASE[:k]
-    cmap = StepColormap(colors=colors, index=bins, vmin=bins[0], vmax=bins[-1])
-    return cmap, (bins[0], bins[-1])
-
-def color_for_value(x, cmap, vmin=None, vmax=None, discrete=False):
+def color_for_value(x, cmap, discrete=False):
     if x is None:
         return "#cccccc"
     try:
         xx = float(x)
-        if not math.isfinite(xx):
+        if not np.isfinite(xx):
             return "#cccccc"
     except Exception:
         return "#cccccc"
+    # both LinearColormap and StepColormap are callable
+    return str(cmap(xx))
 
-    if not discrete:
-        return cmap(xx)
-    # StepColormap handles classing internally on call
-    return cmap(xx)
-
-def fmt_value(x, hi_guess=100.0):
-    try:
-        xx = float(x)
-    except Exception:
-        return "n/a"
-    if not math.isfinite(xx):
-        return "n/a"
-    decimals = 0 if hi_guess >= 100 else 2
-    return f"{xx:,.{decimals}f}"
+def add_outline_geojson(gj: dict, fmap, name, color="#111111", weight=1.2, dash=None, pane=None):
+    if not gj or not features(gj):
+        return
+    style = {
+        "fillOpacity": 0,
+        "color": color,
+        "weight": weight,
+        "className": "nohit-outline",
+    }
+    if dash:
+        style["dashArray"] = dash
+    kw = {}
+    if pane:
+        kw["pane"] = pane
+    folium.GeoJson(
+        data=gj,
+        name=name,
+        style_function=lambda f: style,
+        **kw,
+    ).add_to(fmap)
 
 # --------------------------------------------------------------------------------------
-# UI
+# PAGE
 # --------------------------------------------------------------------------------------
-st.set_page_config(page_title="Map • Ede–Veldhuizen", layout="wide")
+st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
 
-# Existence checks
-missing = [p.name for p in [NEIGH_PATH, MUNI_PATH, CATALOG_CSV] if not p.exists()]
+# Inputs existence
+missing = [p for p in [CATALOG_CSV, GJ_NEIGH, GJ_MUNI] if not p.exists()]
 if missing:
-    st.error(f"Missing required files in /data: {', '.join(missing)}")
+    st.error("Missing required files: " + ", ".join(p.name for p in missing))
     st.stop()
 
-# Load
-neigh_gj = load_geojson(NEIGH_PATH)
-muni_gj  = load_geojson(MUNI_PATH)
-wijk_gj  = load_geojson(WIJK_PATH) if WIJK_PATH.exists() else None
-veld_gj  = load_geojson(VELD_PATH) if VELD_PATH.exists() else None
-catalog  = pd.read_csv(CATALOG_CSV)
+# Load catalog & GeoJSONs
+try:
+    catalog = build_catalog(CATALOG_CSV)
+    neigh_gj = load_geojson(GJ_NEIGH)
+    muni_gj  = load_geojson(GJ_MUNI)
+    wijk_gj  = load_geojson(GJ_WIJK) if GJ_WIJK.exists() else {"type":"FeatureCollection","features":[]}
+    veld_gj  = load_geojson(GJ_VELD) if GJ_VELD.exists() else {"type":"FeatureCollection","features":[]}
+except Exception as e:
+    st.error(f"Failed to load data.\n\n{e}")
+    st.stop()
 
-# Sidebar
+# Sidebar controls
 st.sidebar.header("Choose indicator")
-dimensions = catalog["dimension"].dropna().unique().tolist()
-dim = st.sidebar.selectbox("Dimension", dimensions, index=0)
+dimensions = sorted(pd.Series(catalog["dimension"]).dropna().unique().tolist())
+sel_dim = st.sidebar.selectbox("Dimension", dimensions, index=0)
 
-sub = catalog[catalog["dimension"] == dim].copy()
-label = st.sidebar.selectbox("Variable", sub["label"].tolist(), index=0)
-row = sub[sub["label"] == label].iloc[0]
-var_col = row["column"]
-unit    = str(row.get("unit", "")).strip()
+subset = catalog[catalog["dimension"] == sel_dim].copy()
+labels = subset["label"].tolist()
+sel_label = st.sidebar.selectbox("Variable", labels, index=0)
 
-# Color mode
+sel_row = subset[subset["label"] == sel_label].iloc[0]
+var_col = str(sel_row["column"])
+unit    = str(sel_row.get("unit","")).strip()
+
 color_mode = st.sidebar.radio("Color mode", ["Continuous gradient", "Discrete classes"], index=0)
 if color_mode == "Discrete classes":
-    classes = st.sidebar.selectbox("Classification", ["Equal interval", "Quantile"], index=0)
+    classes = st.sidebar.selectbox("Classification", ["Equal interval","Quantile"], index=0)
     k = st.sidebar.slider("Number of classes", 5, 9, 7)
-    discrete = True
 else:
-    classes = "Equal interval"
-    k = 7
-    discrete = False
+    classes, k = "Equal interval", 7  # placeholders
 
 st.sidebar.markdown("---")
 show_wijk = st.sidebar.checkbox("Show district (wijk) boundaries", True)
-show_muni = st.sidebar.checkbox("Show municipality outline", True)
-show_veld = st.sidebar.checkbox("Highlight Veldhuizen outline", True)
+show_muni_outline = st.sidebar.checkbox("Show municipality outline", True)
+show_veld_outline = st.sidebar.checkbox("Highlight Veldhuizen outline", True)
 
 size = st.sidebar.radio("Map size", list(MAP_HEIGHTS.keys()), index=0, horizontal=True)
 map_height = MAP_HEIGHTS[size]
 
 # --------------------------------------------------------------------------------------
-# DATA PREP
+# Build values list for common scale (neigh + muni)
 # --------------------------------------------------------------------------------------
-# Collect values (neighbourhoods + municipal single value) for common color scale
-vals_all = []
-# neigh values
+neigh_vals = []
 for f in features(neigh_gj):
-    v = f.get("properties", {}).get(var_col)
+    v = get_prop(f, var_col, None)
     try:
         v = float(v)
-        if math.isfinite(v):
-            vals_all.append(v)
     except Exception:
-        pass
-# municipal value
+        v = None
+    neigh_vals.append(v)
+
 muni_val = None
 if features(muni_gj):
-    mv = features(muni_gj)[0].get("properties", {}).get(var_col)
+    mv = get_prop(features(muni_gj)[0], var_col, None)
     try:
-        mv = float(mv)
-        if math.isfinite(mv):
-            muni_val = mv
-            vals_all.append(mv)
+        muni_val = float(mv)
     except Exception:
-        pass
+        muni_val = None
 
-cmap, (vmin, vmax) = colormap_and_range(vals_all, discrete=discrete, mode=classes, k=k)
+combined_vals = neigh_vals + ([muni_val] if muni_val is not None else [])
+vmin, vmax = combined_min_max(combined_vals)
 
-# Determine map center from municipality bbox
-mb = bounds_union(muni_gj)
-if mb:
-    map_center = centroid_of_bounds(mb)  # (lat, lon)
+# Colormap
+if color_mode == "Continuous gradient":
+    cmap = LinearColormap(colors=PALETTE_RED, vmin=vmin, vmax=vmax)
+    discrete = False
 else:
-    nb = bounds_union(neigh_gj)
-    map_center = centroid_of_bounds(nb) if nb else [52.05, 5.66]  # fallback roughly Ede
+    # Bins
+    finite_vals = [x for x in combined_vals if x is not None and np.isfinite(x)]
+    if classes.lower().startswith("quantile") and len(finite_vals) >= k:
+        qs = np.linspace(0, 1, k + 1)
+        bins = list(np.quantile(finite_vals, qs))
+    else:
+        bins = list(np.linspace(vmin, vmax, k + 1))
+
+    # Round edges nicely
+    rng = abs(bins[-1] - bins[0])
+    if rng >= 100:  bins = [round(b, 0) for b in bins]
+    elif rng >= 10: bins = [round(b, 1) for b in bins]
+    else:           bins = [round(b, 2) for b in bins]
+
+    cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
+    discrete = True
 
 # --------------------------------------------------------------------------------------
-# MAP + PANES + CSS
+# Prebuild _tt HTML tooltips to match your old style
 # --------------------------------------------------------------------------------------
+# “hi” to pick decimals
+hi_hint = max([x for x in neigh_vals if x is not None and np.isfinite(x)], default=0.0)
+
+# Neighbourhood features
+for f in features(neigh_gj):
+    props = f.setdefault("properties", {})
+    name = str(props.get("buurtnaam", ""))
+    val  = props.get(var_col, None)
+    val_txt = fmt_num(val, hi_hint)
+    unit_txt = f" [{unit}]" if unit else ""
+    props["_tt"] = (
+        "<div style='font-size:12px'>"
+        f"<b>{name}</b><br>"
+        "<span style='opacity:.8'>Neighbourhood in Veldhuizen (Ede)</span><br>"
+        f"{sel_label}{unit_txt}: {val_txt}"
+        "</div>"
+    )
+
+# Municipality feature
+if features(muni_gj):
+    props = features(muni_gj)[0].setdefault("properties", {})
+    mtxt = fmt_num(props.get(var_col, None), hi_hint)
+    unit_txt = f" [{unit}]" if unit else ""
+    props["_tt"] = (
+        "<div style='font-size:12px'><b>Ede (municipality)</b><br>"
+        f"{sel_label}{unit_txt}: {mtxt}</div>"
+    )
+
+# --------------------------------------------------------------------------------------
+# MAP
+# --------------------------------------------------------------------------------------
+center = rough_center(muni_gj)  # [lat, lon]
 m = folium.Map(
-    location=map_center,
-    zoom_start=12,
+    location=center,
+    zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
     scrollWheelZoom=True,
@@ -314,18 +297,18 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS: keep outlines non-interactive; tidy UI; label styling
+# CSS panes & styles (nohit outlines, tooltip/readability, red legend stays)
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
 .leaflet-control-attribution { display:none !important; }
 .leaflet-control-layers { display:none !important; }
 
-/* Tooltips above labels */
+/* Put tooltips over labels */
 .leaflet-tooltip-pane { z-index: 10050 !important; }
-.leaflet-marker-pane  { z-index: 10040 !important; }  /* labels below tooltips */
+.leaflet-marker-pane  { z-index: 10040 !important; }
 
-/* Outline label style */
+/* Perimeter label style */
 .map-perimeter-label {
   font-size: 14px; font-weight: 700; color: #111;
   text-shadow: 0 1px 2px rgba(255,255,255,0.85), 0 -1px 2px rgba(255,255,255,0.65);
@@ -333,7 +316,7 @@ m.get_root().header.add_child(Element("""
   pointer-events: none !important;
 }
 
-/* Remove focus rectangle */
+/* Remove black focus rectangle */
 .leaflet-container:focus,
 .leaflet-overlay-pane svg:focus,
 .leaflet-interactive:focus,
@@ -345,146 +328,95 @@ m.get_root().header.add_child(Element("""
 </style>
 """))
 
-# Panes for draw order
-folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)    # BELOW
-folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)  # ABOVE
-folium.map.CustomPane("label-pane", z_index=450, pointer_events="none").add_to(m)
+# Draw order panes
+folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # BACK
+folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # FRONT
 folium.map.CustomPane("outline-pane", z_index=500, pointer_events="none").add_to(m)
+folium.map.CustomPane("label-pane", z_index=450, pointer_events="none").add_to(m)
 
-# --------------------------------------------------------------------------------------
-# ADD LAYERS
-# --------------------------------------------------------------------------------------
-# Helper to color a feature by property
-def _fill_color(props):
-    return color_for_value(props.get(var_col), cmap, vmin, vmax, discrete=discrete)
-
-# Municipality polygon (single) with sticky tooltip & popup
-if features(muni_gj):
-    muni_props = features(muni_gj)[0].get("properties", {})
-    muni_label = f"{label}" + (f" [{unit}]" if unit else "")
-    muni_val_txt = fmt_value(muni_props.get(var_col), max(vals_all) if vals_all else 100)
-
-    folium.GeoJson(
-        muni_gj,
-        name=f"Ede (municipality) – {label}",
-        pane="municipality-pane",
-        style_function=lambda feat: {
-            "fillOpacity": 0.55,
-            "fillColor": _fill_color(feat.get("properties", {})),
-            "color": "#555555",
-            "weight": 0.7,
-        },
-        tooltip=folium.GeoJsonTooltip(
-            fields=[],
-            aliases=[],
-            sticky=True, labels=False, parse_html=True,
-            style=("background-color:white; color:#111; padding:6px 8px; "
-                   "border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.25);"),
-            localize=False,
-            # custom HTML content via script - use folium popup below for robust
-        ),
-        popup=folium.GeoJsonPopup(
-            fields=[],
-            aliases=[],
-            sticky=True, labels=False, parse_html=True,
-            localize=False,
-            # we inject a custom HTML in popup via lambda below
-        ),
-    ).add_to(m)
-    # Set popup HTML explicitly (works reliably)
-    folium.Popup(
-        html=f"<div style='font-size:12px'><b>Ede (municipality)</b><br>{muni_label}: {muni_val_txt}</div>",
-        max_width=280,
-    ).add_to(m._children[list(m._children.keys())[-1]])  # attach to last added layer
-
-# Veldhuizen neighbourhoods with hover + popup
-# (Use tooltip fields for hover; popup repeats with nicer formatting)
-neigh_label = f"{label}" + (f" [{unit}]" if unit else "")
+# Municipality (filled, popup only so it doesn't fight with neigh tooltip)
 folium.GeoJson(
-    neigh_gj,
-    name=f"Veldhuizen neighbourhoods – {label}",
-    pane="neighbourhoods-pane",
+    data=muni_gj,
+    name=f"Ede (municipality) – {sel_label}",
+    pane="municipality-pane",
     style_function=lambda feat: {
-        "fillOpacity": 0.85,
-        "fillColor": _fill_color(feat.get("properties", {})),
-        "color": "#333333",
-        "weight": 0.6,
+        "fillOpacity": 0.55,
+        "fillColor": color_for_value(get_prop(feat, var_col, None), cmap, discrete),
+        "color": "#555555",
+        "weight": 0.7,
     },
-    tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", var_col],
-        aliases=["Neighbourhood", neigh_label],
-        sticky=True, labels=False, parse_html=True, localize=False,
-        style=("background-color:white; color:#111; padding:6px 8px; "
-               "border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.25);")
-    ),
+    highlight_function=lambda feat: {"fillOpacity": 0.65, "weight": 1.2, "color": "#444444"},
     popup=folium.GeoJsonPopup(
-        fields=["buurtnaam", var_col],
-        aliases=["Neighbourhood", neigh_label],
-        localize=False, labels=False, parse_html=True,
+        fields=["_tt"], aliases=[""], labels=False, parse_html=True,
         style=("background-color:white; color:#111; padding:6px 8px; "
                "border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.25);")
     ),
 ).add_to(m)
 
-# Optional outlines (non-interactive, on top)
-def add_outline(gj, name, color="#111111", weight=1.2, dash=None, pane="outline-pane"):
-    if not gj:
-        return
-    folium.GeoJson(
-        gj,
-        name=name,
-        pane=pane,
-        style_function=lambda f: {
-            "fillOpacity": 0,
-            "color": color,
-            "weight": weight,
-            **({"dashArray": dash} if dash else {}),
-            "className": "nohit-outline",
-        },
-        highlight_function=None,
-        tooltip=None,
-    ).add_to(m)
+# Veldhuizen neighbourhoods (tooltip + popup + thicker on hover)
+folium.GeoJson(
+    data=neigh_gj,
+    name=f"Veldhuizen neighbourhoods – {sel_label}",
+    pane="neighbourhoods-pane",
+    style_function=lambda feat: {
+        "fillOpacity": 0.85,
+        "fillColor": color_for_value(get_prop(feat, var_col, None), cmap, discrete),
+        "color": "#333333",
+        "weight": 0.6,
+    },
+    highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
+    tooltip=folium.GeoJsonTooltip(
+        fields=["_tt"], aliases=[""], sticky=True, labels=False, parse_html=True,
+        style=("background-color:white; color:#111; padding:6px 8px; "
+               "border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.25);")
+    ),
+    popup=folium.GeoJsonPopup(
+        fields=["_tt"], aliases=[""], labels=False, parse_html=True,
+        style=("background-color:white; color:#111; padding:6px 8px; "
+               "border-radius:4px; box-shadow:0 1px 2px rgba(0,0,0,0.25);")
+    ),
+).add_to(m)
 
-if show_wijk and wijk_gj:
-    add_outline(wijk_gj, "Wijk boundaries", color="#222222", weight=1.0)
-
-if show_muni and muni_gj:
-    add_outline(muni_gj, "Municipality outline", color="#000000", weight=1.6)
-
-if show_veld and veld_gj:
-    add_outline(veld_gj, "Veldhuizen outline", color="#E45756", weight=2.4)  # RED
+# Optional non-interactive outlines (TOP)
+if show_wijk and features(GJ_WIJK.exists() and wijk_gj or {"features": []}):
+    add_outline_geojson(wijk_gj, m, "Wijk boundaries", color="#222222", weight=1.0, pane="outline-pane")
+if show_muni_outline:
+    add_outline_geojson(muni_gj, m, "Municipality outline", color="#000000", weight=1.6, pane="outline-pane")
+if show_veld_outline and features(GJ_VELD.exists() and veld_gj or {"features": []}):
+    add_outline_geojson(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
 # Perimeter label: "Ede–Veldhuizen"
-if veld_gj:
-    pt = largest_polygon_centroid(veld_gj)  # (lat, lon)
-    if pt:
-        lat, lon = pt
-        # Use label pane if supported
-        mk_kwargs = {}
-        if "pane" in folium.Marker.__init__.__code__.co_varnames:
-            mk_kwargs["pane"] = "label-pane"
+tp = top_label_point(veld_gj) if features(veld_gj) else None
+if tp:
+    lat, lon = tp
+    # pane is supported by newer Folium; ignore if not
+    try:
         folium.Marker(
             location=[lat, lon],
-            icon=folium.DivIcon(
-                class_name="map-perimeter-label",
-                html="Ede–Veldhuizen",
-            ),
-            **mk_kwargs,
+            icon=folium.DivIcon(class_name="map-perimeter-label", html='Ede–Veldhuizen'),
+            pane="label-pane",
+        ).add_to(m)
+    except TypeError:
+        folium.Marker(
+            location=[lat, lon],
+            icon=folium.DivIcon(class_name="map-perimeter-label", html='Ede–Veldhuizen'),
         ).add_to(m)
 
-# Legend
-cmap.caption = f"{label}" + (f"  [{unit}]" if unit and unit != "-" else "")
+# Legend (red scale)
+unit_txt = f"  [{unit}]" if unit and unit != "-" else ""
+cmap.caption = f"{sel_label}{unit_txt}"
 cmap.add_to(m)
 
-# Info line above the map
-mode_str = "gradient" if not discrete else f"{classes.lower()}, k={k}"
+# Info line above map
+mode_str = "gradient" if color_mode == "Continuous gradient" else f"{classes.lower()}, k={k}"
 st.markdown(
-    "**Variable:** " + f"{label}"
+    "**Variable:** " + f"{sel_label}"
     + (f"  •  **Unit:** {unit}" if unit else "")
     + f"  •  **Color mode:** {mode_str}"
 )
 
-# Render
+# Render map
 st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
 
+# Attribution
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
