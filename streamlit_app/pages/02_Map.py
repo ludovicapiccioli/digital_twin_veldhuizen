@@ -167,14 +167,16 @@ for f in feats(neigh_gj):
     except Exception:
         neigh_vals.append(None)
 
-muni_val = None
-if feats(muni_gj):
-    mv = get_prop(feats(muni_gj)[0], var_col, None)
+muni_vals = []
+for f in feats(muni_gj):
+    v = get_prop(f, var_col, None)
     try:
-        muni_val = float(mv)
+        muni_vals.append(float(v))
     except Exception:
-        muni_val = None
+        muni_vals.append(None)
 
+# Use a single municipality value if any; combine for vmin/vmax
+muni_val = next((v for v in muni_vals if v is not None and np.isfinite(v)), None)
 combined = neigh_vals + ([muni_val] if muni_val is not None else [])
 vmin, vmax = combined_min_max(combined)
 
@@ -185,7 +187,6 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
-        # de-duplicate edges
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -213,7 +214,7 @@ def fmt_unit_label(label: str, unit: str) -> str:
     u = (f" ({unit})" if unit and unit != "-" else "")
     return f"{label}{u}"
 
-# per-feature formatted values (neighbourhoods)
+# Per-neighbourhood: format values + extra lines
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     try:
@@ -223,13 +224,12 @@ for f in feats(neigh_gj):
         p["_valtxt"] = f"{val:,.{decimals}f}"
     except Exception:
         p["_valtxt"] = "n/a"
-    # subtitle and "Variable: value" line
-    p["_subtitle"] = "Neighbourhood in Ede-Veldhuizen"  # or "Ede–Veldhuizen" if you prefer the en dash
-    p["_valpair"] = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
+    p["_subtitle"] = "Neighbourhood in Ede-Veldhuizen"  # use "Ede–Veldhuizen" if you prefer
+    p["_valpair"]  = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
 
-# municipality formatted value + readable name
-if feats(muni_gj):
-    p = feats(muni_gj)[0].setdefault("properties", {})
+# Per-municipality feature: ensure ALL features get the tooltip fields
+for f in feats(muni_gj):
+    p = f.setdefault("properties", {})
     try:
         mval = float(p.get(var_col, None))
         if not np.isfinite(mval):
@@ -238,8 +238,8 @@ if feats(muni_gj):
     except Exception:
         p["_valtxt"] = "n/a"
     p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
-    p["_title"] = "Ede (municipality)"
-    p["_valpair"] = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
+    p["_title"]    = "Ede (municipality)"
+    p["_valpair"]  = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
 
 # -------------------- Map --------------------
 m = folium.Map(
@@ -255,14 +255,12 @@ m = folium.Map(
 # CSS: keep tooltips above; remove attribution & layers; kill focus rings
 m.get_root().header.add_child(Element("""
 <style>
-/* Make outlines unclickable; keep tooltips on top */
 .nohit-outline { pointer-events: none !important; }
 .leaflet-control-attribution { display:none !important; }
 .leaflet-control-layers { display:none !important; }
 .leaflet-tooltip-pane { z-index: 10050 !important; }
 .leaflet-marker-pane  { z-index: 10040 !important; }
 
-/* Pretty perimeter label */
 .map-perimeter-label {
   font-size: 14px; font-weight: 700; color: #111;
   text-shadow: 0 1px 2px rgba(255,255,255,0.85), 0 -1px 2px rgba(255,255,255,0.65);
@@ -270,7 +268,6 @@ m.get_root().header.add_child(Element("""
   pointer-events: none !important;
 }
 
-/* Remove focus outlines / black rectangle */
 .leaflet-container:focus,
 .leaflet-overlay-pane svg:focus,
 .leaflet-interactive:focus,
@@ -283,8 +280,8 @@ m.get_root().header.add_child(Element("""
 """))
 
 # Layer panes (order matters)
-folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # lower
-folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
+folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)
+folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
@@ -298,11 +295,11 @@ folium.GeoJson(
         "fillColor": color_for_value(get_prop(feat, var_col, None), cmap),
         "color": "#555555",
         "weight": 0.7,
-        "interactive": True,   # allow hover
+        "interactive": True,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_title", "_valpair"],   # exact 2-line format
-        aliases=["", ""],                # ignored because labels=False
+        fields=["_title", "_valpair"],   # 1) title  2) "Variable (unit): value"
+        aliases=["", ""],
         sticky=True, labels=False, localize=False
     ),
 ).add_to(m)
@@ -320,8 +317,8 @@ folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", "_subtitle", "_valpair"],  # name, subtitle, Variable: value
-        aliases=["", "", ""],                           # ignored because labels=False
+        fields=["buurtnaam", "_subtitle", "_valpair"],  # 1) name  2) subtitle  3) "Variable (unit): value"
+        aliases=["", "", ""],
         sticky=True, labels=False, localize=False
     ),
 ).add_to(m)
@@ -351,7 +348,7 @@ cmap.add_to(m)
 # Fit to municipality bounds (center/frame)
 m.fit_bounds(bounds_of(muni_gj))
 
-# Info line in Streamlit (matches your previous UX)
+# Info line in Streamlit
 mode_str = "gradient" if color_mode == "Continuous gradient" else f"{classes.lower()}, k={k}"
 st.markdown(
     "**Variable:** " + f"{sel_label}"
@@ -359,7 +356,7 @@ st.markdown(
     + f"  •  **Color mode:** {mode_str}"
 )
 
-# -------- Render without iframe border/focus ring ----------
+# Render
 html = m.get_root().render()
 components.html(html, height=map_height, scrolling=False)
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
