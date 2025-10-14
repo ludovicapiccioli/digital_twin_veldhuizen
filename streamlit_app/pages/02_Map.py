@@ -184,7 +184,7 @@ maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
 # neighbourhood tooltip HTML (_tt)
-for f in feats(neigh_gj)):
+for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     nm = p.get("buurtnaam", "Unknown")
     try:
@@ -339,3 +339,4 @@ st.markdown(
 # Render
 st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
+
