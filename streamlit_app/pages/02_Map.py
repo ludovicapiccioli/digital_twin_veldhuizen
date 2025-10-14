@@ -94,23 +94,11 @@ def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
 # -------------------- UI --------------------
 st.set_page_config(page_title="Map • Veldhuizen vs Ede", layout="wide")
 
-# Kill any outline/border on Streamlit's iframe container (outside the map)
+# Kill the outer iframe focus ring (Streamlit side)
 st.markdown("""
 <style>
-/* Streamlit iframe container and the iframe itself */
-.stApp [data-testid="stIFrame"],
-.stApp [data-testid="stIFrame"]:focus,
-.stApp [data-testid="stIFrame"]:focus-visible,
-.stApp [data-testid="stIFrame"] iframe,
-.stApp [data-testid="stIFrame"] iframe:focus,
-.stApp [data-testid="stIFrame"] iframe:focus-visible,
-.stApp iframe,
-.stApp iframe:focus,
-.stApp iframe:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
-  border: none !important;
-}
+.stApp iframe:focus, .stApp iframe:focus-visible { outline: none !important; }
+.stApp iframe { border: none !important; box-shadow: none !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -192,7 +180,7 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Tooltip fields --------------------
+# -------------------- Tooltip content (match your local version) --------------------
 # Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
@@ -204,28 +192,43 @@ vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
-# per-feature formatted values (neighbourhoods)
+# per-feature formatted values (neighbourhoods) + full HTML tooltip (_tt)
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     try:
         val = float(p.get(var_col, None))
         if not np.isfinite(val):
             raise ValueError
-        p["_valtxt"] = f"{val:,.{decimals}f}"
+        valtxt = f"{val:,.{decimals}f}"
     except Exception:
-        p["_valtxt"] = "n/a"
+        valtxt = "n/a"
+    p["_valtxt"] = valtxt
+    p["_tt"] = (
+        "<div style='font-size:12px'>"
+        f"<b>{p['buurtnaam']}</b><br>"
+        "<span style='opacity:.8'>Neighbourhood in Veldhuizen (Ede)</span><br>"
+        f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "") + f": {valtxt}"
+        "</div>"
+    )
 
-# municipality formatted value + a readable name
+# municipality formatted value + full HTML tooltip (_tt)
 if feats(muni_gj):
     p = feats(muni_gj)[0].setdefault("properties", {})
     try:
         mval = float(p.get(var_col, None))
         if not np.isfinite(mval):
             raise ValueError
-        p["_valtxt"] = f"{mval:,.{decimals}f}"
+        mvaltxt = f"{mval:,.{decimals}f}"
     except Exception:
-        p["_valtxt"] = "n/a"
+        mvaltxt = "n/a"
+    p["_valtxt"]  = mvaltxt
     p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
+    p["_tt"] = (
+        "<div style='font-size:12px'>"
+        "<b>Ede (municipality)</b><br>"
+        f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "") + f": {mvaltxt}"
+        "</div>"
+    )
 
 # -------------------- Map --------------------
 m = folium.Map(
@@ -238,7 +241,7 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS & panes (keep tooltips above, outlines non-interactive) + remove focus inside map
+# CSS inside the iframe: keep tooltips above; remove ANY focus ring/outline inside the map
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -246,8 +249,13 @@ m.get_root().header.add_child(Element("""
 .leaflet-control-layers { display:none !important; }
 .leaflet-tooltip-pane { z-index: 10050 !important; }
 .leaflet-marker-pane  { z-index: 10040 !important; }
-
-/* Remove focus/outline from anything inside the map */
+.map-perimeter-label {
+  font-size: 14px; font-weight: 700; color: #111;
+  text-shadow: 0 1px 2px rgba(255,255,255,0.85), 0 -1px 2px rgba(255,255,255,0.65);
+  white-space: nowrap;
+  pointer-events: none !important;
+}
+/* Nuke focus outlines inside the Leaflet document */
 .leaflet-container:focus,
 .leaflet-container:focus-visible,
 .leaflet-overlay-pane svg:focus,
@@ -261,31 +269,7 @@ m.get_root().header.add_child(Element("""
   outline: none !important;
   box-shadow: none !important;
 }
-
-/* Perimeter label styling */
-.map-perimeter-label {
-  font-size: 14px; font-weight: 700; color: #111;
-  text-shadow: 0 1px 2px rgba(255,255,255,0.85), 0 -1px 2px rgba(255,255,255,0.65);
-  white-space: nowrap;
-  pointer-events: none !important;
-}
 </style>
-"""))
-
-# JS: remove tabindex & blur map element to avoid focus ring flashes
-m.get_root().html.add_child(Element("""
-<script>
-(function(){
-  function killFocus(){
-    try {
-      var mapEl = document.querySelector('.leaflet-container');
-      if (mapEl) { mapEl.blur(); mapEl.removeAttribute('tabindex'); mapEl.style.outline='none'; }
-    } catch(e){}
-  }
-  document.addEventListener('DOMContentLoaded', killFocus);
-  window.addEventListener('load', killFocus);
-})();
-</script>
 """))
 
 # Layer panes (order matters)
@@ -294,7 +278,7 @@ folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive ON so you can hover outside neighbourhood polygons)
+# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -307,12 +291,8 @@ muni_layer = folium.GeoJson(
         "interactive": True,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_muniname", "_valtxt"],
-        aliases=[
-            "Region",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        sticky=True, labels=False, localize=False
+        fields=["_tt"], aliases=[""], sticky=True, labels=False,
+        parse_html=True, localize=False
     ),
 )
 muni_layer.add_to(m)
@@ -330,21 +310,10 @@ neigh_layer = folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        sticky=True, labels=False, localize=False
+        fields=["_tt"], aliases=[""], sticky=True, labels=False,
+        parse_html=True, localize=False
     ),
-    popup=folium.GeoJsonPopup(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        labels=False, localize=False
-    ),
+    popup=None,
 )
 neigh_layer.add_to(m)
 
