@@ -171,7 +171,6 @@ else:
     if classes.lower().startswith("quantile") and len(finite_vals) >= k:
         qs = np.linspace(0, 1, k + 1)
         bins = list(np.quantile(finite_vals, qs))
-        # de-duplicate edges
         for i in range(1, len(bins)):
             if bins[i] <= bins[i-1]:
                 bins[i] = bins[i-1] + 1e-9
@@ -183,40 +182,42 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Tooltip fields --------------------
-# Normalise name field
-for f in feats(neigh_gj):
-    p = f.setdefault("properties", {})
-    p["buurtnaam"] = (
-        p.get("buurtnaam") or p.get("Buurtnaam") or p.get("name") or p.get("NAAM") or "Unknown"
-    )
-
+# -------------------- Build EXACT HTML tooltips --------------------
 vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
-# per-feature formatted values (neighbourhoods)
+# Normalise name field and build neighbourhood tooltip HTML
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
+    buurt = (p.get("buurtnaam") or p.get("Buurtnaam") or p.get("name") or p.get("NAAM") or "Unknown")
     try:
-        val = float(p.get(var_col, None))
-        if not np.isfinite(val):
-            raise ValueError
-        p["_valtxt"] = f"{val:,.{decimals}f}"
+        v = float(p.get(var_col, None))
+        valtxt = f"{v:,.{decimals}f}" if np.isfinite(v) else "n/a"
     except Exception:
-        p["_valtxt"] = "n/a"
+        valtxt = "n/a"
+    p["_tt"] = (
+        "<div style='font-size:12px'>"
+        f"<b>{buurt}</b><br>"
+        "<span style='opacity:.8'>Neighbourhood in Veldhuizen (Ede)</span><br>"
+        f"{sel_label}" + (f" [{unit}]" if unit else "") + f": {valtxt}"
+        "</div>"
+    )
 
-# municipality formatted value + readable name
+# Municipality tooltip HTML
 if feats(muni_gj):
     p = feats(muni_gj)[0].setdefault("properties", {})
     try:
         mval = float(p.get(var_col, None))
-        if not np.isfinite(mval):
-            raise ValueError
-        p["_valtxt"] = f"{mval:,.{decimals}f}"
+        mvaltxt = f"{mval:,.{decimals}f}" if np.isfinite(mval) else "n/a"
     except Exception:
-        p["_valtxt"] = "n/a"
-    p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
+        mvaltxt = "n/a"
+    p["_tt"] = (
+        "<div style='font-size:12px'>"
+        "<b>Ede (municipality)</b><br>"
+        f"{sel_label}" + (f" [{unit}]" if unit else "") + f": {mvaltxt}"
+        "</div>"
+    )
 
 # -------------------- Map --------------------
 m = folium.Map(
@@ -229,7 +230,7 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# Remove focus ring only (keep Shift+drag box-zoom)
+# Remove ALL focus rings/halos (but keep box-zoom)
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -243,26 +244,24 @@ m.get_root().header.add_child(Element("""
   white-space: nowrap;
   pointer-events: none !important;
 }
-/* Kill the browser focus outline/halo */
-.leaflet-container:focus,
-.leaflet-overlay-pane svg:focus,
-.leaflet-interactive:focus,
-.leaflet-marker-icon:focus,
-.leaflet-control a:focus {
+/* Kill any focus outline/halo */
+.leaflet-container, .leaflet-container * ,
+.leaflet-overlay-pane svg, .leaflet-interactive,
+.leaflet-marker-icon, .leaflet-control a {
   outline: none !important;
   box-shadow: none !important;
 }
 </style>
 """))
 
-# Layer panes (order matters)
+# Panes for draw order
 folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)   # lower
 folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive so you can hover it outside neighbourhood polygons)
-muni_layer = folium.GeoJson(
+# Municipality (interactive so you can hover outside neighbourhood polygons)
+folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
     pane="municipality-pane",
@@ -274,18 +273,13 @@ muni_layer = folium.GeoJson(
         "interactive": True,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_muniname", "_valtxt"],
-        aliases=[
-            "Region",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        sticky=True, labels=False, localize=False
+        fields=["_tt"], aliases=[""], sticky=True, labels=False,
+        parse_html=True, localize=False
     ),
-)
-muni_layer.add_to(m)
+).add_to(m)
 
-# Neighbourhoods (on top, interactive with hover + highlight)
-neigh_layer = folium.GeoJson(
+# Neighbourhoods (on top, with hover + highlight)
+folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
     pane="neighbourhoods-pane",
@@ -297,25 +291,12 @@ neigh_layer = folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood in Veldhuizen (Ede)",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        sticky=True, labels=False, localize=False
+        fields=["_tt"], aliases=[""], sticky=True, labels=False,
+        parse_html=True, localize=False
     ),
-    popup=folium.GeoJsonPopup(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood in Veldhuizen (Ede)",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
-        labels=False, localize=False
-    ),
-)
-neigh_layer.add_to(m)
+).add_to(m)
 
-# Optional outlines (top, non-interactive)
+# Optional outlines
 if show_wijk and feats(wijk_gj):
     add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
 if show_muni_outline:
@@ -333,11 +314,11 @@ if tp:
         pane="label-pane",
     ).add_to(m)
 
-# Legend (branca colormap)
+# Legend
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# Fit to municipality bounds (center/frame like before)
+# Center on municipality
 m.fit_bounds(bounds_of(muni_gj))
 
 # Info line
