@@ -230,7 +230,7 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# Remove ALL focus rings/halos (but keep box-zoom)
+# Remove ALL focus rings/halos (inside the iframe) but keep box-zoom
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -244,7 +244,7 @@ m.get_root().header.add_child(Element("""
   white-space: nowrap;
   pointer-events: none !important;
 }
-/* Kill any focus outline/halo */
+/* Kill any focus outline/halo inside Leaflet doc */
 .leaflet-container, .leaflet-container * ,
 .leaflet-overlay-pane svg, .leaflet-interactive,
 .leaflet-marker-icon, .leaflet-control a {
@@ -328,6 +328,25 @@ st.markdown(
     + (f"  •  **Unit:** {unit}" if unit else "")
     + f"  •  **Color mode:** {mode_str}"
 )
+
+# -------- Host-page CSS to remove iframe focus ring (Streamlit side) --------
+st.markdown("""
+<style>
+/* Streamlit component iframe rendered by streamlit-folium */
+iframe[title^="st_folium"],
+iframe[title^="st_folium"]:focus,
+iframe[title^="st_folium"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+/* Fallback if title differs */
+iframe[title*="folium"]:focus,
+iframe[title*="folium"]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Render
 st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
