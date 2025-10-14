@@ -36,7 +36,7 @@ def load_geojson(p: Path) -> dict:
     gj.setdefault("features", [])
     return gj
 
-def feats(gj: dict): 
+def feats(gj: dict):
     return gj.get("features", [])
 
 def get_prop(f: dict, key: str, default=None):
@@ -60,7 +60,7 @@ def bounds_of(gj: dict):
         extract_ring_points(f.get("geometry"), pts)
     if not pts:
         # fallback box roughly around Ede
-        return [[52.00, 5.58], [52.08, 5.74]]  
+        return [[52.00, 5.58], [52.08, 5.74]]
     xs, ys = zip(*pts)  # lon, lat
     return [[float(min(ys)), float(min(xs))], [float(max(ys)), float(max(xs))]]
 
@@ -68,14 +68,14 @@ def top_label_point(gj: dict):
     pts = []
     for f in feats(gj):
         extract_ring_points(f.get("geometry"), pts)
-    if not pts: 
+    if not pts:
         return None
     lon, lat = max(pts, key=lambda xy: xy[1])
     return (lat, lon)
 
 def combined_min_max(values):
     arr = np.array([v for v in values if v is not None and np.isfinite(v)], dtype=float)
-    if arr.size == 0: 
+    if arr.size == 0:
         return 0.0, 1.0
     vmin, vmax = float(arr.min()), float(arr.max())
     if vmin == vmax:
@@ -92,7 +92,7 @@ def color_for_value(x, cmap):
     return str(cmap(xx))
 
 def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
-    if not gj or not feats(gj): 
+    if not gj or not feats(gj):
         return
     style = {
         "fillOpacity": 0,
@@ -209,6 +209,10 @@ vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
+def fmt_unit_label(label: str, unit: str) -> str:
+    u = (f" ({unit})" if unit and unit != "-" else "")
+    return f"{label}{u}"
+
 # per-feature formatted values (neighbourhoods)
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
@@ -219,6 +223,9 @@ for f in feats(neigh_gj):
         p["_valtxt"] = f"{val:,.{decimals}f}"
     except Exception:
         p["_valtxt"] = "n/a"
+    # subtitle and "Variable: value" line
+    p["_subtitle"] = "Neighbourhood in Ede-Veldhuizen"  # or "Ede–Veldhuizen" if you prefer the en dash
+    p["_valpair"] = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
 
 # municipality formatted value + readable name
 if feats(muni_gj):
@@ -231,6 +238,8 @@ if feats(muni_gj):
     except Exception:
         p["_valtxt"] = "n/a"
     p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
+    p["_title"] = "Ede (municipality)"
+    p["_valpair"] = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
 
 # -------------------- Map --------------------
 m = folium.Map(
@@ -292,11 +301,8 @@ folium.GeoJson(
         "interactive": True,   # allow hover
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_muniname", "_valtxt"],
-        aliases=[
-            "Ede (municipality)",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
+        fields=["_title", "_valpair"],   # exact 2-line format
+        aliases=["", ""],                # ignored because labels=False
         sticky=True, labels=False, localize=False
     ),
 ).add_to(m)
@@ -314,11 +320,8 @@ folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", "_valtxt"],
-        aliases=[
-            "Neighbourhood in Veldhuizen (Ede)",
-            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
-        ],
+        fields=["buurtnaam", "_subtitle", "_valpair"],  # name, subtitle, Variable: value
+        aliases=["", "", ""],                           # ignored because labels=False
         sticky=True, labels=False, localize=False
     ),
 ).add_to(m)
