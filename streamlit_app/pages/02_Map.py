@@ -11,7 +11,6 @@ from streamlit_folium import st_folium
 from branca.colormap import LinearColormap, StepColormap
 from branca.element import Element
 from folium.features import DivIcon
-import streamlit.components.v1 as components  # <- for the iframe focus fix
 
 # -------------------- Paths --------------------
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -36,13 +35,15 @@ def load_geojson(p: Path) -> dict:
     gj.setdefault("features", [])
     return gj
 
-def feats(gj: dict): return gj.get("features", [])
+def feats(gj: dict):
+    return gj.get("features", [])
 
 def get_prop(f: dict, key: str, default=None):
     return f.get("properties", {}).get(key, default)
 
 def extract_ring_points(geom: dict, out_list: list):
-    if not geom: return
+    if not geom:
+        return
     t, c = geom.get("type"), geom.get("coordinates")
     if t == "Polygon" and c and c[0]:
         for pt in c[0]:
@@ -66,27 +67,32 @@ def top_label_point(gj: dict):
     pts = []
     for f in feats(gj):
         extract_ring_points(f.get("geometry"), pts)
-    if not pts: return None
+    if not pts:
+        return None
     lon, lat = max(pts, key=lambda xy: xy[1])
     return (lat, lon)
 
 def combined_min_max(values):
     arr = np.array([v for v in values if v is not None and np.isfinite(v)], dtype=float)
-    if arr.size == 0: return 0.0, 1.0
+    if arr.size == 0:
+        return 0.0, 1.0
     vmin, vmax = float(arr.min()), float(arr.max())
-    if vmin == vmax: vmin -= 0.5; vmax += 0.5
+    if vmin == vmax:
+        vmin -= 0.5; vmax += 0.5
     return vmin, vmax
 
 def color_for_value(x, cmap):
     try:
         xx = float(x)
-        if not np.isfinite(xx): return "#cccccc"
+        if not np.isfinite(xx):
+            return "#cccccc"
     except Exception:
         return "#cccccc"
     return str(cmap(xx))
 
 def add_outline(gj: dict, fmap, name, color="#111", weight=1.2, pane=None):
-    if not gj or not feats(gj): return
+    if not gj or not feats(gj):
+        return
     style = {"fillOpacity": 0, "color": color, "weight": weight,
              "className": "nohit-outline", "interactive": False}
     folium.GeoJson(data=gj, name=name, pane=pane,
@@ -142,14 +148,18 @@ map_height = MAP_HEIGHTS[size]
 neigh_vals = []
 for f in feats(neigh_gj):
     v = get_prop(f, var_col, None)
-    try: neigh_vals.append(float(v))
-    except Exception: neigh_vals.append(None)
+    try:
+        neigh_vals.append(float(v))
+    except Exception:
+        neigh_vals.append(None)
 
 muni_val = None
 if feats(muni_gj):
     mv = get_prop(feats(muni_gj)[0], var_col, None)
-    try: muni_val = float(mv)
-    except Exception: muni_val = None
+    try:
+        muni_val = float(mv)
+    except Exception:
+        muni_val = None
 
 combined = neigh_vals + ([muni_val] if muni_val is not None else [])
 vmin, vmax = combined_min_max(combined)
@@ -185,45 +195,28 @@ vals_clean = [v for v in neigh_vals if v is not None and np.isfinite(v)]
 maxv = max(vals_clean) if vals_clean else None
 decimals = 0 if (maxv is not None and maxv >= 100) else 2
 
-# Per-feature formatted values (neighbourhoods)
+# per-feature formatted values (neighbourhoods)
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
     try:
         val = float(p.get(var_col, None))
         if not np.isfinite(val):
             raise ValueError
-        valtxt = f"{val:,.{decimals}f}"
+        p["_valtxt"] = f"{val:,.{decimals}f}"
     except Exception:
-        valtxt = "n/a"
-    metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
-    p["_tt"] = (
-        "<div style='font-size:12px'>"
-        f"<b>{p.get('buurtnaam','')}</b><br>"
-        "<span style='opacity:.8'>Neighbourhood in Veldhuizen (Ede)</span><br>"
-        f"{metric}: {valtxt}"
-        "</div>"
-    )
-    p["_valtxt"] = valtxt
+        p["_valtxt"] = "n/a"
 
-# Municipality formatted value + HTML tooltip content
+# municipality formatted value + readable name
 if feats(muni_gj):
     p = feats(muni_gj)[0].setdefault("properties", {})
     try:
         mval = float(p.get(var_col, None))
         if not np.isfinite(mval):
             raise ValueError
-        mvaltxt = f"{mval:,.{decimals}f}"
+        p["_valtxt"] = f"{mval:,.{decimals}f}"
     except Exception:
-        mvaltxt = "n/a"
-    metric = f"{sel_label}" + (f" [{unit}]" if unit and unit != "-" else "")
-    p["_tt"] = (
-        "<div style='font-size:12px'>"
-        "<b>Ede (municipality)</b><br>"
-        f"{metric}: {mvaltxt}"
-        "</div>"
-    )
+        p["_valtxt"] = "n/a"
     p["_muniname"] = p.get("gemeentenaam", "Ede (municipality)")
-    p["_valtxt"] = mvaltxt
 
 # -------------------- Map --------------------
 m = folium.Map(
@@ -234,10 +227,9 @@ m = folium.Map(
     scrollWheelZoom=True,
     doubleClickZoom=True,
     zoom_control=True,
-    keyboard=False,  # 🚫 prevent Leaflet container from taking focus (hover still works)
 )
 
-# CSS & panes (keep tooltips above, outlines non-interactive)
+# Remove focus ring only (keep Shift+drag box-zoom)
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -251,11 +243,12 @@ m.get_root().header.add_child(Element("""
   white-space: nowrap;
   pointer-events: none !important;
 }
-/* Remove focus styles inside the Leaflet doc */
+/* Kill the browser focus outline/halo */
 .leaflet-container:focus,
-.leaflet-container .leaflet-interactive:focus,
-.leaflet-container .leaflet-marker-icon:focus,
-.leaflet-container .leaflet-pane *:focus {
+.leaflet-overlay-pane svg:focus,
+.leaflet-interactive:focus,
+.leaflet-marker-icon:focus,
+.leaflet-control a:focus {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -268,7 +261,7 @@ folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m) # upper
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
+# Municipality (interactive so you can hover it outside neighbourhood polygons)
 muni_layer = folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -281,13 +274,17 @@ muni_layer = folium.GeoJson(
         "interactive": True,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_tt"], aliases=[""], sticky=True, labels=False,
-        parse_html=True, localize=False
+        fields=["_muniname", "_valtxt"],
+        aliases=[
+            "Region",
+            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
+        ],
+        sticky=True, labels=False, localize=False
     ),
 )
 muni_layer.add_to(m)
 
-# Neighbourhoods (hover tooltips + hover highlight kept)
+# Neighbourhoods (on top, interactive with hover + highlight)
 neigh_layer = folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -300,11 +297,20 @@ neigh_layer = folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["_tt"], aliases=[""], sticky=True, labels=False,
-        parse_html=True, localize=False
+        fields=["buurtnaam", "_valtxt"],
+        aliases=[
+            "Neighbourhood in Veldhuizen (Ede)",
+            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
+        ],
+        sticky=True, labels=False, localize=False
     ),
     popup=folium.GeoJsonPopup(
-        fields=["_tt"], aliases=[""], labels=False, parse_html=True, localize=False
+        fields=["buurtnaam", "_valtxt"],
+        aliases=[
+            "Neighbourhood in Veldhuizen (Ede)",
+            f"{sel_label}" + (f" ({unit})" if unit and unit != "-" else "")
+        ],
+        labels=False, localize=False
     ),
 )
 neigh_layer.add_to(m)
@@ -342,48 +348,6 @@ st.markdown(
     + f"  •  **Color mode:** {mode_str}"
 )
 
-# Render (hover preserved)
+# Render
 st_folium(m, height=map_height, width=None, returned_objects=[], key="map_static")
-
-# 🚫 Remove the black focus rectangle on the map iframe (cross-browser)
-components.html("""
-<style>
-  /* Streamlit's component iframe often receives focus; hide any outline/ring */
-  div[data-testid="stIFrame"], div[data-testid="stIFrame"]:focus,
-  div[data-testid="stIFrame"] iframe, div[data-testid="stIFrame"] iframe:focus,
-  iframe:focus, iframe:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-  }
-</style>
-<script>
-  (function () {
-    function patch() {
-      const iframe = document.querySelector('div[data-testid="stIFrame"] iframe');
-      if (!iframe) return false;
-      // Make it non-focusable and blur if focus somehow lands there
-      iframe.setAttribute('tabindex','-1');
-      iframe.style.outline = 'none';
-      iframe.addEventListener('focus', function(e){ try { e.target.blur(); } catch(_){} }, true);
-      // Also blur when content loads or user clicks inside
-      iframe.addEventListener('load', function(){
-        try {
-          const doc = iframe.contentWindow.document;
-          doc.addEventListener('mousedown', function(){ try { iframe.blur(); } catch(_){} }, true);
-          doc.addEventListener('focus', function(){ try { iframe.blur(); } catch(_){} }, true);
-        } catch(_) {}
-      });
-      return true;
-    }
-    if (!patch()) {
-      let tries = 0;
-      const id = setInterval(function(){
-        tries += 1;
-        if (patch() || tries > 40) clearInterval(id); // ~2s max
-      }, 50);
-    }
-  })();
-</script>
-""", height=0, width=0)
-
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
