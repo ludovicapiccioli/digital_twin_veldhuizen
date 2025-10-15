@@ -3,10 +3,10 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# Page config MUST be first Streamlit call in this file
+# Page config 
 st.set_page_config(page_title="Scenarios • Veldhuizen", page_icon="🧪", layout="wide")
 
-st.title("🧪 Scenario Sandbox — Benches → Dimensions → QoL")
+st.title("(This is a draft, in progress). Scenarios — Benches → Dimensions → QoL")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
@@ -30,7 +30,7 @@ b = st.slider("Benches (add/remove)", -10, 10, st.session_state.bench_delta)
 st.session_state.bench_delta = b  # keep slider + presets in sync
 
 # ------------------------------------------------------------
-# Mock relationships (tuned to match your diagram feel)
+# Mock relationships 
 # ------------------------------------------------------------
 # Per-bench effects on factors
 d_social   =  2 * b        # +2 per bench
@@ -51,7 +51,7 @@ def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
 # ------------------------------------------------------------
-# Diagram layout (Plotly shapes & arrows) — matches your sketch
+# Diagram layout (Plotly shapes & arrows)
 # ------------------------------------------------------------
 # Canvas coordinates (0..10 in both axes)
 bench_x, bench_y = 1.3, 5.0
@@ -186,3 +186,4 @@ with st.expander("Notes (prototype logic)"):
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
+
