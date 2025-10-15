@@ -3,44 +3,64 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# Config
+# Page config MUST be first Streamlit call in this file
 st.set_page_config(page_title="Scenarios • Veldhuizen", page_icon="🧪", layout="wide")
 
-st.title("(In progress, this is a draft. Scenarios — Benches → Dimensions → QoL")
-st.caption("Concept demo (mock relationships). Move the slider and watch the diagram update.")
+st.title("🧪 Scenario Sandbox — Benches → Dimensions → QoL")
+st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
-# Controls
+# Controls (presets + slider)
 # ------------------------------------------------------------
-b = st.slider("Benches (add/remove)", -10, 10, 0)
+col_p1, col_p2, col_p3 = st.columns(3)
+if "bench_delta" not in st.session_state:
+    st.session_state.bench_delta = 0
 
-# Per-bench effects
-d_social   =  2 * b       # +2 per bench
-d_physical =  1 * b       # +1 per bench
-d_safety   = -2 * b       # −2 per bench
+with col_p1:
+    if st.button("Baseline (0)"):
+        st.session_state.bench_delta = 0
+with col_p2:
+    if st.button("+5 benches"):
+        st.session_state.bench_delta = 5
+with col_p3:
+    if st.button("-5 benches"):
+        st.session_state.bench_delta = -5
 
-# Dimension → QoL weights (+1 bench → +4, +2, −4)
+b = st.slider("Benches (add/remove)", -10, 10, st.session_state.bench_delta)
+st.session_state.bench_delta = b  # keep slider + presets in sync
+
+# ------------------------------------------------------------
+# Mock relationships (tuned to match your diagram feel)
+# ------------------------------------------------------------
+# Per-bench effects on factors
+d_social   =  2 * b        # +2 per bench
+d_physical =  1 * b        # +1 per bench
+d_safety   = -2 * b        # −2 per bench (e.g., perceived nuisance)
+
+# Dimension → QoL weights (so +1 bench → +4, +2, −4)
 W_SOC, W_PHY, W_ENV = 2, 2, 2
 q_social   = W_SOC * d_social
 q_physical = W_PHY * d_physical
 q_env      = W_ENV * d_safety
 q_total    = q_social + q_physical + q_env
 
-def sign_color(v):  # green / red / grey
+def sign_color(v):  # green for positive, red for negative, grey for zero
     return "#27ae60" if v > 0 else ("#c0392b" if v < 0 else "#7f8c8d")
 
-def plus(v):        # format ±
+def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
 # ------------------------------------------------------------
-# Diagram layout (0..10 canvas)
+# Diagram layout (Plotly shapes & arrows) — matches your sketch
 # ------------------------------------------------------------
+# Canvas coordinates (0..10 in both axes)
 bench_x, bench_y = 1.3, 5.0
-soc_x,   soc_y   = 4.2, 8.2
-phy_x,   phy_y   = 4.2, 5.0
-env_x,   env_y   = 4.2, 1.8
-qol_x,   qol_y   = 9.0, 5.0  # center of QoL box
+soc_x, soc_y     = 4.2, 8.2
+phy_x, phy_y     = 4.2, 5.0
+env_x, env_y     = 4.2, 1.8
+qol_x, qol_y     = 9.0, 5.0
 
+# Bubble / card sizes
 oval_w, oval_h = 3.8, 2.2
 card_w, card_h = 2.2, 1.0
 
@@ -54,14 +74,14 @@ GREEN   = "#27ae60"
 
 fig = go.Figure()
 
-# --- Bench (left)
+# Bench (left)
 fig.add_shape(type="rect",
               x0=bench_x-1.4, y0=bench_y-0.9, x1=bench_x+1.4, y1=bench_y+0.9,
               fillcolor=YELLOW, line=dict(color="#b7950b", width=2), layer="below")
 bench_label = f"<b>{plus(b)} Bench</b>" if b != 0 else "<b>±0 Bench</b>"
 fig.add_annotation(x=bench_x, y=bench_y, text=bench_label, showarrow=False, font=dict(size=14))
 
-# --- Social bubble + card
+# Social bubble + card
 fig.add_shape(type="circle",
               x0=soc_x-oval_w/2, y0=soc_y-oval_h/2, x1=soc_x+oval_w/2, y1=soc_y+oval_h/2,
               fillcolor=SOC_BG, line=dict(color=SOC_OUT, width=2, dash="dash"), layer="below")
@@ -74,7 +94,7 @@ fig.add_annotation(x=soc_x, y=soc_y,
                    text=f"<b>{plus(d_social)}</b>&nbsp; Social interactions",
                    showarrow=False, font=dict(color=SOC_COL, size=12))
 
-# --- Physical bubble + card
+# Physical bubble + card
 fig.add_shape(type="circle",
               x0=phy_x-oval_w/2, y0=phy_y-oval_h/2, x1=phy_x+oval_w/2, y1=phy_y+oval_h/2,
               fillcolor=PHY_BG, line=dict(color=PHY_OUT, width=2, dash="dash"), layer="below")
@@ -87,7 +107,7 @@ fig.add_annotation(x=phy_x, y=phy_y,
                    text=f"<b>{plus(d_physical)}</b>&nbsp; Physical activity",
                    showarrow=False, font=dict(color=PHY_COL, size=12))
 
-# --- Environmental bubble + card
+# Environmental bubble + card
 fig.add_shape(type="circle",
               x0=env_x-oval_w/2, y0=env_y-oval_h/2, x1=env_x+oval_w/2, y1=env_y+oval_h/2,
               fillcolor=ENV_BG, line=dict(color=ENV_OUT, width=2, dash="dash"), layer="below")
@@ -100,9 +120,9 @@ fig.add_annotation(x=env_x, y=env_y,
                    text=f"<b>{plus(d_safety)}</b>&nbsp; Safety",
                    showarrow=False, font=dict(color=ENV_COL, size=12))
 
-# --- QoL box 
+# QoL box (right)
 fig.add_shape(type="rect",
-              x0=qol_x-1.8, y0=qol_y-4.6, x1=qol_x+1.8, y1=qol_y+4.6,
+              x0=qol_x-1.8, y0=qol_y-1.6, x1=qol_x+1.8, y1=qol_y+1.6,
               fillcolor=Q_BG, line=dict(color=Q_BR, width=3))
 qol_text = (
     f"{plus(q_social)} from Social<br>"
@@ -113,54 +133,29 @@ qol_text = (
 )
 fig.add_annotation(x=qol_x, y=qol_y, text=qol_text, showarrow=False, font=dict(size=12))
 
-# ------------------------------------------------------------
-# Diagonal arrows
-# ------------------------------------------------------------
-# Bench → factors (slight diagonals with small y shifts)
-for (x, y, delta, y_shift) in [
-    (soc_x, soc_y, d_social, +0.4),     # up-right
-    (phy_x, phy_y, d_physical, -0.2),   # slight down-right
-    (env_x, env_y, d_safety, -0.6)      # more down-right
-]:
-    fig.add_annotation(
-        x=x - 1.25, y=y + y_shift, ax=bench_x + 1.4, ay=bench_y,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3,
-        arrowcolor=sign_color(delta)
-    )
+# Arrows — Bench → factors (sign-colored)
+for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env_x, env_y, d_safety)]:
+    fig.add_annotation(x=x-1.25, y=y, ax=bench_x+1.4, ay=bench_y,
+                       xref="x", yref="y", axref="x", ayref="y",
+                       showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
+                       arrowcolor=sign_color(delta))
 
-# Factors → QoL 
-x_q_left = qol_x - 1.8
-y_q_top, y_q_mid, y_q_bot = qol_y + 2.8, qol_y, qol_y - 2.8
-
-# Social → QoL 
-fig.add_annotation(
-    x=x_q_left, y=y_q_top, ax=soc_x + card_w/2, ay=soc_y,
-    xref="x", yref="y", axref="x", ayref="y",
-    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
-)
-# Physical → QoL 
-fig.add_annotation(
-    x=x_q_left, y=y_q_mid, ax=phy_x + card_w/2, ay=phy_y + 0.6,
-    xref="x", yref="y", axref="x", ayref="y",
-    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
-)
-# Environmental → QoL 
-fig.add_annotation(
-    x=x_q_left, y=y_q_bot, ax=env_x + card_w/2, ay=env_y + 0.4,
-    xref="x", yref="y", axref="x", ayref="y",
-    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
-)
+# Arrows — factors → QoL (always green: more of a dimension → higher QoL)
+for (x, y) in [(soc_x, soc_y), (phy_x, phy_y), (env_x, env_y)]:
+    fig.add_annotation(x=qol_x-1.8, y=y, ax=x+card_w/2, ay=y,
+                       xref="x", yref="y", axref="x", ayref="y",
+                       showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
+                       arrowcolor=GREEN)
 
 # Canvas style
 fig.update_xaxes(visible=False, range=[0, 10])
 fig.update_yaxes(visible=False, range=[0, 10])
-fig.update_layout(template="plotly_white", height=560, margin=dict(l=20, r=20, t=20, b=20))
+fig.update_layout(template="plotly_white", height=540, margin=dict(l=20, r=20, t=20, b=20))
 
 st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------------------------------------------
-# Compact KPIs 
+# Compact KPIs + small QoL gauge
 # ------------------------------------------------------------
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Δ Social interactions", plus(d_social))
@@ -168,7 +163,6 @@ c2.metric("Δ Physical activity", plus(d_physical))
 c3.metric("Δ Safety", plus(d_safety))
 c4.metric("Δ QoL (composite)", plus(q_total))
 
-# Optional 
 BASE_QOL = 70
 qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
 g = go.Figure(go.Indicator(
@@ -189,6 +183,6 @@ st.plotly_chart(g, use_container_width=True)
 with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
-- QoL contributions use equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
+- Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
