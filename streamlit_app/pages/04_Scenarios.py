@@ -4,9 +4,9 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Page config 
-st.set_page_config(page_title="(In progress, this is a draft version) Scenarios • Veldhuizen", page_icon="🧪", layout="wide")
+st.set_page_config(page_title="Scenarios • Veldhuizen", page_icon="🧪", layout="wide")
 
-st.title("Scenarios — Benches → Dimensions → QoL")
+st.title("(In progress, this is a draft version)  Scenarios — Benches → Dimensions → QoL")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
@@ -186,5 +186,6 @@ with st.expander("Notes (prototype logic)"):
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
+
 
 
