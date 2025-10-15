@@ -198,7 +198,7 @@ else:
     else:           bins = [round(b,2) for b in bins]
     cmap = StepColormap(colors=PALETTE_RED[:k], index=bins, vmin=bins[0], vmax=bins[-1])
 
-# -------------------- Tooltip fields (exact phrasing) --------------------
+# -------------------- Tooltip fields --------------------
 # Normalise name field
 for f in feats(neigh_gj):
     p = f.setdefault("properties", {})
@@ -252,7 +252,7 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS: keep tooltips above; remove attribution & layers; kill focus rings
+# CSS: keep tooltips above; remove attribution & layers; remove focus rings
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -279,13 +279,13 @@ m.get_root().header.add_child(Element("""
 </style>
 """))
 
-# Layer panes (order matters)
+# Layer panes 
 folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)
 folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality (interactive ON so you can hover it outside neighbourhood polygons)
+# Municipality 
 folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -304,7 +304,7 @@ folium.GeoJson(
     ),
 ).add_to(m)
 
-# Neighbourhoods (on top, interactive with hover + subtle highlight)
+# Neighbourhoods 
 folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -323,7 +323,7 @@ folium.GeoJson(
     ),
 ).add_to(m)
 
-# Optional outlines (top, non-interactive)
+# Optional outlines
 if show_wijk and feats(wijk_gj):
     add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
 if show_muni_outline:
@@ -331,7 +331,7 @@ if show_muni_outline:
 if show_veld_outline and feats(veld_gj):
     add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
-# Perimeter label (above everything)
+# Perimeter label 
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -345,7 +345,7 @@ if tp:
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# Fit to municipality bounds (center/frame)
+# Fit to municipality bounds 
 m.fit_bounds(bounds_of(muni_gj))
 
 # Info line in Streamlit
@@ -360,3 +360,4 @@ st.markdown(
 html = m.get_root().render()
 components.html(html, height=map_height, scrolling=False)
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
+
