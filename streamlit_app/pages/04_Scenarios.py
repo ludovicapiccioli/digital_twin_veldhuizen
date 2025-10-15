@@ -3,10 +3,10 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# Page config 
+# Page config MUST be first Streamlit call in this file
 st.set_page_config(page_title="Scenarios • Veldhuizen", page_icon="🧪", layout="wide")
 
-st.title("(This is a draft, in progress). Scenarios — Benches → Dimensions → QoL")
+st.title("This is a draft. In progress. Scenarios — Benches → Dimensions → QoL")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
@@ -51,7 +51,7 @@ def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
 # ------------------------------------------------------------
-# Diagram layout (Plotly shapes & arrows)
+# Diagram layout (Plotly shapes & arrows) 
 # ------------------------------------------------------------
 # Canvas coordinates (0..10 in both axes)
 bench_x, bench_y = 1.3, 5.0
@@ -140,12 +140,32 @@ for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env
                        showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
                        arrowcolor=sign_color(delta))
 
-# Arrows — factors → QoL (always green: more of a dimension → higher QoL)
-for (x, y) in [(soc_x, soc_y), (phy_x, phy_y), (env_x, env_y)]:
-    fig.add_annotation(x=qol_x-1.8, y=y, ax=x+card_w/2, ay=y,
-                       xref="x", yref="y", axref="x", ayref="y",
-                       showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
-                       arrowcolor=GREEN)
+# Arrows — factors → QoL 
+x_q_target = (qol_x - 1.8) + 0.05  # slight nudge so the arrow tip is inside the box
+
+# Top (Social → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y + 1.2,   # target inside QoL box (above center)
+    ax=soc_x + card_w/2, ay=soc_y, # start at Social card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
+
+# Middle (Physical → QoL): horizontal
+fig.add_annotation(
+    x=x_q_target, y=phy_y,
+    ax=phy_x + card_w/2, ay=phy_y,
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
+
+# Bottom (Environmental → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y - 1.2,   # target inside QoL box (below center)
+    ax=env_x + card_w/2, ay=env_y, # start at Environmental card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
 # Canvas style
 fig.update_xaxes(visible=False, range=[0, 10])
@@ -186,4 +206,3 @@ with st.expander("Notes (prototype logic)"):
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
-
