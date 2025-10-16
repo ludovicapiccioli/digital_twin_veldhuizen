@@ -268,24 +268,13 @@ m.get_root().header.add_child(Element("""
   pointer-events: none !important;
 }
 
-.leaflet-container:focus, .leaflet-overlay-pane svg:focus, .leaflet-interactive:focus, .leaflet-marker-icon:focus, .leaflet-control a:focus {
+.leaflet-container:focus,
+.leaflet-overlay-pane svg:focus,
+.leaflet-interactive:focus,
+.leaflet-marker-icon:focus,
+.leaflet-control a:focus {
   outline: none !important;
   box-shadow: none !important;
-}
-</style>
-"""))
-
-# NEW: nudge the legend (and optionally all top controls) downward so its caption isn’t overlapped
-m.get_root().header.add_child(Element("""
-<style>
-/* Option A (commented out): push ALL top controls down (zoom, layers, legend) */
-/* .leaflet-top { margin-top: 22px; } */
-
-/* Option B (active): push only the Branca/colormap legend down */
-.leaflet-top .leaflet-control .legend,
-.leaflet-top .leaflet-control .branca-legend,
-.leaflet-top .leaflet-control .colorbar {
-  margin-top: 18px !important;  /* tweak pixels to taste */
 }
 </style>
 """))
