@@ -353,11 +353,12 @@ st.markdown(
 )
 
 # -------------------- Render (map lowered) --------------------
-TOP_SPACER_PX = 30  
+TOP_SPACER_PX = 32  
 
 html = m.get_root().render()
 html_wrapped = f"<div style='height:{TOP_SPACER_PX}px'></div>{html}"
 
 components.html(html_wrapped, height=map_height + TOP_SPACER_PX, scrolling=False)
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
+
 
