@@ -224,7 +224,7 @@ for f in feats(neigh_gj):
         p["_valtxt"] = f"{val:,.{decimals}f}"
     except Exception:
         p["_valtxt"] = "n/a"
-    p["_subtitle"] = "Neighbourhood in Ede-Veldhuizen"  # use "Ede–Veldhuizen" if you prefer
+    p["_subtitle"] = "Neighbourhood in Ede-Veldhuizen"
     p["_valpair"]  = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
 
 # Per-municipality feature: ensure ALL features get the tooltip fields
@@ -268,11 +268,7 @@ m.get_root().header.add_child(Element("""
   pointer-events: none !important;
 }
 
-.leaflet-container:focus,
-.leaflet-overlay-pane svg:focus,
-.leaflet-interactive:focus,
-.leaflet-marker-icon:focus,
-.leaflet-control a:focus {
+.leaflet-container:focus, .leaflet-overlay-pane svg:focus, .leaflet-interactive:focus, .leaflet-marker-icon:focus, .leaflet-control a:focus {
   outline: none !important;
   box-shadow: none !important;
 }
@@ -298,7 +294,7 @@ folium.GeoJson(
         "interactive": True,
     },
     tooltip=folium.GeoJsonTooltip(
-        fields=["_title", "_valpair"],   # 1) title  2) "Variable (unit): value"
+        fields=["_title", "_valpair"],
         aliases=["", ""],
         sticky=True, labels=False, localize=False
     ),
@@ -317,7 +313,7 @@ folium.GeoJson(
     },
     highlight_function=lambda feat: {"fillOpacity": 0.92, "weight": 2.0, "color": "#222222"},
     tooltip=folium.GeoJsonTooltip(
-        fields=["buurtnaam", "_subtitle", "_valpair"],  # 1) name  2) subtitle  3) "Variable (unit): value"
+        fields=["buurtnaam", "_subtitle", "_valpair"],
         aliases=["", "", ""],
         sticky=True, labels=False, localize=False
     ),
@@ -356,7 +352,11 @@ st.markdown(
     + f"  •  **Color mode:** {mode_str}"
 )
 
-# Render
+# -------------------- Render (map lowered) --------------------
+TOP_SPACER_PX = 26  # adjust to taste (e.g., 18–32)
+
 html = m.get_root().render()
-components.html(html, height=map_height, scrolling=False)
+html_wrapped = f"<div style='height:{TOP_SPACER_PX}px'></div>{html}"
+
+components.html(html_wrapped, height=map_height + TOP_SPACER_PX, scrolling=False)
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
