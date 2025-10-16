@@ -268,24 +268,35 @@ m.get_root().header.add_child(Element("""
   pointer-events: none !important;
 }
 
-.leaflet-container:focus,
-.leaflet-overlay-pane svg:focus,
-.leaflet-interactive:focus,
-.leaflet-marker-icon:focus,
-.leaflet-control a:focus {
+.leaflet-container:focus, .leaflet-overlay-pane svg:focus, .leaflet-interactive:focus, .leaflet-marker-icon:focus, .leaflet-control a:focus {
   outline: none !important;
   box-shadow: none !important;
 }
 </style>
 """))
 
-# Layer panes 
+# NEW: nudge the legend (and optionally all top controls) downward so its caption isn’t overlapped
+m.get_root().header.add_child(Element("""
+<style>
+/* Option A (commented out): push ALL top controls down (zoom, layers, legend) */
+/* .leaflet-top { margin-top: 22px; } */
+
+/* Option B (active): push only the Branca/colormap legend down */
+.leaflet-top .leaflet-control .legend,
+.leaflet-top .leaflet-control .branca-legend,
+.leaflet-top .leaflet-control .colorbar {
+  margin-top: 18px !important;  /* tweak pixels to taste */
+}
+</style>
+"""))
+
+# Layer panes
 folium.map.CustomPane("municipality-pane", z_index=300).add_to(m)
 folium.map.CustomPane("neighbourhoods-pane", z_index=400).add_to(m)
 folium.map.CustomPane("outline-pane", z_index=500).add_to(m)
 folium.map.CustomPane("label-pane", z_index=550).add_to(m)
 
-# Municipality 
+# Municipality
 folium.GeoJson(
     data=muni_gj,
     name=f"Ede (municipality) – {sel_label}",
@@ -304,7 +315,7 @@ folium.GeoJson(
     ),
 ).add_to(m)
 
-# Neighbourhoods 
+# Neighbourhoods
 folium.GeoJson(
     data=neigh_gj,
     name=f"Veldhuizen neighbourhoods – {sel_label}",
@@ -331,7 +342,7 @@ if show_muni_outline:
 if show_veld_outline and feats(veld_gj):
     add_outline(veld_gj, m, "Veldhuizen outline", color="#1f77b4", weight=2.2, pane="outline-pane")
 
-# Perimeter label 
+# Perimeter label
 tp = top_label_point(veld_gj) if feats(veld_gj) else None
 if tp:
     lat, lon = tp
@@ -345,7 +356,7 @@ if tp:
 cmap.caption = f"{sel_label}" + (f"  [{unit}]" if unit and unit != "-" else "")
 cmap.add_to(m)
 
-# Fit to municipality bounds 
+# Fit to municipality bounds
 m.fit_bounds(bounds_of(muni_gj))
 
 # Info line in Streamlit
@@ -360,4 +371,3 @@ st.markdown(
 html = m.get_root().render()
 components.html(html, height=map_height, scrolling=False)
 st.caption("Basemap: CARTO Positron • © OpenStreetMap contributors")
-
