@@ -4,7 +4,7 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Page config MUST be first Streamlit call in this file
-st.set_page_config(page_title="Scenarios • Veldhuizen", page_icon="🧪", layout="wide")
+st.set_page_config(page_title="Scenarios • Veldhuizen", layout="wide")
 
 st.title("This is a draft. In progress. Scenarios — Benches → Dimensions → QoL")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
@@ -206,3 +206,4 @@ with st.expander("Notes (prototype logic)"):
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
+
