@@ -2,7 +2,7 @@
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
-st.text("Drivers Diagram — Interrelations across Dimensions")
+st.header("Drivers Diagram — Interrelations across Dimensions")
 
 PINK   = "#ff69b4"   # Social-origin / pink arrows
 ORANGE = "#f39c12"   # Psychological frame/pills
@@ -316,6 +316,7 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
+
 
 
 
