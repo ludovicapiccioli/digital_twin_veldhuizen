@@ -20,7 +20,7 @@ svg = f"""
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
     <!-- A01 ONLY: fixed 340° (gentle clockwise tilt) -->
-    <marker id="arrow-pink-340" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="10" markerUnits="strokeWidth">
+    <marker id="arrow-pink-340" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="20" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
     <style><![CDATA[
@@ -163,4 +163,5 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
