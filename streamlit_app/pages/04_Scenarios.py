@@ -44,25 +44,26 @@ q_physical = W_PHY * d_physical
 q_env      = W_ENV * d_safety
 q_total    = q_social + q_physical + q_env
 
-def sign_color(v):
-    # green for positive, red for negative, grey for zero
+def sign_color(v):  # green for positive, red for negative, grey for zero
     return "#27ae60" if v > 0 else ("#c0392b" if v < 0 else "#7f8c8d")
 
-def plus(v):
-    # format with sign
+def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
-def stroke_for(v):
-    # subtle thickness scale by magnitude (2..6)
-    return 2 + min(4, 0.35 * abs(v))
-
-def alpha_for(v):
-    # subtle opacity scale by magnitude (0.25..1)
-    return 0.25 + min(0.75, 0.075 * abs(v))
-
 # ------------------------------------------------------------
-# Diagram as SVG (Drivers-style look)
+# Diagram layout (Plotly shapes & arrows)
 # ------------------------------------------------------------
+# Canvas coordinates (0..10 in both axes)
+bench_x, bench_y = 1.3, 5.0
+soc_x, soc_y     = 4.2, 8.2
+phy_x, phy_y     = 4.2, 5.0
+env_x, env_y     = 4.2, 1.8
+qol_x, qol_y     = 9.0, 5.0
+
+# Bubble / card sizes
+oval_w, oval_h = 3.8, 2.2
+card_w, card_h = 2.2, 1.0
+
 # Colors
 YELLOW  = "#f1c40f"
 SOC_COL = "#e67e22"; SOC_BG = "#fce9e3"; SOC_OUT = "#fadbd8"
@@ -70,131 +71,108 @@ PHY_COL = "#2980b9"; PHY_BG = "#e8f1fb"; PHY_OUT = "#d6eaf8"
 ENV_COL = "#8e44ad"; ENV_BG = "#f7e9f5"; ENV_OUT = "#f5eef8"
 Q_BG    = "#b8e994"; Q_BR   = "#78e08f"
 GREEN   = "#27ae60"
-DARKTXT = "#1f2d3d"
 
-# Derived visuals for arrows
-soc_col  = sign_color(d_social)
-phy_col  = sign_color(d_physical)
-env_col  = sign_color(d_safety)
+fig = go.Figure()
 
-soc_sw   = stroke_for(d_social)
-phy_sw   = stroke_for(d_physical)
-env_sw   = stroke_for(d_safety)
-
-soc_a    = alpha_for(d_social)
-phy_a    = alpha_for(d_physical)
-env_a    = alpha_for(d_safety)
-
-# Helper to add opacity to hex colors
-def with_opacity(hex_color, a):
-    # hex -> rgba(r,g,b,a)
-    h = hex_color.lstrip("#")
-    r, g, b = int(h[0:2],16), int(h[2:4],16), int(h[4:6],16)
-    return f"rgba({r},{g},{b},{a:.3f})"
-
-soc_col_a = with_opacity(soc_col, soc_a)
-phy_col_a = with_opacity(phy_col, phy_a)
-env_col_a = with_opacity(env_col, env_a)
-
-# Text for cards
+# Bench (left)
+fig.add_shape(type="rect",
+              x0=bench_x-1.4, y0=bench_y-0.9, x1=bench_x+1.4, y1=bench_y+0.9,
+              fillcolor=YELLOW, line=dict(color="#b7950b", width=2), layer="below")
 bench_label = f"<b>{plus(b)} Bench</b>" if b != 0 else "<b>±0 Bench</b>"
-soc_text    = f"<tspan font-weight='700'>{plus(d_social)}</tspan> Social interactions"
-phy_text    = f"<tspan font-weight='700'>{plus(d_physical)}</tspan> Physical activity"
-env_text    = f"<tspan font-weight='700'>{plus(d_safety)}</tspan> Safety"
+fig.add_annotation(x=bench_x, y=bench_y, text=bench_label, showarrow=False, font=dict(size=14))
 
-# QoL breakdown
-qol_lines = [
-    f"{plus(q_social)} from Social",
-    f"{plus(q_physical)} from Physical",
-    f"{plus(q_env)} from Environmental",
-]
-qol_total = f"{plus(q_total)}"
+# Social bubble + card
+fig.add_shape(type="circle",
+              x0=soc_x-oval_w/2, y0=soc_y-oval_h/2, x1=soc_x+oval_w/2, y1=soc_y+oval_h/2,
+              fillcolor=SOC_BG, line=dict(color=SOC_OUT, width=2, dash="dash"), layer="below")
+fig.add_annotation(x=soc_x, y=soc_y+oval_h/2-0.2, text="<b>Social dimension</b>",
+                   showarrow=False, font=dict(color=SOC_COL, size=12), yshift=10)
+fig.add_shape(type="rect",
+              x0=soc_x-card_w/2, y0=soc_y-card_h/2, x1=soc_x+card_w/2, y1=soc_y+card_h/2,
+              fillcolor="white", line=dict(color=SOC_COL, width=2))
+fig.add_annotation(x=soc_x, y=soc_y,
+                   text=f"<b>{plus(d_social)}</b>&nbsp; Social interactions",
+                   showarrow=False, font=dict(color=SOC_COL, size=12))
 
-svg = f"""
-<svg id="scenarios-svg" viewBox="0 0 1140 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Scenario diagram">
-  <defs>
-    <!-- Marker arrowheads (scaled with stroke) -->
-    <marker id="arrow-green" viewBox="0 0 10 6"
-            markerWidth="6.5" markerHeight="6.5"
-            refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,3 L0,6 z" fill="{GREEN}"/>
-    </marker>
-    <marker id="arrow-dyn" viewBox="0 0 10 6"
-            markerWidth="6.5" markerHeight="6.5"
-            refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,3 L0,6 z" fill="{DARKTXT}"/>
-    </marker>
-    <style><![CDATA[
-      .title  {{ font: 700 18px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: {DARKTXT}; }}
-      .label  {{ font: 600 14px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
-      .small  {{ font: 400 13px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: {DARKTXT}; }}
-      .cardt  {{ font: 600 13px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: {DARKTXT}; }}
-      .pill   {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
-      .oval   {{ stroke-width: 2; stroke-dasharray: 6 6; }}
-      .box    {{ rx: 16; ry: 16; }}
-    ]]></style>
-  </defs>
+# Physical bubble + card
+fig.add_shape(type="circle",
+              x0=phy_x-oval_w/2, y0=phy_y-oval_h/2, x1=phy_x+oval_w/2, y1=phy_y+oval_h/2,
+              fillcolor=PHY_BG, line=dict(color=PHY_OUT, width=2, dash="dash"), layer="below")
+fig.add_annotation(x=phy_x, y=phy_y+oval_h/2-0.2, text="<b>Physical dimension</b>",
+                   showarrow=False, font=dict(color=PHY_COL, size=12), yshift=10)
+fig.add_shape(type="rect",
+              x0=phy_x-card_w/2, y0=phy_y-card_h/2, x1=phy_x+card_w/2, y1=phy_y+card_h/2,
+              fillcolor="white", line=dict(color=PHY_COL, width=2))
+fig.add_annotation(x=phy_x, y=phy_y,
+                   text=f"<b>{plus(d_physical)}</b>&nbsp; Physical activity",
+                   showarrow=False, font=dict(color=PHY_COL, size=12))
 
-  <!-- Bench (left) -->
-  <rect class="box" x="60" y="240" width="180" height="120"
-        fill="{YELLOW}" stroke="#b7950b" stroke-width="3"/>
-  <text class="title" x="150" y="270" text-anchor="middle">{bench_label}</text>
+# Environmental bubble + card
+fig.add_shape(type="circle",
+              x0=env_x-oval_w/2, y0=env_y-oval_h/2, x1=env_x+oval_w/2, y1=env_y+oval_h/2,
+              fillcolor=ENV_BG, line=dict(color=ENV_OUT, width=2, dash="dash"), layer="below")
+fig.add_annotation(x=env_x, y=env_y+oval_h/2-0.2, text="<b>Environmental dimension</b>",
+                   showarrow=False, font=dict(color=ENV_COL, size=12), yshift=10)
+fig.add_shape(type="rect",
+              x0=env_x-card_w/2, y0=env_y-card_h/2, x1=env_x+card_w/2, y1=env_y+card_h/2,
+              fillcolor="white", line=dict(color=ENV_COL, width=2))
+fig.add_annotation(x=env_x, y=env_y,
+                   text=f"<b>{plus(d_safety)}</b>&nbsp; Safety",
+                   showarrow=False, font=dict(color=ENV_COL, size=12))
 
-  <!-- Social bubble + card -->
-  <ellipse class="oval" cx="420" cy="120" rx="110" ry="62"
-           fill="{SOC_BG}" stroke="{SOC_OUT}"/>
-  <text class="title" x="420" y="60" text-anchor="middle" fill="{SOC_COL}">Social dimension</text>
-  <rect class="pill" x="355" y="100" width="130" height="44" fill="#fff" stroke="{SOC_COL}" stroke-width="3"/>
-  <text class="cardt" x="420" y="127" text-anchor="middle">{soc_text}</text>
+# QoL box (right)
+fig.add_shape(type="rect",
+              x0=qol_x-1.8, y0=qol_y-1.6, x1=qol_x+1.8, y1=qol_y+1.6,
+              fillcolor=Q_BG, line=dict(color=Q_BR, width=3))
+qol_text = (
+    f"{plus(q_social)} from Social<br>"
+    f"{plus(q_physical)} from Physical<br>"
+    f"{plus(q_env)} from Environmental<br>"
+    f"<span style='font-size:14px'>——</span><br>"
+    f"<b>Δ QoL = {plus(q_total)}</b>"
+)
+fig.add_annotation(x=qol_x, y=qol_y, text=qol_text, showarrow=False, font=dict(size=12))
 
-  <!-- Physical bubble + card -->
-  <ellipse class="oval" cx="420" cy="300" rx="110" ry="62"
-           fill="{PHY_BG}" stroke="{PHY_OUT}"/>
-  <text class="title" x="420" y="240" text-anchor="middle" fill="{PHY_COL}">Physical dimension</text>
-  <rect class="pill" x="355" y="280" width="130" height="44" fill="#fff" stroke="{PHY_COL}" stroke-width="3"/>
-  <text class="cardt" x="420" y="307" text-anchor="middle">{phy_text}</text>
+# Arrows — Bench → factors (sign-colored)
+for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env_x, env_y, d_safety)]:
+    fig.add_annotation(x=x-1.25, y=y, ax=bench_x+1.4, ay=bench_y,
+                       xref="x", yref="y", axref="x", ayref="y",
+                       showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
+                       arrowcolor=sign_color(delta))
 
-  <!-- Environmental bubble + card -->
-  <ellipse class="oval" cx="420" cy="480" rx="110" ry="62"
-           fill="{ENV_BG}" stroke="{ENV_OUT}"/>
-  <text class="title" x="420" y="420" text-anchor="middle" fill="{ENV_COL}">Environmental dimension</text>
-  <rect class="pill" x="355" y="460" width="130" height="44" fill="#fff" stroke="{ENV_COL}" stroke-width="3"/>
-  <text class="cardt" x="420" y="487" text-anchor="middle">{env_text}</text>
+# Arrows — factors → QoL
+x_q_target = (qol_x - 1.8) + 0.05  # slight nudge so the arrow tip is inside the box
 
-  <!-- QoL box (right) -->
-  <rect class="box" x="860" y="190" width="220" height="240"
-        fill="{Q_BG}" stroke="{Q_BR}" stroke-width="3"/>
-  <text class="title" x="970" y="215" text-anchor="middle">Quality of Life</text>
-  <text class="small" x="970" y="250" text-anchor="middle">{qol_lines[0]}</text>
-  <text class="small" x="970" y="270" text-anchor="middle">{qol_lines[1]}</text>
-  <text class="small" x="970" y="290" text-anchor="middle">{qol_lines[2]}</text>
-  <text class="title" x="970" y="330" text-anchor="middle">Δ QoL = <tspan fill="{DARKTXT}" font-weight="800">{qol_total}</tspan></text>
+# Top (Social → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y + 1.2,   # target inside QoL box (above center)
+    ax=soc_x + card_w/2, ay=soc_y, # start at Social card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
-  <!-- Arrows: Bench -> cards (color by sign, thickness/opacity by |delta|) -->
-  <!-- to Social -->
-  <path d="M240,300 C300,260 320,170 355,122"
-        fill="none" stroke="{soc_col_a}" stroke-width="{soc_sw}" marker-end="url(#arrow-dyn)"/>
-  <!-- to Physical -->
-  <path d="M240,300 C300,300 320,300 355,302"
-        fill="none" stroke="{phy_col_a}" stroke-width="{phy_sw}" marker-end="url(#arrow-dyn)"/>
-  <!-- to Environmental -->
-  <path d="M240,300 C300,340 320,430 355,478"
-        fill="none" stroke="{env_col_a}" stroke-width="{env_sw}" marker-end="url(#arrow-dyn)"/>
+# Middle (Physical → QoL): horizontal
+fig.add_annotation(
+    x=x_q_target, y=phy_y,
+    ax=phy_x + card_w/2, ay=phy_y,
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
-  <!-- Arrows: cards -> QoL (always green, gentle curves to different heights) -->
-  <!-- Social -> QoL (upper) -->
-  <path d="M485,122 C700,90 770,210 860,210"
-        fill="none" stroke="{GREEN}" stroke-width="3.5" marker-end="url(#arrow-green)"/>
-  <!-- Physical -> QoL (middle) -->
-  <path d="M485,302 C700,302 770,290 860,290"
-        fill="none" stroke="{GREEN}" stroke-width="3.5" marker-end="url(#arrow-green)"/>
-  <!-- Environmental -> QoL (lower) -->
-  <path d="M485,482 C700,520 770,370 860,360"
-        fill="none" stroke="{GREEN}" stroke-width="3.5" marker-end="url(#arrow-green)"/>
-</svg>
-"""
+# Bottom (Environmental → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y - 1.2,   # target inside QoL box (below center)
+    ax=env_x + card_w/2, ay=env_y, # start at Environmental card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
-st.components.v1.html(svg, height=640, scrolling=False)
+# Canvas style
+fig.update_xaxes(visible=False, range=[0, 10])
+fig.update_yaxes(visible=False, range=[0, 10])
+fig.update_layout(template="plotly_white", height=540, margin=dict(l=20, r=20, t=20, b=20))
+
+st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------------------------------------------
 # Compact KPIs + small QoL gauge
@@ -226,6 +204,5 @@ with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
-- Arrow **thickness** and **opacity** reflect effect magnitude; arrow **color** reflects sign (green = positive, red = negative, grey = zero).
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
