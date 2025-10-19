@@ -117,7 +117,7 @@ svg = f"""
         d="M456,260 C470,340 440,540 410,590"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
   <path id="A05_CP_to_Downshift"
-        d="M456,260 C460,360 450,610 420,640"
+        d="M456,260 C490,390 450,610 420,640"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
   <path id="A06_CP_to_Physical"
         d="M456,260 C560,330 640,560 704,595"
@@ -158,6 +158,7 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
 
