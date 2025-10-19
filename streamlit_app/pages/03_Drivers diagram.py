@@ -19,6 +19,10 @@ svg = f"""
     <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
+    <!-- NEW: fixed 150° orientation (30° upward from left) for A01 only -->
+    <marker id="arrow-pink-150" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="150" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
+    </marker>
     <style><![CDATA[
       .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
       .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
@@ -96,18 +100,16 @@ svg = f"""
 
   <!-- ========= ARROWS ========= -->
 
-  <!-- PINK (Social-origin) — SN arrows start AND end on LEFT edges with STRONGER left curve -->
-  <!-- SN (left edge ~194,195) → Purpose (left edge x=200, y≈590) -->
+  <!-- PINK (Social-origin) — SN arrows start AND end on LEFT edges -->
+  <!-- A01 ONLY: fixed 150° arrowhead -->
   <path id="A01_SN_to_Purpose"
         d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-150)"/>
 
-  <!-- SN (left edge) → Emotional security (left edge x=180, y≈490) -->
+  <!-- The rest keep orient='auto' via arrow-pink -->
   <path id="A02_SN_to_ES"
         d="M194,195 C110,230 130,395 180,490"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
-
-  <!-- SN (left edge) → Sense of autonomy (left edge x=180, y≈540) -->
   <path id="A03_SN_to_SA"
         d="M194,195 C90,210 120,440 180,540"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
@@ -158,20 +160,3 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
