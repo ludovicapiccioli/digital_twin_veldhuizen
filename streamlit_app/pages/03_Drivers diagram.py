@@ -157,12 +157,13 @@ svg = f"""
        start at Environmental frame bottom edge center (860,380);
        end at (692,597) so arrowhead sits ON the Physical pill's left border (outside) -->
   <path id="A16_ENV_to_Physical"
-        d="M860,380 C842,440 774,520 692,597"
+        d="M860,380 C835,450 780,520 702,575"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
 
