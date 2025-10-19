@@ -19,10 +19,6 @@ svg = f"""
     <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
-    <!-- A01 ONLY: fixed 340° (gentle clockwise tilt) -->
-    <marker id="arrow-pink-340" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="340" markerUnits="strokeWidth">
-      <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
-    </marker>
     <style><![CDATA[
       .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
       .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
@@ -101,10 +97,10 @@ svg = f"""
   <!-- ========= ARROWS ========= -->
 
   <!-- PINK (Social-origin) -->
-  <!-- A01 uses the fixed 340° arrowhead -->
+  <!-- A01: natural head via orient='auto', shaped to land cleanly on Purpose's left edge -->
   <path id="A01_SN_to_Purpose"
-        d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-340)"/>
+        d="M194,195 C120,165 150,545 200,590"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
 
   <path id="A02_SN_to_ES"
         d="M194,195 C110,230 130,395 180,490"
@@ -155,9 +151,9 @@ svg = f"""
 
   <!-- ENV → Physical:
        start at Environmental frame bottom edge center (860,380);
-       end at (692,597) so arrowhead sits ON the Physical pill's left border (outside) -->
+       end at top edge of Physical pill (y=575), a bit to the right (x=760) -->
   <path id="A16_ENV_to_Physical"
-        d="M860,380 C842,440 774,520 692,597"
+        d="M860,380 C840,445 790,520 760,575"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
