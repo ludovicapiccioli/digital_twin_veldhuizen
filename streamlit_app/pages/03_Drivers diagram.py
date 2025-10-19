@@ -99,62 +99,63 @@ svg = f"""
   <!-- PINK (Social-origin) — SN arrows start AND end on LEFT edges with STRONGER left curve -->
   <!-- SN (left edge ~194,195) → Purpose (left edge x=200, y≈590) -->
   <path id="A01_SN_to_Purpose"
-        d="M194,195 C110,280 130,540 200,590"
-        stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
+        d="M194,195 C95,300 115,560 200,590"
+        stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- SN (left edge) → Emotional security (left edge x=180, y≈490) -->
   <path id="A02_SN_to_ES"
         d="M194,195 C110,230 130,395 180,490"
-        stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
+        stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- SN (left edge) → Sense of autonomy (left edge x=180, y≈540) -->
   <path id="A03_SN_to_SA"
         d="M194,195 C110,250 130,440 180,540"
-        stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
+        stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- PINK (Community participation origins) -->
   <path id="A04_CP_to_Purpose"
         d="M456,260 C470,340 440,540 410,590"
-        stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
+        stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
   <path id="A05_CP_to_Downshift"
         d="M456,260 C460,360 450,610 420,640"
-        stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
+        stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
   <path id="A06_CP_to_Physical"
         d="M456,260 C560,330 640,560 704,595"
-        stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
+        stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- GREEN (Environmental-origin) -->
   <path id="A07_PS_to_SN"
         d="M740,140 C615,125 480,135 406,195"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A08_PS_to_SA"
         d="M740,140 C690,180 520,470 420,520"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A09_GS_to_CP"
         d="M750,185 C620,190 535,255 456,260"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A10_GS_to_Downshift"
         d="M750,185 C680,240 520,575 420,640"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A11_MA_to_CP"
         d="M740,230 C610,235 535,268 456,260"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A12_SI_to_SN"
         d="M750,275 C620,265 490,190 406,195"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A13_SI_to_CP"
         d="M750,275 C620,280 535,280 456,260"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A14_S_to_CP"
         d="M700,320 C610,330 540,300 456,260"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A15_S_to_Downshift"
         d="M700,320 C640,380 510,600 420,640"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A16_ENV_to_Physical"
         d="M880,360 C860,440 800,520 704,595"
-        stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+        stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
