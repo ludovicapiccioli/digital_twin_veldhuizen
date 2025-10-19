@@ -3,7 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
 st.title("Drivers Diagram — Interrelations across Dimensions")
-st.caption("Dimension titles placed outside frames. Pills fully inside; arrow tips stop at pill edges (no text overlap).")
+st.caption("Vertical titles outside frames. Environmental pills raised. Arrow tips stop at pill edges (no text overlap).")
 
 PINK   = "#ff69b4"   # Social
 ORANGE = "#f39c12"   # Psychological
@@ -11,7 +11,7 @@ GREEN  = "#27ae60"   # Environmental
 BLUE   = "#3498db"   # Physical
 
 svg = f"""
-<svg viewBox="0 0 1140 800" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
+<svg viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
   <defs>
     <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{GREEN}"/>
@@ -21,117 +21,126 @@ svg = f"""
     </marker>
     <style><![CDATA[
       .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
-      .title {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
       .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
       .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
+      .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
     ]]></style>
   </defs>
 
-  <!-- ===== Titles OUTSIDE frames ===== -->
-  <text class="title" x="90"  y="72"  fill="{PINK}">SOCIAL</text>
-  <text class="title" x="90"  y="400" fill="{ORANGE}">Psychological</text>
-  <text class="title" x="650" y="72"  fill="{GREEN}">ENVIRONMENTAL</text>
-  <text class="title" x="650" y="400" fill="{BLUE}">Physical</text>
+  <!-- ===== Frames (titles OUTSIDE and vertical) ===== -->
+  <!-- Frame geometry (x,y,w,h) -->
+  <!-- Social -->
+  <rect class="frame" x="80"  y="90"  width="440" height="280" stroke="{PINK}"/>
+  <text class="titleV" x="60" y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
 
-  <!-- ===== Frames (more breathing room since titles are outside) ===== -->
-  <rect class="frame" x="70"  y="86"  width="440" height="290" stroke="{PINK}"/>
-  <rect class="frame" x="70"  y="414" width="440" height="290" stroke="{ORANGE}"/>
-  <rect class="frame" x="640" y="86"  width="440" height="290" stroke="{GREEN}"/>
-  <rect class="frame" x="640" y="414" width="440" height="290" stroke="{BLUE}"/>
+  <!-- Psychological -->
+  <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
+  <text class="titleV" x="60" y="550" fill="{ORANGE}" transform="rotate(-90 60 550)">Psychological</text>
+
+  <!-- Environmental (made a bit taller to match the source look) -->
+  <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
+  <text class="titleV" x="1090" y="225" fill="{GREEN}" transform="rotate(90 1090 225)">ENVIRONMENTAL</text>
+
+  <!-- Physical -->
+  <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
+  <text class="titleV" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
 
   <!-- ===== SOCIAL pills ===== -->
   <!-- Right edges: SN=410, CP=460 -->
   <g id="social">
-    <rect class="pill" x="190" y="185" width="220" height="40" fill="{PINK}"/>
-    <text class="label" x="300" y="211" text-anchor="middle">Social Networks</text>
+    <rect class="pill" x="190" y="175" width="220" height="40" fill="{PINK}"/>
+    <text class="label" x="300" y="201" text-anchor="middle">Social Networks</text>
 
-    <rect class="pill" x="180" y="250" width="280" height="40" fill="{PINK}"/>
-    <text class="label" x="320" y="276" text-anchor="middle">Community participation</text>
+    <rect class="pill" x="180" y="240" width="280" height="40" fill="{PINK}"/>
+    <text class="label" x="320" y="266" text-anchor="middle">Community participation</text>
   </g>
 
   <!-- ===== PSYCHOLOGICAL pills ===== -->
   <!-- Right edges: ES=420, SA=420, Purpose=410, Downshift=420 -->
   <g id="psy">
-    <rect class="pill" x="180" y="505" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="531" text-anchor="middle">Emotional security</text>
+    <rect class="pill" x="180" y="500" width="240" height="40" fill="{ORANGE}"/>
+    <text class="label" x="300" y="526" text-anchor="middle">Emotional security</text>
 
-    <rect class="pill" x="180" y="555" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="581" text-anchor="middle">Sense of autonomy</text>
+    <rect class="pill" x="180" y="550" width="240" height="40" fill="{ORANGE}"/>
+    <text class="label" x="300" y="576" text-anchor="middle">Sense of autonomy</text>
 
-    <rect class="pill" x="200" y="605" width="210" height="40" fill="{ORANGE}"/>
-    <text class="label" x="305" y="631" text-anchor="middle">Purpose</text>
+    <rect class="pill" x="200" y="600" width="210" height="40" fill="{ORANGE}"/>
+    <text class="label" x="305" y="626" text-anchor="middle">Purpose</text>
 
-    <rect class="pill" x="180" y="655" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="681" text-anchor="middle">Downshift</text>
+    <rect class="pill" x="180" y="650" width="240" height="40" fill="{ORANGE}"/>
+    <text class="label" x="300" y="676" text-anchor="middle">Downshift</text>
   </g>
 
-  <!-- ===== ENVIRONMENTAL pills ===== -->
-  <!-- Safety moved LEFT and DOWN slightly; right edge = 940, well inside frame right = 1080 -->
+  <!-- ===== ENVIRONMENTAL pills — raised upwards ===== -->
+  <!-- All pills moved ~30px up; Safety firmly inside the frame -->
+  <!-- Proximity y=120, Green y=165, Mobility y=210, SocialInfra y=255, Safety y=300 -->
   <g id="env">
-    <rect class="pill" x="740" y="165" width="300" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="191" text-anchor="middle">Proximity to services</text>
+    <rect class="pill" x="740" y="120" width="300" height="40" fill="{GREEN}"/>
+    <text class="label" x="890" y="146" text-anchor="middle">Proximity to services</text>
 
-    <rect class="pill" x="750" y="215" width="280" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="241" text-anchor="middle">Green spaces</text>
+    <rect class="pill" x="750" y="165" width="280" height="40" fill="{GREEN}"/>
+    <text class="label" x="890" y="191" text-anchor="middle">Green spaces</text>
 
-    <rect class="pill" x="740" y="265" width="300" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="291" text-anchor="middle">Mobility &amp; Accessibility</text>
+    <rect class="pill" x="740" y="210" width="300" height="40" fill="{GREEN}"/>
+    <text class="label" x="890" y="236" text-anchor="middle">Mobility &amp; Accessibility</text>
 
-    <rect class="pill" x="750" y="315" width="280" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="341" text-anchor="middle">Social infrastructures</text>
+    <rect class="pill" x="750" y="255" width="280" height="40" fill="{GREEN}"/>
+    <text class="label" x="890" y="281" text-anchor="middle">Social infrastructures</text>
 
-    <!-- SAFETY safely inside -->
-    <rect class="pill" x="700" y="365" width="240" height="40" fill="{GREEN}"/>
-    <text class="label" x="820" y="391" text-anchor="middle">Safety</text>
+    <!-- SAFETY moved up & left; right edge = 940, inside frame right (=1080), bottom = 340 < 380 -->
+    <rect class="pill" x="700" y="300" width="240" height="40" fill="{GREEN}"/>
+    <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
   </g>
 
   <!-- ===== PHYSICAL pill ===== -->
-  <!-- Left edge x=700; arrow tips will land at ~704 -->
+  <!-- Left edge x=700; arrow tips target ≈ 704 -->
   <g id="phys">
-    <rect class="pill" x="700" y="585" width="320" height="44" fill="{BLUE}"/>
-    <text class="label" x="860" y="612" text-anchor="middle">Physical activity &amp; active lifestyle</text>
+    <rect class="pill" x="700" y="575" width="320" height="44" fill="{BLUE}"/>
+    <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
   <!-- ===== ARROWS — tips stop on pill borders ===== -->
+  <!-- Tip x-values: SN=406, CP=456, Psych≈420, Physical=704 -->
 
-  <!-- ENV → Social Networks (tips at x=406) -->
-  <path d="M740,185 C610,170 470,180 406,205" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M750,225 C620,215 480,197 406,205" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,275 C610,265 480,205 406,205" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M750,325 C620,315 480,215 406,205" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M700,385 C600,365 490,230 406,205" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- ENV → Social Networks (5) -->
+  <path d="M740,140 C615,125 480,135 406,195" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M750,185 C620,175 490,160 406,195" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,230 C615,220 490,175 406,195" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M750,275 C620,265 490,190 406,195" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M700,320 C600,305 490,210 406,195" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- ENV → Community participation (tips at x=456) -->
-  <path d="M740,185 C610,185 520,255 456,270" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M750,225 C620,225 525,265 456,270" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,275 C610,275 525,278 456,270" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M750,325 C620,328 525,290 456,270" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M700,385 C610,392 530,300 456,270" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- ENV → Community participation (5) -->
+  <path d="M740,140 C610,145 530,245 456,260" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M750,185 C620,190 535,255 456,260" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,230 C610,235 535,268 456,260" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M750,275 C620,280 535,280 456,260" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M700,320 C610,330 540,300 456,260" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- ENV → Psychological (tips at ES/SA/D = ~ right edges 420/420/420) -->
-  <path d="M750,225 C710,270 525,470 420,525" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,275 C700,315 520,520 420,575" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M700,385 C665,430 510,620 420,675" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- ENV → Psychological (3) to ES/SA/Downshift (right edges ≈ 420) -->
+  <path d="M750,185 C710,230 525,445 420,520" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,230 C700,270 520,495 420,570" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M700,320 C665,365 510,610 420,670" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
   <!-- Safety → Physical (tip at blue pill left edge ≈ 704) -->
-  <path d="M820,385 C810,480 780,545 704,607" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M820,320 C810,420 780,505 704,595" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- PSY → Community participation (tips at 456) -->
-  <path d="M300,525 C305,485 310,350 456,270" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
-  <path d="M300,575 C305,535 310,360 456,270" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
-  <path d="M305,625 C305,585 308,365 456,270" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <!-- PSY → Community participation (3 upward) -->
+  <path d="M300,520 C305,480 315,350 456,260" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M300,570 C305,530 315,365 456,260" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M305,620 C305,580 318,375 456,260" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
 
   <!-- Downshift → Physical (tip at 704) -->
-  <path d="M300,675 C480,660 665,635 704,607" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M300,670 C485,655 670,630 704,595" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
 </svg>
 """
 
-st.components.v1.html(svg, height=820, scrolling=False)
+st.components.v1.html(svg, height=840, scrolling=False)
 
-with st.expander("Notes / tweak tips"):
+with st.expander("Notes / precise geometry"):
     st.markdown("""
-- Titles are **outside** the frames, freeing space inside the boxes.
-- The **Safety** pill is at `x=700` (right edge `= 940`), well inside the Environmental frame (`right = 1080`).
-- Arrow tips stop on pill borders: Social (x=406/456), Psych (~420), Physical (x=704).  
-  If a tip still looks slightly inside/outside on your screen, nudge those tip x-values by ±2.
+- **Frames**: Social (80,90,440,280), Psych (80,410,440,280), Environmental (640,70,440,310), Physical (640,400,440,310).
+- **Vertical titles**: outside frames—rotated **−90°** on the left and **+90°** on the right to mirror your reference.
+- **Environmental pills raised**: y = 120, 165, 210, 255, 300. **Safety** is now well inside (right edge 940; frame right 1080).
+- **Arrow tips** hit pill borders at exact x’s: Social Networks **406**, Community participation **456**, Psychological **~420**, Physical **704**.
+  Adjust by ±2 if rendering shows a 1-px variance on your screen.
 """)
