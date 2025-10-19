@@ -1,200 +1,131 @@
 # pages/03_Drivers diagram.py
 import streamlit as st
-import plotly.graph_objects as go
+from textwrap import dedent
 
-# Page config
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
-
 st.title("Drivers Diagram — Interrelations across Dimensions")
-st.caption("Interactive schematic of drivers in four dimensions. Colors = source dimension of each arrow.")
+st.caption("Static SVG replica of the report figure (precise layout, colors, curves).")
 
-# ---------------- Sidebar: display options ----------------
-with st.sidebar:
-    st.header("Display")
-    show_labels = st.checkbox("Show node labels", value=True)
-    show_boxes  = st.checkbox("Show dimension frames", value=True)
-    arrow_w     = st.slider("Arrow width", 1, 5, 3)
-    arrow_size  = st.slider("Arrow head size", 0.6, 1.4, 1.0)
-    curvature   = st.slider("Curvature", 0.08, 0.35, 0.18)
+# Colors
+PINK = "#ff69b4"         # Social frame + nodes
+ORANGE = "#f39c12"       # Psychological
+GREEN = "#27ae60"        # Environmental
+BLUE = "#3498db"         # Physical
+TEXT = "#5b6770"
+BG = "#ffffff"
 
-# ---------------- Dimensions, nodes (fixed layout) ----------------
-# Canvas range widened a bit to create breathing room
-XMIN, XMAX, YMIN, YMAX = 0, 112, 0, 100
+# SVG (1000x700 canvas). Tweak positions if you want millimetre-perfect changes.
+svg = f"""
+<svg viewBox="0 0 1000 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
+  <defs>
+    <!-- Arrowheads by source dimension -->
+    <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="{GREEN}"/>
+    </marker>
+    <marker id="arrow-orange" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="{ORANGE}"/>
+    </marker>
 
-DIM = {
-    "Social": {
-        "color": "#ff69b4", "label": "SOCIAL",
-        "box": (6, 58, 42, 96),
-        "nodes": [
-            ("Social Networks",         (24, 84)),
-            ("Community participation", (24, 66)),   # slightly lower for spacing
-        ],
-    },
-    "Psychological": {
-        "color": "#f39c12", "label": "Psychological",
-        "box": (6, 6, 42, 46),
-        "nodes": [
-            ("Emotional security", (24, 40)),
-            ("Sense of autonomy",  (24, 30)),
-            ("Purpose",            (24, 20)),
-            ("Downshift",          (24, 10)),
-        ],
-    },
-    "Environmental": {
-        "color": "#27ae60", "label": "ENVIRONMENTAL",
-        # shifted right to reduce crossings
-        "box": (66, 56, 108, 96),
-        "nodes": [
-            ("Proximity to services",     (90, 88)),
-            ("Green spaces",              (90, 80)),
-            ("Mobility & Accessibility",  (90, 72)),
-            ("Social infrastructures",    (90, 64)),
-            ("Safety",                    (90, 58)),
-        ],
-    },
-    "Physical": {
-        "color": "#3498db", "label": "Physical",
-        # shifted right to match Environmental spacing
-        "box": (66, 6, 108, 46),
-        "nodes": [
-            ("Physical activity & active lifestyle", (90, 24)),
-        ],
-    },
-}
+    <!-- Common styles -->
+    <style><![CDATA[
+      .frame {{ fill: none; stroke-width: 3; rx: 14; ry: 14; }}
+      .label   {{ font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 700; font-size: 20px; }}
+      .sublabel{{ font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 16px; fill: {TEXT}; }}
+      .pill-text {{ font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif; font-weight: 600; font-size: 16px; fill: #ffffff; }}
+      .pill {{ rx: 18; ry: 18; }}
+      .node-dot {{ stroke: #ffffff; stroke-width: 3; }}
+    ]]></style>
+  </defs>
 
-# Build lookups
-node_pos, node_dim = {}, {}
-for dim, cfg in DIM.items():
-    for label, (x, y) in cfg["nodes"]:
-        node_pos[label] = (x, y)
-        node_dim[label] = dim
+  <!-- Frames -->
+  <rect class="frame" x="80"  y="60"  width="360" height="260" stroke="{PINK}"/>
+  <text x="110" y="95" class="label" fill="{PINK}">SOCIAL</text>
 
-# ---------------- Directed edges (source, target) ----------------
-# Match your figure; add more as needed
-EDGES = [
-    # Environmental → Social / Physical
-    ("Proximity to services",        "Social Networks"),
-    ("Green spaces",                 "Social Networks"),
-    ("Green spaces",                 "Community participation"),
-    ("Green spaces",                 "Physical activity & active lifestyle"),
-    ("Mobility & Accessibility",     "Social Networks"),
-    ("Mobility & Accessibility",     "Community participation"),
-    ("Mobility & Accessibility",     "Physical activity & active lifestyle"),
-    ("Social infrastructures",       "Community participation"),
-    ("Safety",                       "Social Networks"),
-    ("Safety",                       "Community participation"),
-    # Psychological → Social / Physical
-    ("Emotional security",           "Community participation"),
-    ("Sense of autonomy",            "Community participation"),
-    ("Purpose",                      "Community participation"),
-    ("Downshift",                    "Physical activity & active lifestyle"),
-]
+  <rect class="frame" x="80"  y="380" width="360" height="260" stroke="{ORANGE}"/>
+  <text x="110" y="415" class="label" fill="{ORANGE}">Psychological</text>
 
-# Arrow colors by SOURCE dimension
-ARROW_COLORS = {
-    "Environmental": "#27ae60",   # green
-    "Psychological": "#f39c12",   # orange
-    "Social": "#ff69b4",          # pink (unused now, but future-proof)
-    "Physical": "#3498db",
-}
+  <rect class="frame" x="560" y="60"  width="360" height="260" stroke="{GREEN}"/>
+  <text x="590" y="95" class="label" fill="{GREEN}">ENVIRONMENTAL</text>
 
-# ---------------- Figure ----------------
-fig = go.Figure()
+  <rect class="frame" x="560" y="380" width="360" height="260" stroke="{BLUE}"/>
+  <text x="590" y="415" class="label" fill="{BLUE}">Physical</text>
 
-# Frames (dimension boxes)
-if show_boxes:
-    for dim, cfg in DIM.items():
-        x0, y0, x1, y1 = cfg["box"]
-        fig.add_shape(
-            type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
-            line=dict(color=cfg["color"], width=2),
-            fillcolor="rgba(0,0,0,0)", layer="below"
-        )
-        fig.add_annotation(
-            x=x0 + 2, y=y1 - 2, text=f"<b>{cfg['label']}</b>",
-            showarrow=False, font=dict(color=cfg["color"], size=14),
-            xanchor="left", yanchor="top"
-        )
+  <!-- SOCIAL nodes (pills) -->
+  <g id="social-nodes">
+    <circle cx="280" cy="170" r="14" fill="{PINK}" class="node-dot"/>
+    <text x="140" y="170" class="sublabel">Social Networks</text>
 
-# Helper to draw a smooth curved link with arrowhead
-def draw_curved_arrow(x0, y0, x1, y1, color):
-    # Compute a control point that bows the line gently.
-    # Curvature sign chosen so left→right curves arch slightly downward or upward based on vertical gap.
-    dx, dy = x1 - x0, y1 - y0
-    mx, my = (x0 + x1) / 2, (y0 + y1) / 2
-    ctrl_sign = 1 if dy < 0 else -1
-    # Scale curvature by horizontal span (works for vertical-ish links too)
-    offset = curvature * max(abs(dx), 16)
-    cx, cy = mx, my + ctrl_sign * offset
+    <circle cx="260" cy="235" r="14" fill="{PINK}" class="node-dot"/>
+    <text x="100" y="235" class="sublabel">Community participation</text>
+  </g>
 
-    # Draw the spline (3 points approximated as a smooth line)
-    fig.add_trace(go.Scatter(
-        x=[x0, cx, x1], y=[y0, cy, y1],
-        mode="lines",
-        line=dict(color=color, width=arrow_w, shape="spline", smoothing=1.2),
-        hoverinfo="none"
-    ))
-    # Arrowhead aimed from control point to target
-    fig.add_annotation(
-        x=x1, y=y1, ax=cx, ay=cy,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=3, arrowsize=arrow_size,
-        arrowwidth=arrow_w, arrowcolor=color
-    )
+  <!-- PSYCHOLOGICAL nodes -->
+  <g id="psy-nodes">
+    <circle cx="240" cy="470" r="14" fill="{ORANGE}" class="node-dot"/>
+    <text x="140" y="470" class="sublabel">Emotional security</text>
 
-# Draw edges with small nudges so arrows don’t pierce node centers
-for src, tgt in EDGES:
-    x0, y0 = node_pos[src]
-    x1, y1 = node_pos[tgt]
-    color = ARROW_COLORS.get(node_dim[src], "#4CAF50")
+    <circle cx="240" cy="510" r="14" fill="{ORANGE}" class="node-dot"/>
+    <text x="140" y="510" class="sublabel">Sense of autonomy</text>
 
-    # Nudge start/end a bit along x depending on direction
-    nudge = 1.2
-    if x1 > x0:
-        x0n, x1n = x0 + nudge, x1 - nudge
-    else:
-        x0n, x1n = x0 - nudge, x1 + nudge
+    <circle cx="240" cy="550" r="14" fill="{ORANGE}" class="node-dot"/>
+    <text x="190" y="550" class="sublabel">Purpose</text>
 
-    # For near-vertical edges, still add a tiny horizontal separation
-    if abs(x1 - x0) < 6:
-        x0n += -nudge
-        x1n += nudge
+    <circle cx="240" cy="610" r="14" fill="{ORANGE}" class="node-dot"/>
+    <text x="170" y="610" class="sublabel">Downshift</text>
+  </g>
 
-    draw_curved_arrow(x0n, y0, x1n, y1, color)
+  <!-- ENVIRONMENTAL nodes -->
+  <g id="env-nodes">
+    <circle cx="860" cy="155" r="14" fill="{GREEN}" class="node-dot"/>
+    <text x="680" y="155" class="sublabel">Proximity to services</text>
 
-# Draw nodes
-xs, ys, texts, colors, sizes = [], [], [], [], []
-for label, (x, y) in node_pos.items():
-    xs.append(x); ys.append(y)
-    texts.append(label if show_labels else "")
-    colors.append(DIM[node_dim[label]]["color"])
-    sizes.append(22 if node_dim[label] != "Physical" else 26)
+    <circle cx="860" cy="195" r="14" fill="{GREEN}" class="node-dot"/>
+    <text x="740" y="195" class="sublabel">Green spaces</text>
 
-fig.add_trace(go.Scatter(
-    x=xs, y=ys,
-    mode="markers+text" if show_labels else "markers",
-    text=texts,
-    textposition="middle left",
-    marker=dict(size=sizes, color=colors, line=dict(width=2, color="white")),
-    hovertemplate="<b>%{text}</b><extra></extra>"
-))
+    <circle cx="860" cy="235" r="14" fill="{GREEN}" class="node-dot"/>
+    <text x="710" y="235" class="sublabel">Mobility &amp; Accessibility</text>
 
-# Layout
-fig.update_layout(
-    height=660,
-    margin=dict(l=10, r=10, t=20, b=10),
-    plot_bgcolor="white",
-    xaxis=dict(range=[XMIN, XMAX], visible=False),
-    yaxis=dict(range=[YMIN, YMAX], visible=False),
-    showlegend=False,
-)
+    <circle cx="860" cy="275" r="14" fill="{GREEN}" class="node-dot"/>
+    <text x="720" y="275" class="sublabel">Social infrastructures</text>
 
-st.plotly_chart(fig, use_container_width=True)
+    <circle cx="860" cy="315" r="14" fill="{GREEN}" class="node-dot"/>
+    <text x="805" y="315" class="sublabel">Safety</text>
+  </g>
 
-with st.expander("About this diagram"):
+  <!-- PHYSICAL node -->
+  <g id="phy-nodes">
+    <circle cx="820" cy="560" r="16" fill="{BLUE}" class="node-dot"/>
+    <text x="620" y="560" class="sublabel">Physical activity &amp; active lifestyle</text>
+  </g>
+
+  <!-- Curved arrows from ENVIRONMENTAL (green) -->
+  <!-- Use smooth cubic Beziers to mimic the reference curves -->
+  <path d="M860,155 C760,135 460,150 294,166" stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M860,195 C760,185 450,200 274,228" stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M860,235 C760,235 460,240 274,234" stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M860,275 C760,285 470,270 274,240" stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M860,315 C760,335 460,300 260,245" stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
+
+  <!-- Green vertical to Physical -->
+  <path d="M860,315 C860,420 840,520 822,546" stroke="{GREEN}" stroke-width="4" fill="none" marker-end="url(#arrow-green)"/>
+
+  <!-- Curved arrows from PSYCHOLOGICAL (orange) -->
+  <path d="M240,470 C240,440 248,300 258,248" stroke="{ORANGE}" stroke-width="4" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M240,510 C240,480 248,305 258,248" stroke="{ORANGE}" stroke-width="4" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M240,550 C240,520 248,308 258,248" stroke="{ORANGE}" stroke-width="4" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M240,610 C420,600 640,590 802,558" stroke="{ORANGE}" stroke-width="4" fill="none" marker-end="url(#arrow-orange)"/>
+
+  <!-- Light dotted Social-to-Environmental arc (optional, as in some versions) -->
+  <!-- <path d="M300,140 C420,60 740,60 860,140" stroke="{PINK}" stroke-width="3" fill="none" stroke-dasharray="4 6"/> -->
+</svg>
+"""
+
+# Render the SVG
+st.components.v1.html(svg, height=720, scrolling=False)
+
+with st.expander("Notes"):
     st.markdown("""
-- **Colors on arrows = source dimension** (🟩 Environmental, 🟧 Psychological, 🩷 Social if used, 🩵 Physical).
-- Curved links reduce overlap and echo the conceptual flow in your report.
-- Positions are fixed so it mirrors the figure; tweak any `(x, y)` in the `DIM[...]` blocks to nudge nodes.
-- Add or remove relationships by editing the `EDGES` list.
+- This is a **static SVG** so the visuals match your report precisely (rounded frames, node dots, smooth curved arrows, tidy arrowheads).
+- If you want hover effects (e.g., highlight edges of a node), we can add a tiny bit of JavaScript to the SVG, still with `st.components.v1.html` and **no extra dependencies**.
+- To tweak positions or curves: edit the `cx, cy` of circles and the `C` control points in the `<path>` commands.
 """)
