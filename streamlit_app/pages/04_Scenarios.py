@@ -3,11 +3,11 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# Page config MUST be the first Streamlit call
+# Page config MUST be first Streamlit call in this file
 st.set_page_config(page_title="Scenarios • Veldhuizen", layout="wide")
 
-st.subheader("Concept demo — Simulation of scenarios")
-st.caption("Mock relationships for illustration only. Adjust benches and see how dimensions and QoL change.")
+st.subheader("Concept demo - Simulation of scenarios")
+st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
 # Controls (presets + slider)
@@ -28,10 +28,9 @@ with col_p3:
 
 b = st.slider("Benches (add/remove)", -10, 10, st.session_state.bench_delta)
 st.session_state.bench_delta = b  # keep slider + presets in sync
-st.caption("Legend: solid green arrow = positive effect; dashed red arrow = negative effect.")
 
 # ------------------------------------------------------------
-# Mock relationships (logic unchanged)
+# Mock relationships
 # ------------------------------------------------------------
 # Per-bench effects on factors
 d_social   =  2 * b        # +2 per bench
@@ -45,13 +44,16 @@ q_physical = W_PHY * d_physical
 q_env      = W_ENV * d_safety
 q_total    = q_social + q_physical + q_env
 
-def plus(v):
+def sign_color(v):  # green for positive, red for negative, grey for zero
+    return "#27ae60" if v > 0 else ("#c0392b" if v < 0 else "#7f8c8d")
+
+def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
 # ------------------------------------------------------------
-# Diagram layout (polished visuals)
+# Diagram layout (Plotly shapes & arrows)
 # ------------------------------------------------------------
-# Canvas coordinates (0..10)
+# Canvas coordinates (0..10 in both axes)
 bench_x, bench_y = 1.3, 5.0
 soc_x, soc_y     = 4.2, 8.2
 phy_x, phy_y     = 4.2, 5.0
@@ -62,135 +64,127 @@ qol_x, qol_y     = 9.0, 5.0
 oval_w, oval_h = 3.8, 2.2
 card_w, card_h = 2.2, 1.0
 
-# Visual styling
-FONT = "Inter, Segoe UI, system-ui, -apple-system, sans-serif"
-
-# Color system
-COL_POS = "#2ecc71"   # positive (arrows)
-COL_NEG = "#e74c3c"   # negative (arrows)
-COL_NEU = "#7f8c8d"
-
-SOC_COL, SOC_BG, SOC_OUT = "#e67e22", "#fdf2e9", "#fad7a0"
-PHY_COL, PHY_BG, PHY_OUT = "#2980b9", "#eaf2fb", "#aed6f1"
-ENV_COL, ENV_BG, ENV_OUT = "#8e44ad", "#f7e9fd", "#d7bde2"
-Q_BG, Q_BR               = "#eafaf1", "#2ecc71"
-BENCH_BG, BENCH_BR       = "#f4d03f", "#b7950b"
-
-def arrow_style(delta):
-    stl = dict(
-        showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3,
-        arrowcolor=(COL_POS if delta > 0 else COL_NEG if delta < 0 else COL_NEU),
-        standoff=2,
-    )
-    if delta < 0:
-        stl["dash"] = "dash"
-    return stl
+# Colors
+YELLOW  = "#f1c40f"
+SOC_COL = "#e67e22"; SOC_BG = "#fce9e3"; SOC_OUT = "#fadbd8"
+PHY_COL = "#2980b9"; PHY_BG = "#e8f1fb"; PHY_OUT = "#d6eaf8"
+ENV_COL = "#8e44ad"; ENV_BG = "#f7e9f5"; ENV_OUT = "#f5eef8"
+Q_BG    = "#b8e994"; Q_BR   = "#78e08f"
+GREEN   = "#27ae60"
 
 fig = go.Figure()
 
-# Bench block
-fig.add_shape(
-    type="rect",
-    x0=bench_x - 1.5, y0=bench_y - 1.0, x1=bench_x + 1.5, y1=bench_y + 1.0,
-    fillcolor=BENCH_BG, line=dict(color=BENCH_BR, width=2), layer="below"
-)
-bench_label = f"<b>{plus(b)}</b> bench{'es' if abs(b) != 1 else ''}" if b != 0 else "<b>±0</b> benches"
-fig.add_annotation(
-    x=bench_x, y=bench_y, text=bench_label, showarrow=False,
-    font=dict(size=16, family=FONT, color="#3a3a3a")
-)
+# Bench (left)
+fig.add_shape(type="rect",
+              x0=bench_x-1.4, y0=bench_y-0.9, x1=bench_x+1.4, y1=bench_y+0.9,
+              fillcolor=YELLOW, line=dict(color="#b7950b", width=2), layer="below")
+bench_label = f"<b>{plus(b)} Bench</b>" if b != 0 else "<b>±0 Bench</b>"
+fig.add_annotation(x=bench_x, y=bench_y, text=bench_label, showarrow=False, font=dict(size=14))
 
-# Helpers to draw a “bubble” panel + card label
-def bubble(x, y, w, h, title, tcolor, bg, outline):
-    fig.add_shape(
-        type="circle", x0=x - w/2, y0=y - h/2, x1=x + w/2, y1=y + h/2,
-        fillcolor=bg, line=dict(color=outline, width=2, dash="dot"), layer="below"
-    )
-    fig.add_annotation(
-        x=x, y=y + h/2 - 0.2, text=f"<b>{title}</b>", yshift=10,
-        showarrow=False, font=dict(size=13, family=FONT, color=tcolor)
-    )
+# Social bubble + card
+fig.add_shape(type="circle",
+              x0=soc_x-oval_w/2, y0=soc_y-oval_h/2, x1=soc_x+oval_w/2, y1=soc_y+oval_h/2,
+              fillcolor=SOC_BG, line=dict(color=SOC_OUT, width=2, dash="dash"), layer="below")
+fig.add_annotation(x=soc_x, y=soc_y+oval_h/2-0.2, text="<b>Social dimension</b>",
+                   showarrow=False, font=dict(color=SOC_COL, size=12), yshift=10)
+fig.add_shape(type="rect",
+              x0=soc_x-card_w/2, y0=soc_y-card_h/2, x1=soc_x+card_w/2, y1=soc_y+card_h/2,
+              fillcolor="white", line=dict(color=SOC_COL, width=2))
+fig.add_annotation(x=soc_x, y=soc_y,
+                   text=f"<b>{plus(d_social)}</b>&nbsp; Social interactions",
+                   showarrow=False, font=dict(color=SOC_COL, size=12))
 
-def pill(x, y, txt, line_color):
-    fig.add_shape(
-        type="rect", x0=x - card_w/2, y0=y - card_h/2, x1=x + card_w/2, y1=y + card_h/2,
-        fillcolor="white", line=dict(color=line_color, width=2)
-    )
-    fig.add_annotation(
-        x=x, y=y, text=txt, showarrow=False,
-        font=dict(size=12, family=FONT, color=line_color)
-    )
+# Physical bubble + card
+fig.add_shape(type="circle",
+              x0=phy_x-oval_w/2, y0=phy_y-oval_h/2, x1=phy_x+oval_w/2, y1=phy_y+oval_h/2,
+              fillcolor=PHY_BG, line=dict(color=PHY_OUT, width=2, dash="dash"), layer="below")
+fig.add_annotation(x=phy_x, y=phy_y+oval_h/2-0.2, text="<b>Physical dimension</b>",
+                   showarrow=False, font=dict(color=PHY_COL, size=12), yshift=10)
+fig.add_shape(type="rect",
+              x0=phy_x-card_w/2, y0=phy_y-card_h/2, x1=phy_x+card_w/2, y1=phy_y+card_h/2,
+              fillcolor="white", line=dict(color=PHY_COL, width=2))
+fig.add_annotation(x=phy_x, y=phy_y,
+                   text=f"<b>{plus(d_physical)}</b>&nbsp; Physical activity",
+                   showarrow=False, font=dict(color=PHY_COL, size=12))
 
-# Social
-bubble(soc_x, soc_y, oval_w, oval_h, "Social dimension", SOC_COL, SOC_BG, SOC_OUT)
-pill(soc_x,  soc_y,  f"<b>{plus(d_social)}</b>&nbsp; Social interactions", SOC_COL)
+# Environmental bubble + card
+fig.add_shape(type="circle",
+              x0=env_x-oval_w/2, y0=env_y-oval_h/2, x1=env_x+oval_w/2, y1=env_y+oval_h/2,
+              fillcolor=ENV_BG, line=dict(color=ENV_OUT, width=2, dash="dash"), layer="below")
+fig.add_annotation(x=env_x, y=env_y+oval_h/2-0.2, text="<b>Environmental dimension</b>",
+                   showarrow=False, font=dict(color=ENV_COL, size=12), yshift=10)
+fig.add_shape(type="rect",
+              x0=env_x-card_w/2, y0=env_y-card_h/2, x1=env_x+card_w/2, y1=env_y+card_h/2,
+              fillcolor="white", line=dict(color=ENV_COL, width=2))
+fig.add_annotation(x=env_x, y=env_y,
+                   text=f"<b>{plus(d_safety)}</b>&nbsp; Safety",
+                   showarrow=False, font=dict(color=ENV_COL, size=12))
 
-# Physical
-bubble(phy_x, phy_y, oval_w, oval_h, "Physical dimension", PHY_COL, PHY_BG, PHY_OUT)
-pill(phy_x,  phy_y,  f"<b>{plus(d_physical)}</b>&nbsp; Physical activity",  PHY_COL)
-
-# Environmental
-bubble(env_x, env_y, oval_w, oval_h, "Environmental dimension", ENV_COL, ENV_BG, ENV_OUT)
-pill(env_x,  env_y,  f"<b>{plus(d_safety)}</b>&nbsp; Safety", ENV_COL)
-
-# QoL box
-fig.add_shape(
-    type="rect",
-    x0=qol_x - 2.0, y0=qol_y - 1.6, x1=qol_x + 2.0, y1=qol_y + 1.6,
-    fillcolor=Q_BG, line=dict(color=Q_BR, width=3)
-)
+# QoL box (right)
+fig.add_shape(type="rect",
+              x0=qol_x-1.8, y0=qol_y-1.6, x1=qol_x+1.8, y1=qol_y+1.6,
+              fillcolor=Q_BG, line=dict(color=Q_BR, width=3))
 qol_text = (
-    f"<b>Δ QoL</b><br>"
     f"{plus(q_social)} from Social<br>"
     f"{plus(q_physical)} from Physical<br>"
-    f"{plus(q_env)} from Environmental"
+    f"{plus(q_env)} from Environmental<br>"
+    f"<span style='font-size:14px'>——</span><br>"
+    f"<b>Δ QoL = {plus(q_total)}</b>"
 )
+fig.add_annotation(x=qol_x, y=qol_y, text=qol_text, showarrow=False, font=dict(size=12))
+
+# Arrows — Bench → factors (sign-colored)
+for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env_x, env_y, d_safety)]:
+    fig.add_annotation(x=x-1.25, y=y, ax=bench_x+1.4, ay=bench_y,
+                       xref="x", yref="y", axref="x", ayref="y",
+                       showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
+                       arrowcolor=sign_color(delta))
+
+# Arrows — factors → QoL
+x_q_target = (qol_x - 1.8) + 0.05  # slight nudge so the arrow tip is inside the box
+
+# Top (Social → QoL)
 fig.add_annotation(
-    x=qol_x, y=qol_y, text=qol_text, showarrow=False,
-    font=dict(size=13, family=FONT, color="#2d3436")
+    x=x_q_target, y=qol_y + 1.2,   # target inside QoL box (above center)
+    ax=soc_x + card_w/2, ay=soc_y, # start at Social card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
 )
 
-# Bench → factors
-fig.add_annotation(x=soc_x - 1.15, y=soc_y, ax=bench_x + 1.55, ay=bench_y, **arrow_style(d_social))
-fig.add_annotation(x=phy_x - 1.15, y=phy_y, ax=bench_x + 1.55, ay=bench_y, **arrow_style(d_physical))
-fig.add_annotation(x=env_x - 1.15, y=env_y, ax=bench_x + 1.55, ay=bench_y, **arrow_style(d_safety))
+# Middle (Physical → QoL): horizontal
+fig.add_annotation(
+    x=x_q_target, y=phy_y,
+    ax=phy_x + card_w/2, ay=phy_y,
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
-# Factors → QoL (use positive-colored arrows to the right box; sign is in numbers)
-arrow_to_qol = dict(showarrow=True, arrowhead=3, arrowsize=1.2, arrowwidth=3, arrowcolor=COL_POS)
-x_q_target = (qol_x - 2.0) + 0.08
-fig.add_annotation(x=x_q_target, y=qol_y + 1.1, ax=soc_x + card_w/2, ay=soc_y, **arrow_to_qol)
-fig.add_annotation(x=x_q_target, y=phy_y,      ax=phy_x + card_w/2, ay=phy_y, **arrow_to_qol)
-fig.add_annotation(x=x_q_target, y=qol_y - 1.1, ax=env_x + card_w/2, ay=env_y, **arrow_to_qol)
+# Bottom (Environmental → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y - 1.2,   # target inside QoL box (below center)
+    ax=env_x + card_w/2, ay=env_y, # start at Environmental card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
-# Mini legend
-LEG_X, LEG_Y = 6.1, 9.4
-fig.add_annotation(x=LEG_X, y=LEG_Y, text="<b>Legend</b>", showarrow=False,
-                   font=dict(size=12, family=FONT, color="#2d3436"))
-fig.add_annotation(x=LEG_X - 0.1, y=LEG_Y - 0.35, ax=LEG_X - 1.0, ay=LEG_Y - 0.35,
-                   showarrow=True, arrowcolor=COL_POS, arrowwidth=3, arrowsize=1, arrowhead=3)
-fig.add_annotation(x=LEG_X + 1.25, y=LEG_Y - 0.35, text="Positive effect", showarrow=False,
-                   font=dict(size=11, family=FONT, color="#2d3436"))
-fig.add_annotation(x=LEG_X - 0.1, y=LEG_Y - 0.75, ax=LEG_X - 1.0, ay=LEG_Y - 0.75,
-                   showarrow=True, arrowcolor=COL_NEG, arrowwidth=3, arrowsize=1, arrowhead=3, dash="dash")
-fig.add_annotation(x=LEG_X + 1.25, y=LEG_Y - 0.75, text="Negative effect", showarrow=False,
-                   font=dict(size=11, family=FONT, color="#2d3436"))
-
-# Axes + layout
-fig.update_xaxes(visible=False, range=[0, 11])
+# Canvas style
+fig.update_xaxes(visible=False, range=[0, 10])
 fig.update_yaxes(visible=False, range=[0, 10])
-fig.update_layout(
-    template="plotly_white",
-    height=560,
-    margin=dict(l=24, r=24, t=24, b=18),
-    font=dict(family=FONT, size=13, color="#2d3436"),
-)
+fig.update_layout(template="plotly_white", height=540, margin=dict(l=20, r=20, t=20, b=20))
+
+st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------------------------------------------
 # Compact KPIs + small QoL gauge
 # ------------------------------------------------------------
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Δ Social interactions", plus(d_social))
+c2.metric("Δ Physical activity", plus(d_physical))
+c3.metric("Δ Safety", plus(d_safety))
+c4.metric("Δ QoL (composite)", plus(q_total))
+
 BASE_QOL = 70
 qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
-
 g = go.Figure(go.Indicator(
     mode="gauge+number+delta",
     value=qol_after,
@@ -201,35 +195,16 @@ g = go.Figure(go.Indicator(
     gauge={"axis": {"range": [0, 100]},
            "bar": {"color": "#34495e"},
            "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}]},
-    title={"text": "QoL index (mock)"},
+    title={"text": "QoL index (mock)"}
 ))
 g.update_layout(height=220, margin=dict(l=10, r=10, t=30, b=10), template="plotly_white")
+st.plotly_chart(g, use_container_width=True)
 
-# ------------------------------------------------------------
-# Page layout: diagram left, KPIs/gauge right
-# ------------------------------------------------------------
-try:
-    left, right = st.columns([3, 1.7], vertical_alignment="top")
-except TypeError:  # older Streamlit versions
-    left, right = st.columns([3, 1.7])
-
-with left:
-    st.plotly_chart(fig, use_container_width=True)
-
-with right:
-    c1, c2 = st.columns(2)
-    c1.metric("Δ Social interactions",   plus(d_social))
-    c2.metric("Δ Physical activity",     plus(d_physical))
-    st.metric("Δ Safety",                plus(d_safety))
-    st.metric("Δ QoL (composite)",      plus(q_total))
-    st.plotly_chart(g, use_container_width=True)
-
-# ------------------------------------------------------------
-# Notes
-# ------------------------------------------------------------
 with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
+
+
