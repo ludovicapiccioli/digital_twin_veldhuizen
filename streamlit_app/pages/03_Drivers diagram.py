@@ -94,7 +94,7 @@ svg = f"""
 
   <!-- Dotted Social → Environmental (meta-arc) -->
   <path id="A00_Social_to_Env_arc"
-        d="M120,85 C410,20 820,20 990,72"
+        d="M120,85 C410,20 820,20 990,68
         stroke="{PINK}" stroke-width="3" stroke-dasharray="6 8" fill="none"
         marker-end="url(#arrow-pink)"/>
 
@@ -163,6 +163,7 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
 
