@@ -27,7 +27,7 @@ svg = f"""
     ]]></style>
   </defs>
 
-  <!-- Frames with vertical titles OUTSIDE -->
+  <!-- ===== Frames with vertical titles OUTSIDE ===== -->
   <rect class="frame" x="80"  y="90"  width="440" height="280" stroke="{PINK}"/>
   <text class="titleV" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
 
@@ -40,8 +40,8 @@ svg = f"""
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
   <text class="titleV" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
 
-  <!-- SOCIAL pills -->
-  <!-- Social Networks: x=190..410 (left edge=190); center y≈195 -->
+  <!-- ===== SOCIAL pills ===== -->
+  <!-- Social Networks: x=190..410 (left edge=190, right edge=410); center y≈195 -->
   <g id="social">
     <rect class="pill" x="190" y="175" width="220" height="40" fill="{PINK}"/>
     <text class="label" x="300" y="201" text-anchor="middle">Social Networks</text>
@@ -50,7 +50,7 @@ svg = f"""
     <text class="label" x="320" y="266" text-anchor="middle">Community participation</text>
   </g>
 
-  <!-- PSYCHOLOGICAL pills -->
+  <!-- ===== PSYCHOLOGICAL pills ===== -->
   <!-- Left edges: ES x=180, SA x=180, Purpose x=200, Downshift x=180 -->
   <g id="psy">
     <rect class="pill" x="180" y="470" width="240" height="40" fill="{ORANGE}"/>
@@ -66,7 +66,7 @@ svg = f"""
     <text class="label" x="300" y="646" text-anchor="middle">Downshift</text>
   </g>
 
-  <!-- ENVIRONMENTAL pills (raised; all inside) -->
+  <!-- ===== ENVIRONMENTAL pills (raised; all inside) ===== -->
   <g id="env">
     <rect class="pill" x="740" y="120" width="300" height="40" fill="{GREEN}"/>
     <text class="label" x="890" y="146" text-anchor="middle">Proximity to services</text>
@@ -84,35 +84,37 @@ svg = f"""
     <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
   </g>
 
-  <!-- PHYSICAL pill -->
+  <!-- ===== PHYSICAL pill ===== -->
   <g id="phys">
     <rect class="pill" x="700" y="575" width="320" height="44" fill="{BLUE}"/>
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
-  <!-- Dotted Social → Environmental (meta-arc, slightly higher to clear ENV title) -->
+  <!-- ===== Dotted Social → Environmental (meta-arc, raised to clear ENV title) ===== -->
   <path id="A00_Social_to_Env_arc"
         d="M120,85 C410,20 820,20 1080,85"
         stroke="{PINK}" stroke-width="4" stroke-dasharray="6 8" fill="none"
         marker-end="url(#arrow-pink)"/>
 
-  <!-- ===== PINK (Social-origin) — SN arrows start AND end on LEFT edges ===== -->
+  <!-- ========= ARROWS (exactly as specified) ========= -->
+
+  <!-- ===== PINK (Social-origin) — SN arrows start AND end on LEFT edges with more left curve ===== -->
   <!-- SN (left edge ~194,195) → Purpose (left edge x=200, y≈590) -->
   <path id="A01_SN_to_Purpose"
-        d="M194,195 C170,260 175,560 200,590"
+        d="M194,195 C150,260 160,560 200,590"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- SN (left edge) → Emotional security (left edge x=180, y≈490) -->
   <path id="A02_SN_to_ES"
-        d="M194,195 C170,245 170,420 180,490"
+        d="M194,195 C150,235 160,410 180,490"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- SN (left edge) → Sense of autonomy (left edge x=180, y≈540) -->
   <path id="A03_SN_to_SA"
-        d="M194,195 C170,255 170,470 180,540"
+        d="M194,195 C150,245 160,455 180,540"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
 
-  <!-- PINK (Community participation origins) — unchanged -->
+  <!-- PINK (Community participation origins) -->
   <path id="A04_CP_to_Purpose"
         d="M456,260 C470,340 440,540 410,590"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
@@ -123,7 +125,7 @@ svg = f"""
         d="M456,260 C560,330 640,560 704,595"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
 
-  <!-- GREEN (Environmental-origin) -->
+  <!-- ===== GREEN (Environmental-origin) ===== -->
   <path id="A07_PS_to_SN"
         d="M740,140 C615,125 480,135 406,195"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
