@@ -39,7 +39,7 @@ svg = f"""
 
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
   <!-- ENVIRONMENTAL raised further (y 205 -> 195) -->
-  <text class="titleV" x="1090" y="175" fill="{GREEN}" transform="rotate(90 1090 175)">ENVIRONMENTAL</text>
+  <text class="titleV" x="1090" y="145" fill="{GREEN}" transform="rotate(90 1090 145)">ENVIRONMENTAL</text>
 
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
   <text class="titleV" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
@@ -158,6 +158,7 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
 
