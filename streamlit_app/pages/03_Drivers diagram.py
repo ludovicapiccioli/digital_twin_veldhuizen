@@ -99,7 +99,7 @@ svg = f"""
   <!-- PINK (Social-origin) — SN arrows start AND end on LEFT edges with STRONGER left curve -->
   <!-- SN (left edge ~194,195) → Purpose (left edge x=200, y≈590) -->
   <path id="A01_SN_to_Purpose"
-        d="M194,195 C75,250 115,560 200,590"
+        d="M194,195 C60,210 115,560 200,590"
         stroke="{PINK}" stroke-width="4" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- SN (left edge) → Emotional security (left edge x=180, y≈490) -->
@@ -158,5 +158,6 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
