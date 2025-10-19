@@ -19,8 +19,8 @@ svg = f"""
     <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
-    <!-- A01 ONLY: fixed 310° orientation (clockwise tilt) -->
-    <marker id="arrow-pink-310" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="310" markerUnits="strokeWidth">
+    <!-- A01 ONLY: fixed 340° (gentle clockwise tilt) -->
+    <marker id="arrow-pink-340" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="340" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
     <style><![CDATA[
@@ -101,10 +101,10 @@ svg = f"""
   <!-- ========= ARROWS ========= -->
 
   <!-- PINK (Social-origin) -->
-  <!-- A01 uses the fixed 310° arrowhead -->
+  <!-- A01 uses the fixed 340° arrowhead -->
   <path id="A01_SN_to_Purpose"
         d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-310)"/>
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-340)"/>
 
   <path id="A02_SN_to_ES"
         d="M194,195 C110,230 130,395 180,490"
@@ -153,10 +153,11 @@ svg = f"""
         d="M700,320 C640,380 510,600 420,640"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- ENV → Physical: start at Environmental frame bottom edge center (860,380);
-       end at (697,597) so arrowhead lands exactly on the Physical pill's left border -->
+  <!-- ENV → Physical:
+       start at Environmental frame bottom edge center (860,380);
+       end at (692,597) so arrowhead sits ON the Physical pill's left border (outside) -->
   <path id="A16_ENV_to_Physical"
-        d="M860,380 C845,440 780,520 697,597"
+        d="M860,380 C842,440 774,520 692,597"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
