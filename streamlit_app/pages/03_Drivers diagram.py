@@ -97,7 +97,7 @@ svg = f"""
   <!-- ========= ARROWS ========= -->
 
   <!-- PINK (Social-origin) -->
-  <!-- A01: natural head via orient='auto', shaped to land cleanly on Purpose's left edge -->
+  <!-- A01: smooth natural curve, left-edge to left-edge -->
   <path id="A01_SN_to_Purpose"
         d="M194,195 C120,165 150,545 200,590"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
@@ -150,10 +150,11 @@ svg = f"""
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 
   <!-- ENV → Physical:
-       start at Environmental frame bottom edge center (860,380);
-       end at top edge of Physical pill (y=575), a bit to the right (x=760) -->
+       start on Environmental frame bottom edge (860,380);
+       end on top edge of Physical pill. Pill top y=575, left x=700.
+       We land slightly right of the corner so the head is clearly on the border. -->
   <path id="A16_ENV_to_Physical"
-        d="M860,380 C840,445 790,520 760,575"
+        d="M860,380 C835,450 780,520 702,575"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
