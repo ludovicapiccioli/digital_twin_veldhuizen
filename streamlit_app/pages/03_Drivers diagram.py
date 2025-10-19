@@ -1,15 +1,13 @@
-# pages/03_Drivers diagram.py
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
 st.title("Drivers Diagram — Interrelations across Dimensions")
-st.caption("SVG replica with pill bubbles and complete arrows, aligned to the reference figure.")
+st.caption("Pills are centered inside frames; arrows stop at the pill edge (no text overlap).")
 
 PINK   = "#ff69b4"   # Social
 ORANGE = "#f39c12"   # Psychological
 GREEN  = "#27ae60"   # Environmental
 BLUE   = "#3498db"   # Physical
-TEXT   = "#5b6770"
 
 svg = f"""
 <svg viewBox="0 0 1120 760" xmlns="http://www.w3.org/2000/svg">
@@ -28,7 +26,7 @@ svg = f"""
     ]]></style>
   </defs>
 
-  <!-- Frames (more breathing room) -->
+  <!-- Frames -->
   <rect class="frame" x="70"  y="60"  width="420" height="290" stroke="{PINK}"/>
   <text class="title" x="100" y="105" fill="{PINK}">SOCIAL</text>
 
@@ -41,8 +39,7 @@ svg = f"""
   <rect class="frame" x="630" y="390" width="420" height="290" stroke="{BLUE}"/>
   <text class="title" x="660" y="435" fill="{BLUE}">Physical</text>
 
-  <!-- SOCIAL pills (centered) -->
-  <!-- SN pill center: (290, 185)  | CP pill center: (305, 250) -->
+  <!-- SOCIAL pills (centers at ~ (290,185) and (305,250)) -->
   <g id="social">
     <rect class="pill" x="180" y="165" width="220" height="40" fill="{PINK}"/>
     <text class="label" x="290" y="191" text-anchor="middle">Social Networks</text>
@@ -51,8 +48,7 @@ svg = f"""
     <text class="label" x="305" y="256" text-anchor="middle">Community participation</text>
   </g>
 
-  <!-- PSYCHOLOGICAL pills -->
-  <!-- ES(290,505), SA(290,555), P(300,605), D(290,655) -->
+  <!-- PSYCHOLOGICAL pills (right edge x=410 for first, second, fourth; 400 for 'Purpose') -->
   <g id="psy">
     <rect class="pill" x="170" y="485" width="240" height="40" fill="{ORANGE}"/>
     <text class="label" x="290" y="511" text-anchor="middle">Emotional security</text>
@@ -67,8 +63,7 @@ svg = f"""
     <text class="label" x="290" y="661" text-anchor="middle">Downshift</text>
   </g>
 
-  <!-- ENVIRONMENTAL pills (evenly spaced) -->
-  <!-- PS(880,165), GS(870,215), MA(865,265), SI(870,315), S(890,365) -->
+  <!-- ENVIRONMENTAL pills (Safety moved left to stay inside frame) -->
   <g id="env">
     <rect class="pill" x="730" y="145" width="300" height="40" fill="{GREEN}"/>
     <text class="label" x="880" y="171" text-anchor="middle">Proximity to services</text>
@@ -82,59 +77,62 @@ svg = f"""
     <rect class="pill" x="740" y="295" width="280" height="40" fill="{GREEN}"/>
     <text class="label" x="880" y="321" text-anchor="middle">Social infrastructures</text>
 
-    <rect class="pill" x="800" y="345" width="220" height="40" fill="{GREEN}"/>
-    <text class="label" x="910" y="371" text-anchor="middle">Safety</text>
+    <!-- Safety shifted left: right edge now at 980 (< frame right 1050) -->
+    <rect class="pill" x="760" y="345" width="220" height="40" fill="{GREEN}"/>
+    <text class="label" x="870" y="371" text-anchor="middle">Safety</text>
   </g>
 
-  <!-- PHYSICAL pill -->
-  <!-- center (840, 585) -->
+  <!-- PHYSICAL pill (left edge x=690) -->
   <g id="phys">
     <rect class="pill" x="690" y="565" width="300" height="44" fill="{BLUE}"/>
     <text class="label" x="840" y="592" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
-  <!-- ====== ARROWS (complete set) ====== -->
-  <!-- Helper: Social targets -->
-  <!-- SN tip: ~ (290,185) ; CP tip: ~ (305,250) -->
+  <!-- ====== ARROWS: tips land on pill edges (not inside) ====== -->
 
-  <!-- Environmental → Social Networks (5) -->
-  <path d="M730,165 C600,150 440,160 310,180" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,215 C610,205 440,175 310,182" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M730,265 C600,250 440,188 310,186" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,315 C610,300 440,198 310,190" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M800,365 C650,350 460,205 312,194" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- Convenience: edge x-positions for arrow tips -->
+  <!-- Social right edges: SN=400, CP=440 -->
+  <!-- Psych right edges: ES=410, SA=410, Purpose=400, Downshift=410 -->
+  <!-- Physical left edge: PA=690 -->
 
-  <!-- Environmental → Community participation (5) -->
-  <path d="M730,165 C600,165 470,235 430,250" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,215 C610,215 480,245 430,255" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M730,265 C600,265 480,258 430,260" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,315 C610,318 490,270 430,266" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M800,365 C660,372 520,285 430,274" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- Environmental → Social Networks (tip x=396) -->
+  <path d="M730,165 C600,150 460,158 396,185" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,195 C610,185 470,175 396,185" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M730,245 C600,235 470,182 396,185" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,295 C610,285 470,195 396,185" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M760,345 C630,335 480,205 396,185" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- Environmental → Psychological (3) -->
-  <!-- to Emotional security(290,505), Sense of autonomy(290,555), Downshift(290,655) -->
-  <path d="M740,215 C700,260 520,470 330,505" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M730,265 C680,300 510,520 330,555" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <path d="M740,315 C700,360 520,590 330,655" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- Environmental → Community participation (tip x=436) -->
+  <path d="M730,165 C600,165 500,235 436,250" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,195 C610,195 505,245 436,250" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M730,245 C600,245 505,258 436,250" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M740,295 C610,298 505,270 436,250" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M760,345 C640,352 520,286 436,250" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- Environmental (Safety) → Physical activity -->
-  <path d="M910,365 C900,450 875,525 840,570" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <!-- Environmental → Psychological (tips at orange right edges ≈ 408/408/408) -->
+  <path d="M740,195 C700,240 520,460 408,505" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M730,245 C690,280 515,515 408,555" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
+  <path d="M760,345 C710,395 520,595 408,655" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- Psychological → Community participation (4 upward) -->
-  <path d="M290,505 C295,465 300,330 300,270" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
-  <path d="M290,555 C295,515 300,335 300,272" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
-  <path d="M300,605 C300,565 302,345 300,274" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <!-- Environmental (Safety) → Physical activity (tip at PA left edge ≈ 694) -->
+  <path d="M870,365 C860,450 820,525 694,585" stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- Downshift → Physical activity -->
-  <path d="M290,655 C460,640 660,615 730,595" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <!-- Psychological → Community participation (tips at 436) -->
+  <path d="M290,505 C295,465 300,330 436,250" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M290,555 C295,515 300,335 436,250" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+  <path d="M300,605 C300,565 300,345 436,250" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
+
+  <!-- Downshift → Physical activity (tip at 694) -->
+  <path d="M290,655 C460,640 640,615 694,585" stroke="{ORANGE}" stroke-width="5" fill="none" marker-end="url(#arrow-orange)"/>
 </svg>
 """
 
 st.components.v1.html(svg, height=780, scrolling=False)
 
-with st.expander("Notes / tweak tips"):
+with st.expander("Notes"):
     st.markdown("""
-- Pills are **centered** inside frames, with extra margins to stop crowding.
-- The arrow set now matches the reference: Environmental→(Social, Psych, Physical), Psychological→Community participation, and Downshift→Physical.
-- If any curve needs a tiny nudge, adjust the numbers in that path’s `C` control segment.
+- **Safety** was shifted left so it stays fully inside the Environmental frame.
+- Arrow tips end at the **pill borders** (x=396/436 for Social, x≈408 for Psych, x=694 for Physical).  
+  If you want the tips to sit *exactly* on the stroke, nudge those x-values by ±2.
+- To tweak any curve, adjust the control point in the cubic Bézier `C` segment.
 """)
