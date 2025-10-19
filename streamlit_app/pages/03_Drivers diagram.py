@@ -1,4 +1,3 @@
-# pages/03_Drivers diagram.py
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
@@ -19,15 +18,15 @@ svg = f"""
     <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
-    <!-- NEW: gentle anticlockwise tilt for A01 only (≈10° up-left from left) -->
+    <!-- Gentle anticlockwise tilt for A01 only (≈10° up-left from left) -->
     <marker id="arrow-pink-170" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="170" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
     <style><![CDATA[
-      .frame { fill: none; stroke-width: 4; rx: 20; ry: 20; }
-      .label { font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }
-      .pill  { rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }
-      .titleV { font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }
+      .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
+      .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
+      .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
+      .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
     ]]></style>
   </defs>
 
@@ -92,7 +91,7 @@ svg = f"""
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
-  <!-- Dotted Social → Environmental (meta-arc) -->
+  <!-- Dotted Social → Environmental (meta-arc, raised to clear ENV title) -->
   <path id="A00_Social_to_Env_arc"
         d="M120,85 C410,20 820,20 1080,85"
         stroke="{PINK}" stroke-width="3" stroke-dasharray="6 8" fill="none"
