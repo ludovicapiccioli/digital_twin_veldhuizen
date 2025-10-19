@@ -1,3 +1,4 @@
+# pages/03_Drivers diagram.py
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
@@ -18,8 +19,8 @@ svg = f"""
     <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
-    <!-- Gentle anticlockwise tilt for A01 only (≈10° up-left from left) -->
-    <marker id="arrow-pink-170" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="170" markerUnits="strokeWidth">
+    <!-- A01 ONLY: 355° (i.e., 185° more clockwise than 170°) -->
+    <marker id="arrow-pink-355" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="355" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
     <style><![CDATA[
@@ -67,7 +68,7 @@ svg = f"""
     <text class="label" x="300" y="646" text-anchor="middle">Downshift</text>
   </g>
 
-  <!-- ENVIRONMENTAL pills (raised; all inside) -->
+  <!-- ENVIRONMENTAL pills -->
   <g id="env">
     <rect class="pill" x="740" y="120" width="300" height="40" fill="{GREEN}"/>
     <text class="label" x="890" y="146" text-anchor="middle">Proximity to services</text>
@@ -91,7 +92,7 @@ svg = f"""
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
-  <!-- Dotted Social → Environmental (meta-arc, raised to clear ENV title) -->
+  <!-- Dotted Social → Environmental (meta-arc) -->
   <path id="A00_Social_to_Env_arc"
         d="M120,85 C410,20 820,20 1080,85"
         stroke="{PINK}" stroke-width="3" stroke-dasharray="6 8" fill="none"
@@ -100,12 +101,12 @@ svg = f"""
   <!-- ========= ARROWS ========= -->
 
   <!-- PINK (Social-origin) — SN arrows start & end on LEFT edges -->
-  <!-- A01 ONLY uses the slightly rotated 170° arrowhead -->
+  <!-- A01 uses the fixed 355° arrowhead -->
   <path id="A01_SN_to_Purpose"
         d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-170)"/>
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-355)"/>
 
-  <!-- Others keep the default 'auto' orientation -->
+  <!-- Others keep orient='auto' -->
   <path id="A02_SN_to_ES"
         d="M194,195 C110,230 130,395 180,490"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
