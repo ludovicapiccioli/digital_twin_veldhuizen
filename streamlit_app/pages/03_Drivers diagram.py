@@ -2,137 +2,170 @@
 import streamlit as st
 import plotly.graph_objects as go
 
+# Page config
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
 st.title("Drivers Diagram — Interrelations across Dimensions")
-st.caption("Interactive schematic of drivers in four dimensions (conceptual). Hover to explore relationships.")
+st.caption("Interactive schematic of drivers in four dimensions. Colors = source dimension of each arrow.")
 
-# ------------------------------------------------------------
-# Sidebar options
-# ------------------------------------------------------------
+# ---------------- Sidebar: display options ----------------
 with st.sidebar:
     st.header("Display")
     show_labels = st.checkbox("Show node labels", value=True)
-    arrow_width = st.slider("Arrow width", 1, 5, 3)
-    curve = st.slider("Arrow curvature", 0.05, 0.4, 0.18)
-    arrow_size = st.slider("Arrow head size", 0.6, 1.6, 1.0)
+    show_boxes  = st.checkbox("Show dimension frames", value=True)
+    arrow_w     = st.slider("Arrow width", 1, 5, 3)
+    arrow_size  = st.slider("Arrow head size", 0.6, 1.4, 1.0)
+    curvature   = st.slider("Curvature", 0.08, 0.35, 0.18)
 
-# ------------------------------------------------------------
-# Node definitions
-# ------------------------------------------------------------
+# ---------------- Dimensions, nodes (fixed layout) ----------------
+# Canvas range widened a bit to create breathing room
+XMIN, XMAX, YMIN, YMAX = 0, 112, 0, 100
+
 DIM = {
     "Social": {
-        "color": "#ff69b4", "text": "SOCIAL",
+        "color": "#ff69b4", "label": "SOCIAL",
         "box": (6, 58, 42, 96),
         "nodes": [
-            ("Social Networks", (24, 84)),
-            ("Community participation", (24, 70)),
+            ("Social Networks",         (24, 84)),
+            ("Community participation", (24, 66)),   # slightly lower for spacing
         ],
     },
     "Psychological": {
-        "color": "#f39c12", "text": "Psychological",
+        "color": "#f39c12", "label": "Psychological",
         "box": (6, 6, 42, 46),
         "nodes": [
             ("Emotional security", (24, 40)),
-            ("Sense of autonomy", (24, 30)),
-            ("Purpose", (24, 20)),
-            ("Downshift", (24, 10)),
+            ("Sense of autonomy",  (24, 30)),
+            ("Purpose",            (24, 20)),
+            ("Downshift",          (24, 10)),
         ],
     },
     "Environmental": {
-        "color": "#27ae60", "text": "ENVIRONMENTAL",
-        "box": (58, 56, 96, 96),
+        "color": "#27ae60", "label": "ENVIRONMENTAL",
+        # shifted right to reduce crossings
+        "box": (66, 56, 108, 96),
         "nodes": [
-            ("Proximity to services", (77, 88)),
-            ("Green spaces", (77, 80)),
-            ("Mobility & Accessibility", (77, 72)),
-            ("Social infrastructures", (77, 64)),
-            ("Safety", (77, 58)),
+            ("Proximity to services",     (90, 88)),
+            ("Green spaces",              (90, 80)),
+            ("Mobility & Accessibility",  (90, 72)),
+            ("Social infrastructures",    (90, 64)),
+            ("Safety",                    (90, 58)),
         ],
     },
     "Physical": {
-        "color": "#3498db", "text": "Physical",
-        "box": (58, 6, 96, 46),
+        "color": "#3498db", "label": "Physical",
+        # shifted right to match Environmental spacing
+        "box": (66, 6, 108, 46),
         "nodes": [
-            ("Physical activity & active lifestyle", (77, 24)),
+            ("Physical activity & active lifestyle", (90, 24)),
         ],
     },
 }
 
+# Build lookups
 node_pos, node_dim = {}, {}
 for dim, cfg in DIM.items():
     for label, (x, y) in cfg["nodes"]:
         node_pos[label] = (x, y)
         node_dim[label] = dim
 
-# ------------------------------------------------------------
-# Edge definitions
-# ------------------------------------------------------------
+# ---------------- Directed edges (source, target) ----------------
+# Match your figure; add more as needed
 EDGES = [
-    ("Proximity to services", "Social Networks"),
-    ("Green spaces", "Social Networks"),
-    ("Green spaces", "Community participation"),
-    ("Green spaces", "Physical activity & active lifestyle"),
-    ("Mobility & Accessibility", "Social Networks"),
-    ("Mobility & Accessibility", "Community participation"),
-    ("Mobility & Accessibility", "Physical activity & active lifestyle"),
-    ("Social infrastructures", "Community participation"),
-    ("Safety", "Social Networks"),
-    ("Safety", "Community participation"),
-    ("Emotional security", "Community participation"),
-    ("Sense of autonomy", "Community participation"),
-    ("Purpose", "Community participation"),
-    ("Downshift", "Physical activity & active lifestyle"),
+    # Environmental → Social / Physical
+    ("Proximity to services",        "Social Networks"),
+    ("Green spaces",                 "Social Networks"),
+    ("Green spaces",                 "Community participation"),
+    ("Green spaces",                 "Physical activity & active lifestyle"),
+    ("Mobility & Accessibility",     "Social Networks"),
+    ("Mobility & Accessibility",     "Community participation"),
+    ("Mobility & Accessibility",     "Physical activity & active lifestyle"),
+    ("Social infrastructures",       "Community participation"),
+    ("Safety",                       "Social Networks"),
+    ("Safety",                       "Community participation"),
+    # Psychological → Social / Physical
+    ("Emotional security",           "Community participation"),
+    ("Sense of autonomy",            "Community participation"),
+    ("Purpose",                      "Community participation"),
+    ("Downshift",                    "Physical activity & active lifestyle"),
 ]
 
-# ------------------------------------------------------------
-# Build figure
-# ------------------------------------------------------------
+# Arrow colors by SOURCE dimension
+ARROW_COLORS = {
+    "Environmental": "#27ae60",   # green
+    "Psychological": "#f39c12",   # orange
+    "Social": "#ff69b4",          # pink (unused now, but future-proof)
+    "Physical": "#3498db",
+}
+
+# ---------------- Figure ----------------
 fig = go.Figure()
 
-# Boxes
-for dim, cfg in DIM.items():
-    x0, y0, x1, y1 = cfg["box"]
-    fig.add_shape(
-        type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
-        line=dict(color=cfg["color"], width=2),
-        fillcolor="rgba(0,0,0,0)", layer="below"
-    )
+# Frames (dimension boxes)
+if show_boxes:
+    for dim, cfg in DIM.items():
+        x0, y0, x1, y1 = cfg["box"]
+        fig.add_shape(
+            type="rect", x0=x0, y0=y0, x1=x1, y1=y1,
+            line=dict(color=cfg["color"], width=2),
+            fillcolor="rgba(0,0,0,0)", layer="below"
+        )
+        fig.add_annotation(
+            x=x0 + 2, y=y1 - 2, text=f"<b>{cfg['label']}</b>",
+            showarrow=False, font=dict(color=cfg["color"], size=14),
+            xanchor="left", yanchor="top"
+        )
+
+# Helper to draw a smooth curved link with arrowhead
+def draw_curved_arrow(x0, y0, x1, y1, color):
+    # Compute a control point that bows the line gently.
+    # Curvature sign chosen so left→right curves arch slightly downward or upward based on vertical gap.
+    dx, dy = x1 - x0, y1 - y0
+    mx, my = (x0 + x1) / 2, (y0 + y1) / 2
+    ctrl_sign = 1 if dy < 0 else -1
+    # Scale curvature by horizontal span (works for vertical-ish links too)
+    offset = curvature * max(abs(dx), 16)
+    cx, cy = mx, my + ctrl_sign * offset
+
+    # Draw the spline (3 points approximated as a smooth line)
+    fig.add_trace(go.Scatter(
+        x=[x0, cx, x1], y=[y0, cy, y1],
+        mode="lines",
+        line=dict(color=color, width=arrow_w, shape="spline", smoothing=1.2),
+        hoverinfo="none"
+    ))
+    # Arrowhead aimed from control point to target
     fig.add_annotation(
-        x=x0 + 2, y=y1 - 2, text=f"<b>{cfg['text']}</b>",
-        showarrow=False, font=dict(color=cfg["color"], size=14),
-        xanchor="left", yanchor="top"
+        x=x1, y=y1, ax=cx, ay=cy,
+        xref="x", yref="y", axref="x", ayref="y",
+        showarrow=True, arrowhead=3, arrowsize=arrow_size,
+        arrowwidth=arrow_w, arrowcolor=color
     )
 
-# Curved arrows
+# Draw edges with small nudges so arrows don’t pierce node centers
 for src, tgt in EDGES:
     x0, y0 = node_pos[src]
     x1, y1 = node_pos[tgt]
+    color = ARROW_COLORS.get(node_dim[src], "#4CAF50")
 
-    # curvature midpoint
-    mx = (x0 + x1) / 2
-    my = (y0 + y1) / 2 + (x1 - x0) * curve  # adds curvature
+    # Nudge start/end a bit along x depending on direction
+    nudge = 1.2
+    if x1 > x0:
+        x0n, x1n = x0 + nudge, x1 - nudge
+    else:
+        x0n, x1n = x0 - nudge, x1 + nudge
 
-    # draw as 3-point bezier approximation
-    fig.add_trace(go.Scatter(
-        x=[x0, mx, x1], y=[y0, my, y1],
-        mode="lines",
-        line=dict(color="#4CAF50", width=arrow_width, shape="spline", smoothing=1.3),
-        hoverinfo="none"
-    ))
-    # add arrowhead manually
-    fig.add_annotation(
-        x=x1, y=y1, ax=mx, ay=my,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=3, arrowsize=arrow_size,
-        arrowwidth=arrow_width, arrowcolor="#4CAF50"
-    )
+    # For near-vertical edges, still add a tiny horizontal separation
+    if abs(x1 - x0) < 6:
+        x0n += -nudge
+        x1n += nudge
 
-# Nodes
+    draw_curved_arrow(x0n, y0, x1n, y1, color)
+
+# Draw nodes
 xs, ys, texts, colors, sizes = [], [], [], [], []
 for label, (x, y) in node_pos.items():
-    xs.append(x)
-    ys.append(y)
+    xs.append(x); ys.append(y)
     texts.append(label if show_labels else "")
     colors.append(DIM[node_dim[label]]["color"])
     sizes.append(22 if node_dim[label] != "Physical" else 26)
@@ -148,11 +181,11 @@ fig.add_trace(go.Scatter(
 
 # Layout
 fig.update_layout(
-    height=640,
+    height=660,
     margin=dict(l=10, r=10, t=20, b=10),
     plot_bgcolor="white",
-    xaxis=dict(range=[0, 100], visible=False),
-    yaxis=dict(range=[0, 100], visible=False),
+    xaxis=dict(range=[XMIN, XMAX], visible=False),
+    yaxis=dict(range=[YMIN, YMAX], visible=False),
     showlegend=False,
 )
 
@@ -160,9 +193,8 @@ st.plotly_chart(fig, use_container_width=True)
 
 with st.expander("About this diagram"):
     st.markdown("""
-- **Curved arrows** visualize influences between dimensions.
-- **Colors** group related drivers:
-  - 🩷 Social 🟧 Psychological 🟩 Environmental 🩵 Physical
-- Hover nodes to read their labels.
-- The layout approximates the conceptual model for Ede–Veldhuizen.
+- **Colors on arrows = source dimension** (🟩 Environmental, 🟧 Psychological, 🩷 Social if used, 🩵 Physical).
+- Curved links reduce overlap and echo the conceptual flow in your report.
+- Positions are fixed so it mirrors the figure; tweak any `(x, y)` in the `DIM[...]` blocks to nudge nodes.
+- Add or remove relationships by editing the `EDGES` list.
 """)
