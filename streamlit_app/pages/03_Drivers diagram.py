@@ -109,7 +109,7 @@ svg = f"""
 
   <!-- SN (left edge) → Sense of autonomy (left edge x=180, y≈540) -->
   <path id="A03_SN_to_SA"
-        d="M194,195 C90,210 130,440 180,540"
+        d="M194,195 C90,210 120,440 180,540"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- PINK (Community participation origins) -->
@@ -158,6 +158,7 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
 
