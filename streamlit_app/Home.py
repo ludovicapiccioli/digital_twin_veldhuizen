@@ -1,10 +1,10 @@
 # Home.py
 import streamlit as st
 
-st.set_page_config(page_title="Veldhuizen • Local Digital Twin (Concept)", layout="wide")
+st.set_page_config(page_title="Concept prototype for a DT for Ede-Veldhuizen")
 
 # --- Header ---
-st.title("Veldhuizen • Local Digital Twin (Concept Prototype)")
+st.subheader("Concept prototype for a Digital Twin for Ede-Veldhuizen")
 st.caption(
     "Exploring how a local digital twin could support healthy ageing (65+) in Ede–Veldhuizen by "
     "visualising drivers of Quality of Life and testing simple ‘what-if’ scenarios."
@@ -90,3 +90,4 @@ st.markdown(
 )
 
 st.caption("Built with QGIS & Streamlit • Team 3538 • ACT 2025")
+
