@@ -19,8 +19,8 @@ svg = f"""
     <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
-    <!-- A01 ONLY: 355° (i.e., 185° more clockwise than 170°) -->
-    <marker id="arrow-pink-355" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="355" markerUnits="strokeWidth">
+    <!-- A01 ONLY: fixed 310° orientation (clockwise tilt) -->
+    <marker id="arrow-pink-310" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="310" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
     <style><![CDATA[
@@ -100,13 +100,12 @@ svg = f"""
 
   <!-- ========= ARROWS ========= -->
 
-  <!-- PINK (Social-origin) — SN arrows start & end on LEFT edges -->
-  <!-- A01 uses the fixed 355° arrowhead -->
+  <!-- PINK (Social-origin) -->
+  <!-- A01 uses the fixed 310° arrowhead -->
   <path id="A01_SN_to_Purpose"
         d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-355)"/>
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-310)"/>
 
-  <!-- Others keep orient='auto' -->
   <path id="A02_SN_to_ES"
         d="M194,195 C110,230 130,395 180,490"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
@@ -153,11 +152,13 @@ svg = f"""
   <path id="A15_S_to_Downshift"
         d="M700,320 C640,380 510,600 420,640"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+
+  <!-- ENV → Physical: start at Environmental frame bottom edge center (860,380);
+       end at (697,597) so arrowhead lands exactly on the Physical pill's left border -->
   <path id="A16_ENV_to_Physical"
-        d="M880,380 C860,440 800,520 704,595"
+        d="M860,380 C845,440 780,520 697,597"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
-
