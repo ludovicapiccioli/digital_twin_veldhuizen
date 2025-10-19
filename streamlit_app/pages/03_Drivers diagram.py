@@ -2,11 +2,13 @@
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
-st.title("DRAFT!! Drivers Diagram — Interrelations across Dimensions")
-st.caption("draft.")
+st.title("DRAFT!!Drivers Diagram — Interrelations across Dimensions")
+st.caption(
+    "DRAFT"
+)
 
 PINK   = "#ff69b4"   # Social-origin / pink arrows
-ORANGE = "#f39c12"   # Psychological frames/pills
+ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
 BLUE   = "#3498db"   # Physical frame/pill
 
@@ -29,13 +31,15 @@ svg = f"""
 
   <!-- ===== Frames with vertical titles OUTSIDE ===== -->
   <rect class="frame" x="80"  y="90"  width="440" height="280" stroke="{PINK}"/>
-  <text class="titleV" x="60" y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
+  <text class="titleV" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
 
   <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
-  <text class="titleV" x="60" y="550" fill="{ORANGE}" transform="rotate(-90 60 550)">Psychological</text>
+  <!-- Moved slightly LOWER to your request -->
+  <text class="titleV" x="60"  y="570" fill="{ORANGE}" transform="rotate(-90 60 570)">Psychological</text>
 
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
-  <text class="titleV" x="1090" y="225" fill="{GREEN}" transform="rotate(90 1090 225)">ENVIRONMENTAL</text>
+  <!-- Moved slightly HIGHER to your request -->
+  <text class="titleV" x="1090" y="205" fill="{GREEN}" transform="rotate(90 1090 205)">ENVIRONMENTAL</text>
 
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
   <text class="titleV" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
@@ -68,7 +72,6 @@ svg = f"""
 
   <!-- ===== ENVIRONMENTAL pills (raised; all inside) ===== -->
   <g id="env">
-    <!-- centers at: (890,140) (890,185) (890,230) (890,275) (820,320) -->
     <rect class="pill" x="740" y="120" width="300" height="40" fill="{GREEN}"/>
     <text class="label" x="890" y="146" text-anchor="middle">Proximity to services</text>
 
@@ -92,7 +95,7 @@ svg = f"""
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
-  <!-- ========= ARROWS (EXACTLY as requested) ========= -->
+  <!-- ========= ARROWS (exactly as specified) ========= -->
 
   <!-- Dotted Social → Environmental (meta-arc) -->
   <path id="A00_Social_to_Env_arc"
@@ -101,69 +104,53 @@ svg = f"""
         marker-end="url(#arrow-pink)"/>
 
   <!-- PINK (Social-origin) -->
-  <!-- Social Networks → Purpose -->
   <path id="A01_SN_to_Purpose"
         d="M406,195 C440,260 410,560 410,590"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
-  <!-- Social Networks → Emotional security -->
   <path id="A02_SN_to_ES"
         d="M406,195 C420,255 410,420 420,480"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
-  <!-- Social Networks → Sense of autonomy -->
   <path id="A03_SN_to_SA"
         d="M406,195 C430,265 425,470 420,520"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
-  <!-- Community participation → Purpose -->
   <path id="A04_CP_to_Purpose"
         d="M456,260 C470,340 440,540 410,590"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
-  <!-- Community participation → Downshift -->
   <path id="A05_CP_to_Downshift"
         d="M456,260 C460,360 450,610 420,640"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
-  <!-- Community participation → Physical activity & active lifestyle -->
   <path id="A06_CP_to_Physical"
         d="M456,260 C560,330 640,560 704,595"
         stroke="{PINK}" stroke-width="5" fill="none" marker-end="url(#arrow-pink)"/>
 
   <!-- GREEN (Environmental-origin) -->
-  <!-- Proximity to services → Social Networks -->
   <path id="A07_PS_to_SN"
         d="M740,140 C615,125 480,135 406,195"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Proximity to services → Sense of autonomy -->
   <path id="A08_PS_to_SA"
         d="M740,140 C690,180 520,470 420,520"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Green spaces → Community participation -->
   <path id="A09_GS_to_CP"
         d="M750,185 C620,190 535,255 456,260"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Green spaces → Downshift -->
   <path id="A10_GS_to_Downshift"
         d="M750,185 C680,240 520,575 420,640"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Mobility & Accessibility → Community participation -->
   <path id="A11_MA_to_CP"
         d="M740,230 C610,235 535,268 456,260"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Social infrastructures → Social Networks -->
   <path id="A12_SI_to_SN"
         d="M750,275 C620,265 490,190 406,195"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Social infrastructures → Community participation -->
   <path id="A13_SI_to_CP"
         d="M750,275 C620,280 535,280 456,260"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Safety → Community participation -->
   <path id="A14_S_to_CP"
         d="M700,320 C610,330 540,300 456,260"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Safety → Downshift -->
   <path id="A15_S_to_Downshift"
         d="M700,320 C640,380 510,600 420,640"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
-  <!-- Environmental (box) → Physical activity & active lifestyle -->
   <path id="A16_ENV_to_Physical"
         d="M880,360 C860,440 800,520 704,595"
         stroke="{GREEN}" stroke-width="5" fill="none" marker-end="url(#arrow-green)"/>
@@ -172,8 +159,4 @@ svg = f"""
 
 st.components.v1.html(svg, height=840, scrolling=False)
 
-st.success(
-    "Done. If any single arrow still needs a micro-adjustment, tell me its **id** "
-    "(e.g., `A09_GS_to_CP`) and how to tweak it (more/less curve, higher/lower end), "
-    "and I’ll refine the control points exactly."
-)
+st.caption("If you want any micro-adjustments, tell me the arrow id (e.g., A09_GS_to_CP) and how to nudge it (higher/lower, more/less curve).")
