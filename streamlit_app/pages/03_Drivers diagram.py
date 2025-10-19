@@ -154,9 +154,10 @@ svg = f"""
         d="M700,320 C640,380 510,600 420,640"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
   <path id="A16_ENV_to_Physical"
-        d="M880,360 C860,440 800,520 704,595"
+        d="M880,380 C860,440 800,520 704,595"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 </svg>
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
