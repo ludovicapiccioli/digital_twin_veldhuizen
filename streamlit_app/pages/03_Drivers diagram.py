@@ -35,11 +35,11 @@ svg = f"""
 
   <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
   <!-- Psychological lowered further (y 570 -> 580) -->
-  <text class="titleV" x="60"  y="580" fill="{ORANGE}" transform="rotate(-90 60 580)">Psychological</text>
+  <text class="titleV" x="60"  y="600" fill="{ORANGE}" transform="rotate(-90 60 600)">Psychological</text>
 
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
   <!-- ENVIRONMENTAL raised further (y 205 -> 195) -->
-  <text class="titleV" x="1090" y="195" fill="{GREEN}" transform="rotate(90 1090 195)">ENVIRONMENTAL</text>
+  <text class="titleV" x="1090" y="175" fill="{GREEN}" transform="rotate(90 1090 175)">ENVIRONMENTAL</text>
 
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
   <text class="titleV" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
@@ -158,5 +158,6 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
+
 
 
