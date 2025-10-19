@@ -2,9 +2,9 @@
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
-st.title("DRAFT!!Drivers Diagram — Interrelations across Dimensions")
+st.title("DRAFT!! Drivers Diagram — Interrelations across Dimensions")
 st.caption(
-    "DRAFT"
+    "draft"
 )
 
 PINK   = "#ff69b4"   # Social-origin / pink arrows
@@ -34,12 +34,12 @@ svg = f"""
   <text class="titleV" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
 
   <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
-  <!-- Moved slightly LOWER to your request -->
-  <text class="titleV" x="60"  y="570" fill="{ORANGE}" transform="rotate(-90 60 570)">Psychological</text>
+  <!-- Psychological lowered further (y 570 -> 580) -->
+  <text class="titleV" x="60"  y="580" fill="{ORANGE}" transform="rotate(-90 60 580)">Psychological</text>
 
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
-  <!-- Moved slightly HIGHER to your request -->
-  <text class="titleV" x="1090" y="205" fill="{GREEN}" transform="rotate(90 1090 205)">ENVIRONMENTAL</text>
+  <!-- ENVIRONMENTAL raised further (y 205 -> 195) -->
+  <text class="titleV" x="1090" y="195" fill="{GREEN}" transform="rotate(90 1090 195)">ENVIRONMENTAL</text>
 
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
   <text class="titleV" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
@@ -159,4 +159,4 @@ svg = f"""
 
 st.components.v1.html(svg, height=840, scrolling=False)
 
-st.caption("If you want any micro-adjustments, tell me the arrow id (e.g., A09_GS_to_CP) and how to nudge it (higher/lower, more/less curve).")
+
