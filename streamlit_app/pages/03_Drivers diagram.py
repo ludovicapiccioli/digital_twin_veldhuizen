@@ -13,16 +13,33 @@ BLUE   = "#3498db"   # Physical frame/pill
 svg = f"""
 <svg viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
   <defs>
-    <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+    <!-- Smaller heads, still scale with stroke (Option A) -->
+    <marker id="arrow-green"
+            viewBox="0 0 10 6"
+            markerWidth="6.5" markerHeight="6.5"
+            refX="8.3" refY="3"
+            orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{GREEN}"/>
     </marker>
-    <marker id="arrow-pink" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+
+    <marker id="arrow-pink"
+            viewBox="0 0 10 6"
+            markerWidth="6.5" markerHeight="6.5"
+            refX="8.3" refY="3"
+            orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
-    <!-- A01 ONLY: fixed 340° (gentle clockwise tilt) -->
-    <marker id="arrow-pink-340" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="35" markerUnits="strokeWidth">
+
+    <!-- Your fixed-angle pink marker (kept as-is: orient="35"). 
+         If you meant 340°, change orient="35" -> orient="340". -->
+    <marker id="arrow-pink-340"
+            viewBox="0 0 10 6"
+            markerWidth="6.5" markerHeight="6.5"
+            refX="8.3" refY="3"
+            orient="35" markerUnits="strokeWidth">
       <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
     </marker>
+
     <style><![CDATA[
       .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
       .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
@@ -101,7 +118,7 @@ svg = f"""
   <!-- ========= ARROWS ========= -->
 
   <!-- PINK (Social-origin) -->
-  <!-- A01 uses the fixed 340° arrowhead -->
+  <!-- A01 uses your fixed-angle marker (kept) -->
   <path id="A01_SN_to_Purpose"
         d="M194,195 C60,190 115,560 200,590"
         stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-340)"/>
@@ -153,9 +170,7 @@ svg = f"""
         d="M700,320 C640,380 510,600 420,640"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
 
-  <!-- ENV → Physical:
-       start at Environmental frame bottom edge center (860,380);
-       end at (692,597) so arrowhead sits ON the Physical pill's left border (outside) -->
+  <!-- ENV → Physical (kept exactly as your latest) -->
   <path id="A16_ENV_to_Physical"
         d="M860,380 C835,450 795,520 760,575"
         stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
@@ -163,18 +178,3 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=840, scrolling=False)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
