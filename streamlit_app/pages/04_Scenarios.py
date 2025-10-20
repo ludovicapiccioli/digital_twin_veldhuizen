@@ -16,10 +16,11 @@ MIN_B, MAX_B = -10, 10
 if "bench_delta" not in st.session_state:
     st.session_state.bench_delta = 0
 
-# Row with – value +
 col_minus, col_value, col_plus = st.columns([1, 2, 1])
+
 with col_minus:
-    if st.button("−", use_container_width=True):
+    # Use emoji to guarantee rendering in the button
+    if st.button("➖", use_container_width=True, key="btn_minus"):
         st.session_state.bench_delta = max(MIN_B, st.session_state.bench_delta - 1)
 
 with col_value:
@@ -31,7 +32,8 @@ with col_value:
     )
 
 with col_plus:
-    if st.button("+", use_container_width=True):
+    # Use emoji or full-width plus "＋" to avoid missing "+"
+    if st.button("➕", use_container_width=True, key="btn_plus"):
         st.session_state.bench_delta = min(MAX_B, st.session_state.bench_delta + 1)
 
 # Slider (stays in sync with buttons)
@@ -192,10 +194,10 @@ st.plotly_chart(fig, use_container_width=True)
 # Compact KPIs + small QoL gauge
 # ------------------------------------------------------------
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Δ Social interactions", plus(d_social))
-c2.metric("Δ Physical activity", plus(d_physical))
-c3.metric("Δ Safety", plus(d_safety))
-c4.metric("Δ QoL (composite)", plus(q_total))
+c1.metric("Δ Social interactions", f"{d_social:+d}")
+c2.metric("Δ Physical activity",   f"{d_physical:+d}")
+c3.metric("Δ Safety",              f"{d_safety:+d}")
+c4.metric("Δ QoL (composite)",     f"{q_total:+d}")
 
 BASE_QOL = 70
 qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
