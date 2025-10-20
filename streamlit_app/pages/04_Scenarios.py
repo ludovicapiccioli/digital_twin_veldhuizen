@@ -65,19 +65,14 @@ def sign_color(v):  # green for positive, red for negative, grey for zero
 def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
-# Helper: add vertical trend arrow to the LEFT of a node
-def add_trend_arrow(fig, x_left, y_center, delta, length=0.9):
-    """Adds a vertical arrow: up (green) if delta>0, down (red) if delta<0. Hidden if 0."""
-    if delta == 0:
-        return
-    color = "#27ae60" if delta > 0 else "#c0392b"
-    head_y = y_center + (length/2 if delta > 0 else -length/2)
-    tail_y = y_center - (length/2 if delta > 0 else -length/2)
-    fig.add_annotation(
-        x=x_left, y=head_y, ax=x_left, ay=tail_y,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=3, arrowcolor=color
-    )
+def trend_html(delta: int, show_zero=False) -> str:
+    """Return a colored ▲/▼ HTML span placed inline next to a value."""
+    if delta > 0:
+        return "<span style='color:#27ae60'>&nbsp;▲</span>"
+    elif delta < 0:
+        return "<span style='color:#c0392b'>&nbsp;▼</span>"
+    else:
+        return "<span style='color:#7f8c8d'>&nbsp;•</span>" if show_zero else ""
 
 # ------------------------------------------------------------
 # Diagram layout (Plotly shapes & arrows)
@@ -119,9 +114,11 @@ fig.add_annotation(x=soc_x, y=soc_y+oval_h/2-0.2, text="<b>Social dimension</b>"
 fig.add_shape(type="rect",
               x0=soc_x-card_w/2, y0=soc_y-card_h/2, x1=soc_x+card_w/2, y1=soc_y+card_h/2,
               fillcolor="white", line=dict(color=SOC_COL, width=2))
-fig.add_annotation(x=soc_x, y=soc_y,
-                   text=f"<b>{plus(d_social)}</b>&nbsp; Social interactions",
-                   showarrow=False, font=dict(color=SOC_COL, size=12))
+fig.add_annotation(
+    x=soc_x, y=soc_y,
+    text=f"<b>{plus(d_social)}</b>{trend_html(d_social)}&nbsp; Social interactions",
+    showarrow=False, font=dict(color=SOC_COL, size=12)
+)
 
 # Physical bubble + card
 fig.add_shape(type="circle",
@@ -132,9 +129,11 @@ fig.add_annotation(x=phy_x, y=phy_y+oval_h/2-0.2, text="<b>Physical dimension</b
 fig.add_shape(type="rect",
               x0=phy_x-card_w/2, y0=phy_y-card_h/2, x1=phy_x+card_w/2, y1=phy_y+card_h/2,
               fillcolor="white", line=dict(color=PHY_COL, width=2))
-fig.add_annotation(x=phy_x, y=phy_y,
-                   text=f"<b>{plus(d_physical)}</b>&nbsp; Physical activity",
-                   showarrow=False, font=dict(color=PHY_COL, size=12))
+fig.add_annotation(
+    x=phy_x, y=phy_y,
+    text=f"<b>{plus(d_physical)}</b>{trend_html(d_physical)}&nbsp; Physical activity",
+    showarrow=False, font=dict(color=PHY_COL, size=12)
+)
 
 # Environmental bubble + card
 fig.add_shape(type="circle",
@@ -145,20 +144,23 @@ fig.add_annotation(x=env_x, y=env_y+oval_h/2-0.2, text="<b>Environmental dimensi
 fig.add_shape(type="rect",
               x0=env_x-card_w/2, y0=env_y-card_h/2, x1=env_x+card_w/2, y1=env_y+card_h/2,
               fillcolor="white", line=dict(color=ENV_COL, width=2))
-fig.add_annotation(x=env_x, y=env_y,
-                   text=f"<b>{plus(d_safety)}</b>&nbsp; Safety",
-                   showarrow=False, font=dict(color=ENV_COL, size=12))
+fig.add_annotation(
+    x=env_x, y=env_y,
+    text=f"<b>{plus(d_safety)}</b>{trend_html(d_safety)}&nbsp; Safety",
+    showarrow=False, font=dict(color=ENV_COL, size=12)
+)
 
 # QoL box (right)
 fig.add_shape(type="rect",
               x0=qol_x-1.8, y0=qol_y-1.6, x1=qol_x+1.8, y1=qol_y+1.6,
               fillcolor=Q_BG, line=dict(color=Q_BR, width=3))
+
 qol_text = (
-    f"{plus(q_social)} from Social<br>"
-    f"{plus(q_physical)} from Physical<br>"
-    f"{plus(q_env)} from Environmental<br>"
+    f"{plus(q_social)}{trend_html(q_social)} from Social<br>"
+    f"{plus(q_physical)}{trend_html(q_physical)} from Physical<br>"
+    f"{plus(q_env)}{trend_html(q_env)} from Environmental<br>"
     f"<span style='font-size:14px'>——</span><br>"
-    f"<b>Δ QoL = {plus(q_total)}</b>"
+    f"<b>Δ QoL = {plus(q_total)}</b>{trend_html(q_total)}"
 )
 fig.add_annotation(x=qol_x, y=qol_y, text=qol_text, showarrow=False, font=dict(size=12))
 
@@ -169,8 +171,8 @@ for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env
                        showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
                        arrowcolor=sign_color(delta))
 
-# Arrows — factors → QoL
-x_q_target = (qol_x - 1.8) + 0.05  # slight nudge so the arrow tip is inside the box
+# Arrows — factors → QoL (green, directional)
+x_q_target = (qol_x - 1.8) + 0.05
 fig.add_annotation(x=x_q_target, y=qol_y + 1.2, ax=soc_x + card_w/2, ay=soc_y,
                    xref="x", yref="y", axref="x", ayref="y",
                    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
@@ -180,18 +182,6 @@ fig.add_annotation(x=x_q_target, y=phy_y, ax=phy_x + card_w/2, ay=phy_y,
 fig.add_annotation(x=x_q_target, y=qol_y - 1.2, ax=env_x + card_w/2, ay=env_y,
                    xref="x", yref="y", axref="x", ayref="y",
                    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
-
-# NEW: Trend arrows to the LEFT of each dimension and QoL (up=green, down=red)
-left_pad = 0.35
-soc_trend_x = soc_x - oval_w/2 - left_pad
-phy_trend_x = phy_x - oval_w/2 - left_pad
-env_trend_x = env_x - oval_w/2 - left_pad
-qol_trend_x = (qol_x - 1.8) - left_pad
-
-add_trend_arrow(fig, soc_trend_x, soc_y, d_social)    # Social trend
-add_trend_arrow(fig, phy_trend_x, phy_y, d_physical)  # Physical trend
-add_trend_arrow(fig, env_trend_x, env_y, d_safety)    # Environmental trend
-add_trend_arrow(fig, qol_trend_x, qol_y, q_total)     # QoL trend
 
 # Canvas style
 fig.update_xaxes(visible=False, range=[0, 10])
@@ -230,6 +220,6 @@ with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
-- Green ▲ arrows = increase; Red ▼ arrows = decrease; hidden when no change.
+- Inline ▲/▼ shows direction next to each value; hidden when zero.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
