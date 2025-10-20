@@ -10,24 +10,38 @@ st.subheader("Concept demo - Simulation of scenarios")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
-# Controls (presets + slider)
+# Controls (minus / plus buttons + slider)
 # ------------------------------------------------------------
-col_p1, col_p2, col_p3 = st.columns(3)
+MIN_B, MAX_B = -10, 10
 if "bench_delta" not in st.session_state:
     st.session_state.bench_delta = 0
 
-with col_p1:
-    if st.button("Baseline (0)"):
-        st.session_state.bench_delta = 0
-with col_p2:
-    if st.button("+5 benches"):
-        st.session_state.bench_delta = 5
-with col_p3:
-    if st.button("-5 benches"):
-        st.session_state.bench_delta = -5
+# Row with – value +
+col_minus, col_value, col_plus = st.columns([1, 2, 1])
+with col_minus:
+    if st.button("−", use_container_width=True):
+        st.session_state.bench_delta = max(MIN_B, st.session_state.bench_delta - 1)
 
-b = st.slider("Benches (add/remove)", -10, 10, st.session_state.bench_delta)
-st.session_state.bench_delta = b  # keep slider + presets in sync
+with col_value:
+    st.markdown(
+        f"<div style='text-align:center; font-size:22px; line-height:1.4'>"
+        f"<b>{st.session_state.bench_delta:+d}</b> benches"
+        f"</div>",
+        unsafe_allow_html=True
+    )
+
+with col_plus:
+    if st.button("+", use_container_width=True):
+        st.session_state.bench_delta = min(MAX_B, st.session_state.bench_delta + 1)
+
+# Slider (stays in sync with buttons)
+b = st.slider(
+    "Benches (add/remove)",
+    MIN_B, MAX_B, st.session_state.bench_delta, key="bench_slider"
+)
+if b != st.session_state.bench_delta:
+    st.session_state.bench_delta = b
+b = st.session_state.bench_delta  # use `b` below
 
 # ------------------------------------------------------------
 # Mock relationships
@@ -206,5 +220,3 @@ with st.expander("Notes (prototype logic)"):
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
-
-
