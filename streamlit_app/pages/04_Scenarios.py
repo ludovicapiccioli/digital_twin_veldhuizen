@@ -10,39 +10,42 @@ st.subheader("Concept demo - Simulation of scenarios")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
-# Controls (minus / plus buttons + slider)
+# Controls (− / + buttons + slider) — single source of truth
 # ------------------------------------------------------------
 MIN_B, MAX_B = -10, 10
-if "bench_delta" not in st.session_state:
-    st.session_state.bench_delta = 0
+if "benches" not in st.session_state:
+    st.session_state.benches = 0
+
+def clamp_b(v):  # keep within bounds
+    return int(np.clip(v, MIN_B, MAX_B))
 
 col_minus, col_value, col_plus = st.columns([1, 2, 1])
 
 with col_minus:
-    # Emoji ensures the symbol renders in the button
     if st.button("➖", use_container_width=True, key="btn_minus"):
-        st.session_state.bench_delta = max(MIN_B, st.session_state.bench_delta - 1)
+        st.session_state.benches = clamp_b(st.session_state.benches - 1)
 
 with col_value:
     st.markdown(
         f"<div style='text-align:center; font-size:22px; line-height:1.4'>"
-        f"<b>{st.session_state.bench_delta:+d}</b> benches"
+        f"<b>{st.session_state.benches:+d}</b> benches"
         f"</div>",
         unsafe_allow_html=True
     )
 
 with col_plus:
     if st.button("➕", use_container_width=True, key="btn_plus"):
-        st.session_state.bench_delta = min(MAX_B, st.session_state.bench_delta + 1)
+        st.session_state.benches = clamp_b(st.session_state.benches + 1)
 
-# Slider (stays in sync with buttons)
-b = st.slider(
+# Slider stays in sync with buttons via the same key
+st.slider(
     "Benches (add/remove)",
-    MIN_B, MAX_B, st.session_state.bench_delta, key="bench_slider"
+    MIN_B, MAX_B, key="benches",
+    help="Use the buttons or slider; both control the same value."
 )
-if b != st.session_state.bench_delta:
-    st.session_state.bench_delta = b
-b = st.session_state.bench_delta  # use `b` below
+# Just in case the user typed a value via keyboard on some frontends
+st.session_state.benches = clamp_b(st.session_state.benches)
+b = st.session_state.benches  # use `b` below
 
 # ------------------------------------------------------------
 # Mock relationships
@@ -191,35 +194,52 @@ fig.update_layout(template="plotly_white", height=540, margin=dict(l=20, r=20, t
 st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------------------------------------------
-# Compact KPIs + small QoL gauge
+# KPIs + QoL gauge (with arrow row under each KPI)
 # ------------------------------------------------------------
+def arrow_row(delta: int, size_px=18):
+    if delta > 0:
+        return f"<div style='text-align:center; font-size:{size_px}px; color:#27ae60'>▲</div>"
+    elif delta < 0:
+        return f"<div style='text-align:center; font-size:{size_px}px; color:#c0392b'>▼</div>"
+    else:
+        return f"<div style='text-align:center; font-size:{size_px}px; color:#7f8c8d'>•</div>"
+
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Δ Social interactions", f"{d_social:+d}")
-c2.metric("Δ Physical activity",   f"{d_physical:+d}")
-c3.metric("Δ Safety",              f"{d_safety:+d}")
-c4.metric("Δ QoL (composite)",     f"{q_total:+d}")
+c1.markdown(arrow_row(d_social), unsafe_allow_html=True)
 
+c2.metric("Δ Physical activity",   f"{d_physical:+d}")
+c2.markdown(arrow_row(d_physical), unsafe_allow_html=True)
+
+c3.metric("Δ Safety",              f"{d_safety:+d}")
+c3.markdown(arrow_row(d_safety), unsafe_allow_html=True)
+
+c4.metric("Δ QoL (composite)",     f"{q_total:+d}")
+c4.markdown(arrow_row(q_total), unsafe_allow_html=True)
+
+# QoL gauge (fix cutoff by giving more headroom)
 BASE_QOL = 70
 qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
 g = go.Figure(go.Indicator(
     mode="gauge+number+delta",
     value=qol_after,
-    number={"suffix": " / 100"},
+    number={"suffix": " / 100", "font": {"size": 34}},
     delta={"reference": BASE_QOL,
            "increasing": {"color": "#27ae60"},
            "decreasing": {"color": "#c0392b"}},
     gauge={"axis": {"range": [0, 100]},
            "bar": {"color": "#34495e"},
-           "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}]},
+           "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}],
+           "threshold": {"line": {"width": 2}, "thickness": 0.6, "value": BASE_QOL}},
     title={"text": "QoL index (mock)"}
 ))
-g.update_layout(height=220, margin=dict(l=10, r=10, t=30, b=10), template="plotly_white")
+g.update_layout(height=260, margin=dict(l=10, r=10, t=60, b=20), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
 
 with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
-- Inline ▲/▼ shows direction next to each value; hidden when zero.
+- Inline ▲/▼ next to card values and under KPIs show direction; grey dot means no change.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
