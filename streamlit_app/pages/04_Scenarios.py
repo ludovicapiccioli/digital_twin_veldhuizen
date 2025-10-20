@@ -10,42 +10,24 @@ st.subheader("Concept demo - Simulation of scenarios")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ------------------------------------------------------------
-# Controls (− / + buttons + slider) — single source of truth
+# Controls (presets + slider)
 # ------------------------------------------------------------
-MIN_B, MAX_B = -10, 10
-if "benches" not in st.session_state:
-    st.session_state.benches = 0
+col_p1, col_p2, col_p3 = st.columns(3)
+if "bench_delta" not in st.session_state:
+    st.session_state.bench_delta = 0
 
-def clamp_b(v):  # keep within bounds
-    return int(np.clip(v, MIN_B, MAX_B))
+with col_p1:
+    if st.button("Baseline (0)"):
+        st.session_state.bench_delta = 0
+with col_p2:
+    if st.button("+5 benches"):
+        st.session_state.bench_delta = 5
+with col_p3:
+    if st.button("-5 benches"):
+        st.session_state.bench_delta = -5
 
-col_minus, col_value, col_plus = st.columns([1, 2, 1])
-
-with col_minus:
-    if st.button("➖", use_container_width=True, key="btn_minus"):
-        st.session_state.benches = clamp_b(st.session_state.benches - 1)
-
-with col_value:
-    st.markdown(
-        f"<div style='text-align:center; font-size:22px; line-height:1.4'>"
-        f"<b>{st.session_state.benches:+d}</b> benches"
-        f"</div>",
-        unsafe_allow_html=True
-    )
-
-with col_plus:
-    if st.button("➕", use_container_width=True, key="btn_plus"):
-        st.session_state.benches = clamp_b(st.session_state.benches + 1)
-
-# Slider stays in sync with buttons via the same key
-st.slider(
-    "Benches (add/remove)",
-    MIN_B, MAX_B, key="benches",
-    help="Use the buttons or slider; both control the same value."
-)
-# Just in case the user typed a value via keyboard on some frontends
-st.session_state.benches = clamp_b(st.session_state.benches)
-b = st.session_state.benches  # use `b` below
+b = st.slider("Benches (add/remove)", -10, 10, st.session_state.bench_delta)
+st.session_state.bench_delta = b  # keep slider + presets in sync
 
 # ------------------------------------------------------------
 # Mock relationships
@@ -67,15 +49,6 @@ def sign_color(v):  # green for positive, red for negative, grey for zero
 
 def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
-
-def trend_html(delta: int, show_zero=False) -> str:
-    """Return a colored ▲/▼ HTML span placed inline next to a value."""
-    if delta > 0:
-        return "<span style='color:#27ae60'>&nbsp;▲</span>"
-    elif delta < 0:
-        return "<span style='color:#c0392b'>&nbsp;▼</span>"
-    else:
-        return "<span style='color:#7f8c8d'>&nbsp;•</span>" if show_zero else ""
 
 # ------------------------------------------------------------
 # Diagram layout (Plotly shapes & arrows)
@@ -117,11 +90,9 @@ fig.add_annotation(x=soc_x, y=soc_y+oval_h/2-0.2, text="<b>Social dimension</b>"
 fig.add_shape(type="rect",
               x0=soc_x-card_w/2, y0=soc_y-card_h/2, x1=soc_x+card_w/2, y1=soc_y+card_h/2,
               fillcolor="white", line=dict(color=SOC_COL, width=2))
-fig.add_annotation(
-    x=soc_x, y=soc_y,
-    text=f"<b>{plus(d_social)}</b>{trend_html(d_social)}&nbsp; Social interactions",
-    showarrow=False, font=dict(color=SOC_COL, size=12)
-)
+fig.add_annotation(x=soc_x, y=soc_y,
+                   text=f"<b>{plus(d_social)}</b>&nbsp; Social interactions",
+                   showarrow=False, font=dict(color=SOC_COL, size=12))
 
 # Physical bubble + card
 fig.add_shape(type="circle",
@@ -132,11 +103,9 @@ fig.add_annotation(x=phy_x, y=phy_y+oval_h/2-0.2, text="<b>Physical dimension</b
 fig.add_shape(type="rect",
               x0=phy_x-card_w/2, y0=phy_y-card_h/2, x1=phy_x+card_w/2, y1=phy_y+card_h/2,
               fillcolor="white", line=dict(color=PHY_COL, width=2))
-fig.add_annotation(
-    x=phy_x, y=phy_y,
-    text=f"<b>{plus(d_physical)}</b>{trend_html(d_physical)}&nbsp; Physical activity",
-    showarrow=False, font=dict(color=PHY_COL, size=12)
-)
+fig.add_annotation(x=phy_x, y=phy_y,
+                   text=f"<b>{plus(d_physical)}</b>&nbsp; Physical activity",
+                   showarrow=False, font=dict(color=PHY_COL, size=12))
 
 # Environmental bubble + card
 fig.add_shape(type="circle",
@@ -147,23 +116,20 @@ fig.add_annotation(x=env_x, y=env_y+oval_h/2-0.2, text="<b>Environmental dimensi
 fig.add_shape(type="rect",
               x0=env_x-card_w/2, y0=env_y-card_h/2, x1=env_x+card_w/2, y1=env_y+card_h/2,
               fillcolor="white", line=dict(color=ENV_COL, width=2))
-fig.add_annotation(
-    x=env_x, y=env_y,
-    text=f"<b>{plus(d_safety)}</b>{trend_html(d_safety)}&nbsp; Safety",
-    showarrow=False, font=dict(color=ENV_COL, size=12)
-)
+fig.add_annotation(x=env_x, y=env_y,
+                   text=f"<b>{plus(d_safety)}</b>&nbsp; Safety",
+                   showarrow=False, font=dict(color=ENV_COL, size=12))
 
 # QoL box (right)
 fig.add_shape(type="rect",
               x0=qol_x-1.8, y0=qol_y-1.6, x1=qol_x+1.8, y1=qol_y+1.6,
               fillcolor=Q_BG, line=dict(color=Q_BR, width=3))
-
 qol_text = (
-    f"{plus(q_social)}{trend_html(q_social)} from Social<br>"
-    f"{plus(q_physical)}{trend_html(q_physical)} from Physical<br>"
-    f"{plus(q_env)}{trend_html(q_env)} from Environmental<br>"
+    f"{plus(q_social)} from Social<br>"
+    f"{plus(q_physical)} from Physical<br>"
+    f"{plus(q_env)} from Environmental<br>"
     f"<span style='font-size:14px'>——</span><br>"
-    f"<b>Δ QoL = {plus(q_total)}</b>{trend_html(q_total)}"
+    f"<b>Δ QoL = {plus(q_total)}</b>"
 )
 fig.add_annotation(x=qol_x, y=qol_y, text=qol_text, showarrow=False, font=dict(size=12))
 
@@ -174,17 +140,32 @@ for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env
                        showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=2,
                        arrowcolor=sign_color(delta))
 
-# Arrows — factors → QoL (green, directional)
-x_q_target = (qol_x - 1.8) + 0.05
-fig.add_annotation(x=x_q_target, y=qol_y + 1.2, ax=soc_x + card_w/2, ay=soc_y,
-                   xref="x", yref="y", axref="x", ayref="y",
-                   showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
-fig.add_annotation(x=x_q_target, y=phy_y, ax=phy_x + card_w/2, ay=phy_y,
-                   xref="x", yref="y", axref="x", ayref="y",
-                   showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
-fig.add_annotation(x=x_q_target, y=qol_y - 1.2, ax=env_x + card_w/2, ay=env_y,
-                   xref="x", yref="y", axref="x", ayref="y",
-                   showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
+# Arrows — factors → QoL
+x_q_target = (qol_x - 1.8) + 0.05  # slight nudge so the arrow tip is inside the box
+
+# Top (Social → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y + 1.2,   # target inside QoL box (above center)
+    ax=soc_x + card_w/2, ay=soc_y, # start at Social card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
+
+# Middle (Physical → QoL): horizontal
+fig.add_annotation(
+    x=x_q_target, y=phy_y,
+    ax=phy_x + card_w/2, ay=phy_y,
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
+
+# Bottom (Environmental → QoL)
+fig.add_annotation(
+    x=x_q_target, y=qol_y - 1.2,   # target inside QoL box (below center)
+    ax=env_x + card_w/2, ay=env_y, # start at Environmental card
+    xref="x", yref="y", axref="x", ayref="y",
+    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
+)
 
 # Canvas style
 fig.update_xaxes(visible=False, range=[0, 10])
@@ -194,52 +175,36 @@ fig.update_layout(template="plotly_white", height=540, margin=dict(l=20, r=20, t
 st.plotly_chart(fig, use_container_width=True)
 
 # ------------------------------------------------------------
-# KPIs + QoL gauge (with arrow row under each KPI)
+# Compact KPIs + small QoL gauge
 # ------------------------------------------------------------
-def arrow_row(delta: int, size_px=18):
-    if delta > 0:
-        return f"<div style='text-align:center; font-size:{size_px}px; color:#27ae60'>▲</div>"
-    elif delta < 0:
-        return f"<div style='text-align:center; font-size:{size_px}px; color:#c0392b'>▼</div>"
-    else:
-        return f"<div style='text-align:center; font-size:{size_px}px; color:#7f8c8d'>•</div>"
-
 c1, c2, c3, c4 = st.columns(4)
-c1.metric("Δ Social interactions", f"{d_social:+d}")
-c1.markdown(arrow_row(d_social), unsafe_allow_html=True)
+c1.metric("Δ Social interactions", plus(d_social))
+c2.metric("Δ Physical activity", plus(d_physical))
+c3.metric("Δ Safety", plus(d_safety))
+c4.metric("Δ QoL (composite)", plus(q_total))
 
-c2.metric("Δ Physical activity",   f"{d_physical:+d}")
-c2.markdown(arrow_row(d_physical), unsafe_allow_html=True)
-
-c3.metric("Δ Safety",              f"{d_safety:+d}")
-c3.markdown(arrow_row(d_safety), unsafe_allow_html=True)
-
-c4.metric("Δ QoL (composite)",     f"{q_total:+d}")
-c4.markdown(arrow_row(q_total), unsafe_allow_html=True)
-
-# QoL gauge (fix cutoff by giving more headroom)
 BASE_QOL = 70
 qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
 g = go.Figure(go.Indicator(
     mode="gauge+number+delta",
     value=qol_after,
-    number={"suffix": " / 100", "font": {"size": 34}},
+    number={"suffix": " / 100"},
     delta={"reference": BASE_QOL,
            "increasing": {"color": "#27ae60"},
            "decreasing": {"color": "#c0392b"}},
     gauge={"axis": {"range": [0, 100]},
            "bar": {"color": "#34495e"},
-           "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}],
-           "threshold": {"line": {"width": 2}, "thickness": 0.6, "value": BASE_QOL}},
+           "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}]},
     title={"text": "QoL index (mock)"}
 ))
-g.update_layout(height=260, margin=dict(l=10, r=10, t=60, b=20), template="plotly_white")
+g.update_layout(height=220, margin=dict(l=10, r=10, t=30, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
 
 with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
-- Inline ▲/▼ next to card values and under KPIs show direction; grey dot means no change.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
+
+
