@@ -19,7 +19,7 @@ if "bench_delta" not in st.session_state:
 col_minus, col_value, col_plus = st.columns([1, 2, 1])
 
 with col_minus:
-    # Use emoji to guarantee rendering in the button
+    # Emoji ensures the symbol renders in the button
     if st.button("➖", use_container_width=True, key="btn_minus"):
         st.session_state.bench_delta = max(MIN_B, st.session_state.bench_delta - 1)
 
@@ -32,7 +32,6 @@ with col_value:
     )
 
 with col_plus:
-    # Use emoji or full-width plus "＋" to avoid missing "+"
     if st.button("➕", use_container_width=True, key="btn_plus"):
         st.session_state.bench_delta = min(MAX_B, st.session_state.bench_delta + 1)
 
@@ -65,6 +64,20 @@ def sign_color(v):  # green for positive, red for negative, grey for zero
 
 def plus(v):        # format with sign
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
+
+# Helper: add vertical trend arrow to the LEFT of a node
+def add_trend_arrow(fig, x_left, y_center, delta, length=0.9):
+    """Adds a vertical arrow: up (green) if delta>0, down (red) if delta<0. Hidden if 0."""
+    if delta == 0:
+        return
+    color = "#27ae60" if delta > 0 else "#c0392b"
+    head_y = y_center + (length/2 if delta > 0 else -length/2)
+    tail_y = y_center - (length/2 if delta > 0 else -length/2)
+    fig.add_annotation(
+        x=x_left, y=head_y, ax=x_left, ay=tail_y,
+        xref="x", yref="y", axref="x", ayref="y",
+        showarrow=True, arrowhead=3, arrowsize=1, arrowwidth=3, arrowcolor=color
+    )
 
 # ------------------------------------------------------------
 # Diagram layout (Plotly shapes & arrows)
@@ -158,30 +171,27 @@ for (x, y, delta) in [(soc_x, soc_y, d_social), (phy_x, phy_y, d_physical), (env
 
 # Arrows — factors → QoL
 x_q_target = (qol_x - 1.8) + 0.05  # slight nudge so the arrow tip is inside the box
+fig.add_annotation(x=x_q_target, y=qol_y + 1.2, ax=soc_x + card_w/2, ay=soc_y,
+                   xref="x", yref="y", axref="x", ayref="y",
+                   showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
+fig.add_annotation(x=x_q_target, y=phy_y, ax=phy_x + card_w/2, ay=phy_y,
+                   xref="x", yref="y", axref="x", ayref="y",
+                   showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
+fig.add_annotation(x=x_q_target, y=qol_y - 1.2, ax=env_x + card_w/2, ay=env_y,
+                   xref="x", yref="y", axref="x", ayref="y",
+                   showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN)
 
-# Top (Social → QoL)
-fig.add_annotation(
-    x=x_q_target, y=qol_y + 1.2,   # target inside QoL box (above center)
-    ax=soc_x + card_w/2, ay=soc_y, # start at Social card
-    xref="x", yref="y", axref="x", ayref="y",
-    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
-)
+# NEW: Trend arrows to the LEFT of each dimension and QoL (up=green, down=red)
+left_pad = 0.35
+soc_trend_x = soc_x - oval_w/2 - left_pad
+phy_trend_x = phy_x - oval_w/2 - left_pad
+env_trend_x = env_x - oval_w/2 - left_pad
+qol_trend_x = (qol_x - 1.8) - left_pad
 
-# Middle (Physical → QoL): horizontal
-fig.add_annotation(
-    x=x_q_target, y=phy_y,
-    ax=phy_x + card_w/2, ay=phy_y,
-    xref="x", yref="y", axref="x", ayref="y",
-    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
-)
-
-# Bottom (Environmental → QoL)
-fig.add_annotation(
-    x=x_q_target, y=qol_y - 1.2,   # target inside QoL box (below center)
-    ax=env_x + card_w/2, ay=env_y, # start at Environmental card
-    xref="x", yref="y", axref="x", ayref="y",
-    showarrow=True, arrowhead=3, arrowsize=1.1, arrowwidth=3, arrowcolor=GREEN
-)
+add_trend_arrow(fig, soc_trend_x, soc_y, d_social)    # Social trend
+add_trend_arrow(fig, phy_trend_x, phy_y, d_physical)  # Physical trend
+add_trend_arrow(fig, env_trend_x, env_y, d_safety)    # Environmental trend
+add_trend_arrow(fig, qol_trend_x, qol_y, q_total)     # QoL trend
 
 # Canvas style
 fig.update_xaxes(visible=False, range=[0, 10])
@@ -220,5 +230,6 @@ with st.expander("Notes (prototype logic)"):
     st.markdown("""
 - Per bench effects (mock): **+2 Social interactions**, **+1 Physical activity**, **−2 Safety**.
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
+- Green ▲ arrows = increase; Red ▼ arrows = decrease; hidden when no change.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
