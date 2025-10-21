@@ -77,7 +77,7 @@ svg = f"""
   <!-- SOCIAL -->
   <g class="node" data-node="SN">
     <rect class="pill" x="190" y="175" width="220" height="40" fill="{PINK}"/>
-    <text class="label" x="300" y="201" text-anchor="middle">Social Networks</text>
+    <text class="label" x="300" y="201" text-anchor="middle">Social networks</text>
   </g>
 
   <g class="node" data-node="CP">
@@ -316,6 +316,7 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
+
 
 
 
