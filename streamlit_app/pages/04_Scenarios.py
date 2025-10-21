@@ -280,17 +280,17 @@ svg = f'''
         marker-end="url(#arrowGreen2)"/>
   <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M190,230 C330,235 350,230 420,240"
+  <path d="M190,230 C330,235 350,230 360,240"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowGreen1)"/>
   <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M190,230 C320,300 350,315 420,330"
+  <path d="M190,230 C320,300 350,315 350,330"
         fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowRed1)"/>
   <text x="320" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
 
-  <path d="M190,230 C320,360 360,400 420,460"
+  <path d="M190,230 C320,360 360,400 339,460"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowGreen1)"/>
   <text x="320" y="380" class="cap" font-size="18" fill="#19a974">x1</text>
@@ -351,6 +351,7 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
+
 
 
 
