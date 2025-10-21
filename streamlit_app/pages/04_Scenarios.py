@@ -208,7 +208,7 @@ svg = f'''
 
   <!-- ========== Arrows from Intervention to dimensions (weight-aware size) ========== -->
   <!-- to Social (x2, green) -->
-  <path d="M240,245 C350,140 370,110 440,90"
+  <path d="M240,245 C350,140 370,110 420,90"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_IN['social']}"
         marker-end="url(#arrowGreen2)"/>
   <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
@@ -291,6 +291,7 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
+
 
 
 
