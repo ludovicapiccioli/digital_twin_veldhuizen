@@ -3,44 +3,101 @@ import streamlit as st
 
 st.set_page_config(page_title="Concept prototype for a DT for Ede-Veldhuizen")
 
-# --- Header ---
-st.subheader("Concept prototype for a Digital Twin for Ede-Veldhuizen")
-st.caption(
-    "Exploring how a local digital twin could support healthy ageing (65+) in Ede–Veldhuizen by "
-    "visualising drivers of Quality of Life and testing simple ‘what-if’ scenarios."
-)
+# ---------- Simple CSS for colored blocks ----------
+st.markdown("""
+<style>
+:root{
+  --green:#214F1E;
+  --orange:#E3702A;
+  --blue:#1E5A7B;
+  --card-green:#2E6A2A;
+  --card-yellow:#F3C34C;
+  --card-peach:#F1C3AC;
+  --radius:22px;
+}
+.block {
+  border-radius: var(--radius);
+  padding: 22px 26px;
+  color: #fff;
+  margin: 8px 0 18px 0;
+}
+.hero {
+  background: var(--green);
+}
+.section {
+  background: var(--orange);
+  color:#fff;
+}
+.section h2, .hero h1 { margin-top: 0; }
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 10px;
+}
+.card {
+  border-radius: 18px;
+  padding: 16px 18px;
+  min-height: 110px;
+  display:flex; flex-direction:column; justify-content:center;
+}
+.card h4{ margin:0 0 6px 0; color:#fff; }
+.card p{ margin:0; color:#f6f6f6; }
+.card a{ color:#fff; text-decoration: underline; }
+.card-green   { background: var(--card-green); }
+.card-blue    { background: var(--blue); }
+.card-peach   { background: var(--card-peach); color:#1b1b1b; }
+.card-peach h4, .card-peach p, .card-peach a{ color:#1b1b1b; }
+.card-yellow  { background: var(--card-yellow); color:#1b1b1b; }
+.card-yellow h4, .card-yellow p, .card-yellow a{ color:#1b1b1b; }
+.caption { opacity:.9; font-size:0.95rem; }
+</style>
+""", unsafe_allow_html=True)
 
-# --- Purpose / one-paragraph intro ---
-st.markdown(
-    """
-This prototype turns research on **drivers of Quality of Life (QoL)** into an interactive tool for
-**policy exploration**. It focuses on residents **65+** in **Veldhuizen** and organises indicators into four
-driver dimensions: **Social**, **Physical**, **Psychological**, and **Environmental**.  
-It is a **proof of concept** designed to start conversations and help prioritise where and how to act—**not** a predictive model.
-"""
-)
+# ---------- Header in a colored block ----------
+st.markdown(f"""
+<div class="block hero">
+  <h1>Concept prototype for a Digital Twin for Ede-Veldhuizen</h1>
+  <p class="caption">
+    Exploring how a local digital twin could support healthy ageing (65+) in Ede–Veldhuizen by
+    visualising drivers of Quality of Life and testing simple ‘what-if’ scenarios.
+  </p>
+  <p>
+    This prototype turns research on <b>drivers of Quality of Life (QoL)</b> into an interactive tool for
+    <b>policy exploration</b>. It focuses on residents <b>65+</b> in <b>Veldhuizen</b> and organises indicators into four
+    driver dimensions: <b>Social</b>, <b>Physical</b>, <b>Psychological</b>, and <b>Environmental</b>.
+    It is a <b>proof of concept</b> designed to start conversations and help prioritise where and how to act—<b>not</b> a predictive model.
+  </p>
+</div>
+""", unsafe_allow_html=True)
 
-# --- How to use ---
-st.subheader("What you can do here")
-c1, c2 = st.columns(2)
-with c1:
-    st.markdown(
-        """
-- **Dashboard** — Compare neighbourhoods across indicators (with Ede average as reference).
-- **Map** — See **where** challenges/opportunities cluster via an interactive choropleth.
-"""
-    )
-with c2:
-    st.markdown(
-        """
-- **Drivers diagram** — Explore **interrelations** among key drivers (social ↔ physical ↔ environmental ↔ psychological).
-- **Scenarios** — Try a **mock simulation** (e.g., adding benches) to illustrate potential trade-offs and QoL impact.
-"""
-    )
+# ---------- What you can do here (orange block with four cards) ----------
+st.markdown("""
+<div class="block section">
+  <h2>What you can do here</h2>
+  <div class="grid">
+    <div class="card card-green">
+      <h4>📊 Dashboard</h4>
+      <p>Compare <a href="#">neighbourhoods</a> across indicators (Ede average as reference).</p>
+    </div>
+    <div class="card card-blue">
+      <h4>🧩 Drivers diagram</h4>
+      <p>Explore interrelations among key drivers (social ↔ physical ↔ environmental ↔ psychological).</p>
+    </div>
+    <div class="card card-peach">
+      <h4>🗺️ Map</h4>
+      <p>See where challenges/opportunities cluster via an interactive choropleth.</p>
+    </div>
+    <div class="card card-yellow">
+      <h4>🎛️ Scenarios</h4>
+      <p>Try a mock simulation (e.g., adding benches) to illustrate potential trade-offs and QoL impact.</p>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-# Optional quick nav (works on Streamlit >= 1.32). Falls back silently if not available.
+# ---------- Quick navigation ----------
 try:
-    st.divider()
     st.subheader("Quick navigation")
     nav1, nav2, nav3, nav4 = st.columns(4)
     with nav1:
@@ -54,7 +111,7 @@ try:
 except Exception:
     pass
 
-# --- Notes & limitations (brief, user-facing) ---
+# ---------- Notes & limitations ----------
 st.divider()
 st.subheader("About the data & limitations")
 st.info(
@@ -68,7 +125,7 @@ st.warning(
     "The **Scenarios** page uses simplified mock relationships for communication only."
 )
 
-# --- What a real Local Digital Twin would add ---
+# ---------- What a real Local Digital Twin would add ----------
 with st.expander("What a future Local Digital Twin could add"):
     st.markdown(
         """
@@ -79,7 +136,7 @@ with st.expander("What a future Local Digital Twin could add"):
 """
     )
 
-# --- Links ---
+# ---------- Links ----------
 st.divider()
 st.subheader("Project links")
 st.markdown(
@@ -90,4 +147,3 @@ st.markdown(
 )
 
 st.caption("Built with QGIS & Streamlit • Team 3538 • ACT 2025")
-
