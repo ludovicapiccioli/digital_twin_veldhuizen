@@ -2,9 +2,10 @@ import streamlit as st
 
 st.set_page_config(layout="wide", page_title="Intervention Diagram")
 
-# Inline SVG so the diagram renders exactly and consistently in Streamlit
+# Responsive SVG (scales to fit the available width)
 svg = r'''
-<svg width="960" height="560" viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" style="background:#f2f2f2;">
+<svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;height:auto;display:block;background:#f2f2f2;">
 
   <!-- ========== defs ========== -->
   <defs>
@@ -21,10 +22,8 @@ svg = r'''
       .cap { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; font-weight:600; }
       .text { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
       .tiny { font-size:12px; fill:#666; }
-      .label { font-size:16px; font-weight:700; fill:#111; }
       .pill { font-size:14px; font-weight:600; fill:#fff; }
       .score { font-size:36px; font-weight:800; fill:#fff; }
-      .sub { font-size:14px; fill:#2e7d32; font-weight:700; }
     </style>
   </defs>
 
@@ -148,4 +147,5 @@ svg = r'''
 </svg>
 '''
 
-st.components.v1.html(svg, height=600, scrolling=False)
+# Render SVG; height is just the iframe height (content itself is fluid).
+st.components.v1.html(svg, height=640, scrolling=False)
