@@ -16,7 +16,7 @@ if "b" not in st.session_state:
     st.session_state.b = 0
 
 def clamp(v): return int(max(BMIN, min(BMAX, v)))
-def sgn(v):  return f"{int(v):+d}"
+def sgn(v):  return f"{int(v):+d}"  # keep +/− sign
 
 # ---------------- Controls (presets + +/- + single slider) ----------------
 c1, c2, c3 = st.columns(3)
@@ -69,37 +69,39 @@ HEAD_REF_X_X2 = HEAD_W_X2 + 1.0
 HEAD_REF_Y_X2 = HEAD_H_X2 / 2
 
 # ---------------- Box sizing ----------------
-# ↓↓↓ Shrunk THESE (Intervention + all Dimensions)
-DIM_H  = 64      # was 80
+# ↓↓↓ Shrunk THESE (Intervention + all Dimensions); QoL unchanged
+DIM_H  = 64      # panel height
 DIM_RX = 16
-PILL_H = 40      # was 46
+PILL_H = 40
 PILL_R = 12
 PILL_PAD_X = 18
 
-DIM_W_SOC = 220  # was 260
-DIM_W_PHY = 170  # was 200
-DIM_W_ENV = 190  # was 220
-DIM_W_PSY = 205  # was 240
+DIM_W_SOC = 220
+DIM_W_PHY = 170
+DIM_W_ENV = 190
+DIM_W_PSY = 205
 
-INT_W = 150      # was 180
-INT_H = 100      # was 110
+INT_W = 150
+INT_H = 100
 INT_INNER_W = 120
 INT_INNER_H = 60
 
-# ↔ QoL UNCHANGED
+# QoL (unchanged)
 Q_W = 160
 Q_H = 210
 Q_RX = 24
 Q_SCORE_H = 96
 
-PHYS_COL = "#B39DDB"
+PHYS_COL = "#B39DDB"  # Physical activity theme color
 
 # ---------------- Dynamic SVG ----------------
+# Note: double {{ }} in <style> to escape Python f-string braces.
 svg = f'''
 <svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg"
      style="width:100%;height:auto;display:block;background:#ffffff;">
 
   <defs>
+    <!-- Green arrowheads: x1 and x2 -->
     <marker id="arrowGreen1" markerUnits="userSpaceOnUse"
             markerWidth="{HEAD_W_X1}" markerHeight="{HEAD_H_X1}"
             refX="{HEAD_REF_X_X1}" refY="{HEAD_REF_Y_X1}" orient="auto">
@@ -110,6 +112,8 @@ svg = f'''
             refX="{HEAD_REF_X_X2}" refY="{HEAD_REF_Y_X2}" orient="auto">
       <path d="M0,0 L{HEAD_W_X2},{HEAD_H_X2/2} L0,{HEAD_H_X2} z" fill="#19a974"/>
     </marker>
+
+    <!-- Red arrowheads: x1 and x2 -->
     <marker id="arrowRed1" markerUnits="userSpaceOnUse"
             markerWidth="{HEAD_W_X1}" markerHeight="{HEAD_H_X1}"
             refX="{HEAD_REF_X_X1}" refY="{HEAD_REF_Y_X1}" orient="auto">
@@ -120,6 +124,7 @@ svg = f'''
             refX="{HEAD_REF_X_X2}" refY="{HEAD_REF_Y_X2}" orient="auto">
       <path d="M0,0 L{HEAD_W_X2},{HEAD_H_X2/2} L0,{HEAD_H_X2} z" fill="#e85959"/>
     </marker>
+
     <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
     </filter>
@@ -193,33 +198,37 @@ svg = f'''
     <text x="{Q_W/2}" y="-20" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
     <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_H}"
           fill="#fff" stroke="#6fa28e" stroke-width="3" filter="url(#soft)"/>
+
+    <!-- Δ big score -->
     <g transform="translate(0,{Q_H - Q_SCORE_H})">
       <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_SCORE_H}" fill="#5f8f75"/>
-      <text x="{Q_W/2}" y="{Q_SCORE_H*0.65}" text-anchor="middle" class="score">{sgn(q_total)}</text>
+      <text x="{Q_W/2}" y="{Q_SCORE_H*0.65}" text-anchor="middle" class="score">Δ {sgn(q_total)}</text>
     </g>
+
+    <!-- Δ contributions list -->
     <g transform="translate(14,24)">
-      <text class="tiny" x="0" y="0">{sgn(q_social)} from Social</text>
-      <text class="tiny" x="0" y="18">{sgn(q_physical)} from Physical</text>
-      <text class="tiny" x="0" y="36">{sgn(q_env)} from Environmental</text>
-      <text class="tiny" x="0" y="54">{sgn(q_psych)} from Psychological</text>
+      <text class="tiny" x="0" y="0">Δ {sgn(q_social)} from Social</text>
+      <text class="tiny" x="0" y="18">Δ {sgn(q_physical)} from Physical</text>
+      <text class="tiny" x="0" y="36">Δ {sgn(q_env)} from Environmental</text>
+      <text class="tiny" x="0" y="54">Δ {sgn(q_psych)} from Psychological</text>
     </g>
   </g>
 
   <!-- Node badges -->
   <g>
-    <g transform="translate(680 + 60,72)">
+    <g transform="translate(740,72)">
       <circle cx="0" cy="0" r="16" fill="#bdbdbd"/>
       <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_social)}</text>
     </g>
-    <g transform="translate(620 + 50,226)">
+    <g transform="translate(690,226)">
       <circle cx="0" cy="0" r="16" fill="#bdbdbd"/>
       <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_physical)}</text>
     </g>
-    <g transform="translate(610 + 50,352)">
+    <g transform="translate(680,352)">
       <circle cx="0" cy="0" r="16" fill="#bdbdbd"/>
       <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_safety)}</text>
     </g>
-    <g transform="translate(570 + 50,490)">
+    <g transform="translate(640,490)">
       <circle cx="0" cy="0" r="16" fill="#bdbdbd"/>
       <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_psych)}</text>
     </g>
