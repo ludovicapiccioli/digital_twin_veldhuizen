@@ -120,7 +120,7 @@ svg = f'''
      style="width:100%;height:auto;display:block;background:#ffffff;">
 
   <defs>
-    <!-- Good arrowhead definitions -->
+    <!-- ✅ Good arrowhead definitions from Drivers Diagram -->
     <marker id="arrowGreen1" viewBox="0 0 10 6"
             markerWidth="6.5" markerHeight="6.5"
             refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -156,8 +156,118 @@ svg = f'''
     </style>
   </defs>
 
-  <!-- [SVG contents unchanged: boxes, arrows, bubbles, etc.] -->
+  <!-- === INTERVENTION === -->
+  <g transform="translate({INT_X},{INT_Y})">
+    <rect x="0" y="0" rx="20" ry="20" width="{INT_W}" height="{INT_H}"
+          fill="#fff" stroke="#111" stroke-width="3" filter="url(#soft)"/>
+    <text x="{INT_W/2}" y="-18" text-anchor="middle" class="cap" fill="#111" font-size="16">Intervention</text>
+    <rect x="{(INT_W-INT_INNER_W)/2}" y="{(INT_H-INT_INNER_H)/2}" rx="20" ry="20"
+          width="{INT_INNER_W}" height="{INT_INNER_H}" fill="#000"/>
+    <text x="{INT_W/2}" y="{(INT_H/2)+12}" text-anchor="middle" class="pill">Benches</text>
+    <g transform="translate(-8,30)">
+      <circle cx="20" cy="30" r="20" fill="#bdbdbd"/>
+      <text x="20" y="34" text-anchor="middle" class="cap" font-size="15" fill="#fff">{sgn(b)}</text>
+    </g>
+  </g>
 
+  <!-- === DIMENSIONS === -->
+  <g transform="translate({SOC_X},{SOC_Y})">
+    <text x="{DIM_W_SOC/2}" y="10" text-anchor="middle" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
+    <rect x="0" y="28" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
+          fill="#fff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="42" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_SOC - 2*PILL_PAD_X}" height="{PILL_H}" fill="#ff9ad5"/>
+    <text x="{DIM_W_SOC/2}" y="68" text-anchor="middle" class="pill">Social networks</text>
+  </g>
+
+  <g transform="translate({PHY_X},{PHY_Y})">
+    <text x="{DIM_W_PHY/2}" y="10" text-anchor="middle" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
+    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
+          fill="#fff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_PHY - 2*PILL_PAD_X}" height="{PILL_H}" fill="{PHYS_COL}"/>
+    <text x="{DIM_W_PHY/2}" y="58" text-anchor="middle" class="pill">Physical activity</text>
+  </g>
+
+  <g transform="translate({ENV_X},{ENV_Y})">
+    <text x="{DIM_W_ENV/2}" y="10" text-anchor="middle" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
+    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
+          fill="#fff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_ENV - 2*PILL_PAD_X}" height="{PILL_H}" fill="#00c853"/>
+    <text x="{DIM_W_ENV/2}" y="58" text-anchor="middle" class="pill">Safety</text>
+  </g>
+
+  <g transform="translate({PSY_X},{PSY_Y})">
+    <text x="{DIM_W_PSY/2}" y="10" text-anchor="middle" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
+    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
+          fill="#fff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_PSY - 2*PILL_PAD_X}" height="{PILL_H}" fill="#ff8f2d"/>
+    <text x="{DIM_W_PSY/2}" y="58" text-anchor="middle" class="pill">Downshift</text>
+  </g>
+
+  <!-- === QoL === -->
+  <g transform="translate({QOL_X},{QOL_Y})">
+    <text x="{Q_W/2}" y="-20" text-anchor="middle" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
+    <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_H}"
+          fill="#fff" stroke="#6fa28e" stroke-width="3" filter="url(#soft)"/>
+    <g transform="translate(0,{Q_H - Q_SCORE_H})">
+      <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_SCORE_H}" fill="#5f8f75"/>
+      <text x="{Q_W/2}" y="{Q_SCORE_H*0.65}" text-anchor="middle" class="score">Δ {sgn(q_total)}</text>
+    </g>
+    <g transform="translate(14,24)">
+      <text class="tiny" x="0" y="0">Δ {sgn(q_social)} from Social</text>
+      <text class="tiny" x="0" y="18">Δ {sgn(q_physical)} from Physical</text>
+      <text class="tiny" x="0" y="36">Δ {sgn(q_env)} from Environmental</text>
+      <text class="tiny" x="0" y="54">Δ {sgn(q_psych)} from Psychological</text>
+    </g>
+  </g>
+
+  <!-- === Small numeric bubbles === -->
+  <g>
+    <g transform="translate({SOC_BADGE_X},{SOC_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_social)}</text>
+    </g>
+    <g transform="translate({PHY_BADGE_X},{PHY_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_physical)}</text>
+    </g>
+    <g transform="translate({ENV_BADGE_X},{ENV_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_safety)}</text>
+    </g>
+    <g transform="translate({PSY_BADGE_X},{PSY_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_psych)}</text>
+    </g>
+  </g>
+
+  <!-- === Arrows + x1/x2 labels === -->
+  <path d="M190,230 C210,170 285,105 339,80" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}" marker-end="url(#arrowGreen2)"/>
+  <text x="290" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
+
+  <path d="M190,230 C230,220 300,210 370,210" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
+  <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
+
+  <path d="M190,230 C235,275 300,320 355,338" fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}" marker-end="url(#arrowRed1)"/>
+  <text x="295" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
+
+  <path d="M190,230 C200,320 245,405 344,460" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
+  <text x="320" y="396" class="cap" font-size="18" fill="#19a974">x1</text>
+
+  <path d="M570,80  C650,95 735,165 768,230" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}" marker-end="url(#arrowGreen2)"/>
+  <text x="590" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
+
+  <path d="M545,210 C620,210 680,215 773,230" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
+  <text x="620" y="200" class="cap" font-size="18" fill="#19a974">x1</text>
+
+  <path d="M555,338 C640,320 710,270 768,230" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}" marker-end="url(#arrowGreen2)"/>
+  <text x="590" y="305" class="cap" font-size="18" fill="#19a974">x2</text>
+
+  <path d="M565,460 C670,440 740,330 768,230" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
+  <text x="690" y="410" class="cap" font-size="18" fill="#19a974">x1</text>
 </svg>
 '''
 
@@ -189,22 +299,3 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=210, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
-
-# ---------------- Concept notes ----------------
-st.markdown("""
----
-### 🧭 Concept Notes
-
-This simulation is a **conceptual demonstration** of how local urban interventions (here, adding or removing benches)
-can influence various **dimensions of quality of life (QoL)**.
-
-**Logic summary:**
-- The number of benches (`b`) affects social, physical, safety, and psychological dimensions using simple mock coefficients.
-- Each dimension’s change (`Δ`) contributes to an aggregated QoL composite score using predefined weights.
-- Arrows in the diagram visualize directional relationships, not statistical causation.
-- The gauge at the bottom gives an indicative QoL score out of 100, starting from a baseline of 70.
-
-**Purpose:**  
-This visualization is intended to **communicate relationships and trade-offs**, not empirical results.
-It helps explore how physical design changes could ripple across multiple wellbeing dimensions.
-""")
