@@ -8,7 +8,7 @@ PINK   = "#ff69b4"   # Social-origin / pink arrows
 ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
 BLUE   = "#3498db"   # Kept for reference if needed elsewhere
-RED    = "#E57373"   # Physical frame/pill — now red
+RED    = "#B39DDB"   # Physical frame/pill — now red
 LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
 
 svg = f"""
@@ -327,5 +327,6 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
+
 
 
