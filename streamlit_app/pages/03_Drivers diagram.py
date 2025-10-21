@@ -1,332 +1,307 @@
-# pages/03_Drivers diagram.py
+# pages/04_Scenarios.py
 import streamlit as st
-st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
+import numpy as np
+import plotly.graph_objects as go
 
-st.subheader("Drivers Diagram - Key interrelations of QoL drivers")
+# Must be first Streamlit call
+st.set_page_config(layout="wide", page_title="Simulation of interventions • Veldhuizen")
 
-PINK   = "#ff69b4"   # Social-origin / pink arrows
-ORANGE = "#f39c12"   # Psychological frame/pills
-GREEN  = "#27ae60"   # Environmental-origin / green arrows
-BLUE   = "#3498db"   # Kept for reference if needed elsewhere
-RED    = "#B39DDB"   # Physical frame/pill — now red
-LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
+# Header
+st.subheader("Concept demo - Simulation of interventions")
+st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
-svg = f"""
-<svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
+# ---------------- State & helpers ----------------
+BMIN, BMAX = -10, 10
+if "b" not in st.session_state:
+    st.session_state.b = 0
+
+def clamp(v): return int(max(BMIN, min(BMAX, v)))
+def sgn(v):  return f"{int(v):+d}"
+
+def set_b(v: int): st.session_state.b = clamp(v)
+def inc_b(): st.session_state.b = clamp(st.session_state.get("b", 0) + 1)
+def dec_b(): st.session_state.b = clamp(st.session_state.get("b", 0) - 1)
+
+# ---------------- Controls ----------------
+left_spacer, col_minus5, col_base, col_plus5, right_spacer = st.columns([1, 1, 1, 1, 1])
+with col_minus5:
+    st.button("-5 Benches", on_click=set_b, args=(-5,), use_container_width=True)
+with col_base:
+    st.button("Baseline (0)", on_click=set_b, args=(0,), use_container_width=True)
+with col_plus5:
+    st.button("+5 Benches", on_click=set_b, args=(+5,), use_container_width=True)
+
+cm, cs, cp = st.columns([1, 8, 1])
+with cm:
+    st.button("−", on_click=dec_b, use_container_width=True)
+with cs:
+    st.slider("Benches (add/remove)", BMIN, BMAX, step=1, key="b")
+with cp:
+    st.button("＋", on_click=inc_b, use_container_width=True)
+
+b = int(st.session_state.b)
+
+# ---------------- Logic ----------------
+d_social   =  2 * b
+d_physical =  1 * b
+d_safety   = -1 * b
+d_psych    =  1 * b
+
+W_SOC, W_PHY, W_ENV, W_PSY = 2, 1, 2, 1
+q_social   = W_SOC * d_social
+q_physical = W_PHY * d_physical
+q_env      = W_ENV * d_safety
+q_psych    = W_PSY * d_psych
+q_total    = q_social + q_physical + q_env + q_psych
+
+# ---------------- Layout parameters ----------------
+ARROW_W_X1 = 3.0
+ARROW_W_X2 = 4.5
+DIM_H  = 64
+DIM_RX = 16
+PILL_H = 40
+PILL_R = 12
+PILL_PAD_X = 18
+
+DIM_W_SOC = 220
+DIM_W_PHY = 170
+DIM_W_ENV = 190
+DIM_W_PSY = 205
+
+INT_W = 150
+INT_H = 100
+INT_INNER_W = 120
+INT_INNER_H = 60
+
+Q_W = 160
+Q_H = 210
+Q_RX = 24
+Q_SCORE_H = 96
+
+PHYS_COL = "#B39DDB"
+
+CENTER_X = 455
+SOC_X = CENTER_X - DIM_W_SOC / 2
+PHY_X = CENTER_X - DIM_W_PHY / 2
+ENV_X = CENTER_X - DIM_W_ENV / 2
+PSY_X = CENTER_X - DIM_W_PSY / 2
+
+SOC_Y = 20
+PHY_Y = 160
+ENV_Y = 285
+PSY_Y = 405
+
+INT_X, INT_Y = 40, 180
+QOL_X = 770
+QOL_Y = INT_Y + INT_H / 2 - Q_H / 2
+
+BADGE_R   = 16
+BADGE_DX  = 0
+BADGE_DY  = 25
+
+SOC_CY = 28 + DIM_H/2
+PHY_CY = 18 + DIM_H/2
+ENV_CY = 18 + DIM_H/2
+PSY_CY = 18 + DIM_H/2
+
+SOC_BADGE_X = SOC_X + DIM_W_SOC + BADGE_DX
+PHY_BADGE_X = PHY_X + DIM_W_PHY + BADGE_DX
+ENV_BADGE_X = ENV_X + DIM_W_ENV + BADGE_DX
+PSY_BADGE_X = PSY_X + DIM_W_PSY + BADGE_DX
+
+SOC_BADGE_Y = SOC_Y + SOC_CY + BADGE_DY
+PHY_BADGE_Y = PHY_Y + PHY_CY + BADGE_DY
+ENV_BADGE_Y = ENV_Y + ENV_CY + BADGE_DY
+PSY_BADGE_Y = PSY_Y + PSY_CY + BADGE_DY
+
+# ---------------- SVG ----------------
+svg = f'''
+<svg viewBox="0 0 960 520" xmlns="http://www.w3.org/2000/svg"
+     style="width:100%;height:auto;display:block;background:#ffffff;">
+
   <defs>
-    <!-- Smaller arrowheads (Option A), keep your orientations -->
-    <marker id="arrow-green" viewBox="0 0 10 6"
-            markerWidth="6.5" markerHeight="6.5"
-            refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,3 L0,6 z" fill="{GREEN}"/>
+    <!-- Arrowheads scaled by stroke width; tips align with path end -->
+    <marker id="arrowGreen1" markerUnits="strokeWidth"
+            markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 z" fill="#19a974"/>
     </marker>
-    <marker id="arrow-pink" viewBox="0 0 10 6"
-            markerWidth="6.5" markerHeight="6.5"
-            refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
-      <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
+    <marker id="arrowGreen2" markerUnits="strokeWidth"
+            markerWidth="7.5" markerHeight="7.5" refX="7.5" refY="3.75" orient="auto">
+      <path d="M0,0 L7.5,3.75 L0,7.5 z" fill="#19a974"/>
     </marker>
-    <marker id="arrow-pink-340" viewBox="0 0 10 6"
-            markerWidth="6.5" markerHeight="6.5"
-            refX="8.3" refY="3" orient="35" markerUnits="strokeWidth">
-      <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
+    <marker id="arrowRed1" markerUnits="strokeWidth"
+            markerWidth="6" markerHeight="6" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 z" fill="#e85959"/>
     </marker>
 
-    <style><![CDATA[
-      .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
-      .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
-      .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
-      .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
-
-      /* --- Override label color for specific nodes --- */
-      .node[data-node="Purpose"] .label,
-      .node[data-node="Downshift"] .label,
-      .node[data-node="CP"] .label,
-      .node[data-node="PA"] .label {{
-        fill: {LIGHTBLUE};
-      }}
-
-      /* --- Interactivity styles --- */
-      .node {{ cursor: pointer; }}
-      .edge {{ pointer-events: stroke; }}
-      .dim-title {{ pointer-events: none; }}
-
-      /* default opacity */
-      .node .pill, .edge {{ opacity: 0.85; transition: opacity .15s ease, filter .15s ease, stroke-width .15s ease; }}
-      .edge {{ stroke-linecap: round; }}
-
-      /* on hover context: fade others */
-      .faded {{ opacity: 0.15; filter: grayscale(40%); }}
-
-      /* highlight: make vivid and a tad thicker */
-      .highlight {{ opacity: 1; filter: none; }}
-      .edge.highlight {{ stroke-width: 4.2; }}
-      .node.highlight .pill {{ stroke-width: 4; }}
-
-      /* dotted meta-arc keeps its dash but can highlight too */
-      .dotted {{ stroke-dasharray: 6 8; }}
-
-      /* Improve text hit area a bit */
-      .node text {{ user-select: none; pointer-events: none; }}
-    ]]></style>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+    <style>
+      .cap {{ font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial; font-weight:600; }}
+      .tiny {{ font-size:12px; fill:#666; }}
+      .pill {{ font-size:14px; font-weight:600; fill:#fff; }}
+      .score {{ font-size:36px; font-weight:800; fill:#fff; }}
+    </style>
   </defs>
 
-  <!-- ===== Frames with vertical titles OUTSIDE ===== -->
-  <rect class="frame" x="80"  y="90"  width="440" height="280" stroke="{PINK}"/>
-  <text class="titleV dim-title" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
-
-  <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
-  <text class="titleV dim-title" x="60"  y="650" fill="{ORANGE}" transform="rotate(-90 60 650)">Psychological</text>
-
-  <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
-  <text class="titleV dim-title" x="1090" y="130" fill="{GREEN}" transform="rotate(90 1090 130)">ENVIRONMENTAL</text>
-
-  <!-- PHYSICAL frame/title now RED -->
-  <rect class="frame" x="640" y="400" width="440" height="310" stroke="{RED}"/>
-  <text class="titleV dim-title" x="1090" y="555" fill="{RED}" transform="rotate(90 1090 555)">Physical</text>
-
-  <!-- ===== Nodes (pills) with data-node ids ===== -->
-  <!-- SOCIAL -->
-  <g class="node" data-node="SN">
-    <rect class="pill" x="190" y="175" width="220" height="40" fill="{PINK}"/>
-    <text class="label" x="300" y="201" text-anchor="middle">Social networks</text>
+  <!-- === INTERVENTION BOX === -->
+  <g transform="translate({INT_X},{INT_Y})">
+    <rect x="0" y="0" rx="20" ry="20" width="{INT_W}" height="{INT_H}"
+          fill="#fff" stroke="#111" stroke-width="3" filter="url(#soft)"/>
+    <text x="{INT_W/2}" y="-18" text-anchor="middle" class="cap" fill="#111" font-size="16">Intervention</text>
+    <rect x="{(INT_W-INT_INNER_W)/2}" y="{(INT_H-INT_INNER_H)/2}" rx="20" ry="20"
+          width="{INT_INNER_W}" height="{INT_INNER_H}" fill="#000"/>
+    <text x="{INT_W/2}" y="{(INT_H/2)+12}" text-anchor="middle" class="pill">Benches</text>
+    <g transform="translate(-8,30)">
+      <circle cx="20" cy="30" r="20" fill="#bdbdbd"/>
+      <text x="20" y="34" text-anchor="middle" class="cap" font-size="15" fill="#fff">{sgn(b)}</text>
+    </g>
   </g>
 
-  <g class="node" data-node="CP">
-    <rect class="pill" x="180" y="240" width="280" height="40" fill="{PINK}"/>
-    <text class="label" x="320" y="266" text-anchor="middle">Community participation</text>
+  <!-- === DIMENSION BOXES === -->
+  <g transform="translate({SOC_X},{SOC_Y})">
+    <text x="{DIM_W_SOC/2}" y="10" text-anchor="middle" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
+    <rect x="0" y="28" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
+          fill="#fff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="42" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_SOC - 2*PILL_PAD_X}" height="{PILL_H}" fill="#ff9ad5"/>
+    <text x="{DIM_W_SOC/2}" y="68" text-anchor="middle" class="pill">Social networks</text>
   </g>
 
-  <!-- PSYCHOLOGICAL -->
-  <g class="node" data-node="ES">
-    <rect class="pill" x="180" y="470" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="496" text-anchor="middle">Emotional security</text>
+  <g transform="translate({PHY_X},{PHY_Y})">
+    <text x="{DIM_W_PHY/2}" y="10" text-anchor="middle" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
+    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
+          fill="#fff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_PHY - 2*PILL_PAD_X}" height="{PILL_H}" fill="{PHYS_COL}"/>
+    <text x="{DIM_W_PHY/2}" y="58" text-anchor="middle" class="pill">Physical activity</text>
   </g>
 
-  <g class="node" data-node="SA">
-    <rect class="pill" x="180" y="520" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="546" text-anchor="middle">Sense of autonomy</text>
+  <g transform="translate({ENV_X},{ENV_Y})">
+    <text x="{DIM_W_ENV/2}" y="10" text-anchor="middle" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
+    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
+          fill="#fff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_ENV - 2*PILL_PAD_X}" height="{PILL_H}" fill="#00c853"/>
+    <text x="{DIM_W_ENV/2}" y="58" text-anchor="middle" class="pill">Safety</text>
   </g>
 
-  <g class="node" data-node="Purpose">
-    <rect class="pill" x="200" y="570" width="210" height="40" fill="{ORANGE}"/>
-    <text class="label" x="305" y="596" text-anchor="middle">Purpose</text>
+  <g transform="translate({PSY_X},{PSY_Y})">
+    <text x="{DIM_W_PSY/2}" y="10" text-anchor="middle" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
+    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
+          fill="#fff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
+    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+          width="{DIM_W_PSY - 2*PILL_PAD_X}" height="{PILL_H}" fill="#ff8f2d"/>
+    <text x="{DIM_W_PSY/2}" y="58" text-anchor="middle" class="pill">Downshift</text>
   </g>
 
-  <g class="node" data-node="Downshift">
-    <rect class="pill" x="180" y="620" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="646" text-anchor="middle">Downshift</text>
+  <!-- === QoL === -->
+  <g transform="translate({QOL_X},{QOL_Y})">
+    <text x="{Q_W/2}" y="-20" text-anchor="middle" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
+    <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_H}"
+          fill="#fff" stroke="#6fa28e" stroke-width="3" filter="url(#soft)"/>
+    <g transform="translate(0,{Q_H - Q_SCORE_H})">
+      <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_SCORE_H}" fill="#5f8f75"/>
+      <text x="{Q_W/2}" y="{Q_SCORE_H*0.65}" text-anchor="middle" class="score">Δ {sgn(q_total)}</text>
+    </g>
+    <g transform="translate(14,24)">
+      <text class="tiny" x="0" y="0">Δ {sgn(q_social)} from Social</text>
+      <text class="tiny" x="0" y="18">Δ {sgn(q_physical)} from Physical</text>
+      <text class="tiny" x="0" y="36">Δ {sgn(q_env)} from Environmental</text>
+      <text class="tiny" x="0" y="54">Δ {sgn(q_psych)} from Psychological</text>
+    </g>
   </g>
 
-  <!-- ENVIRONMENTAL -->
-  <g class="node" data-node="PS">
-    <rect class="pill" x="740" y="120" width="300" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="146" text-anchor="middle">Proximity to services</text>
+  <!-- === Small numeric bubbles (exact coords kept) === -->
+  <g>
+    <g transform="translate({SOC_BADGE_X},{SOC_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_social)}</text>
+    </g>
+    <g transform="translate({PHY_BADGE_X},{PHY_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_physical)}</text>
+    </g>
+    <g transform="translate({ENV_BADGE_X},{ENV_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_safety)}</text>
+    </g>
+    <g transform="translate({PSY_BADGE_X},{PSY_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_psych)}</text>
+    </g>
   </g>
 
-  <g class="node" data-node="GS">
-    <rect class="pill" x="750" y="165" width="280" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="191" text-anchor="middle">Green spaces</text>
-  </g>
+  <!-- === Arrows + labels (exact coords kept) === -->
+  <!-- Set stroke-linecap to 'butt' so line ends meet the marker tip precisely -->
+  <path d="M190,230 C210,170 285,105 339,80"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen2)"/>
+  <text x="290" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <g class="node" data-node="MA">
-    <rect class="pill" x="740" y="210" width="300" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="236" text-anchor="middle">Mobility &amp; Accessibility</text>
-  </g>
+  <path d="M190,230 C230,220 300,210 370,210"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen1)"/>
+  <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <g class="node" data-node="SI">
-    <rect class="pill" x="750" y="255" width="280" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="281" text-anchor="middle">Social infrastructures</text>
-  </g>
+  <path d="M190,230 C235,275 300,320 355,338"
+        fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}"
+        stroke-linecap="butt" marker-end="url(#arrowRed1)"/>
+  <text x="295" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
 
-  <g class="node" data-node="Safety">
-    <rect class="pill" x="700" y="300" width="240" height="40" fill="{GREEN}"/>
-    <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
-  </g>
+  <path d="M190,230 C200,320 245,405 344,460"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen1)"/>
+  <text x="320" y="396" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <!-- PHYSICAL node pill now RED + blue label -->
-  <g class="node" data-node="PA">
-    <rect class="pill" x="700" y="575" width="320" height="44" fill="{RED}"/>
-    <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
-  </g>
+  <path d="M570,80  C650,95 735,165 768,230"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen2)"/>
+  <text x="590" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <!-- ===== Meta dotted arc (treat as edge Social→Environmental) ===== -->
-  <path id="A00_Social_to_Env_arc" class="edge dotted"
-        data-from="SOCIAL" data-to="ENV"
-        d="M120,85 C410,20 820,20 990,68"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+  <path d="M545,210 C620,210 680,215 773,230"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen1)"/>
+  <text x="620" y="200" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <!-- ========= EDGES with data-from / data-to ========= -->
-  <!-- Pink (Social-origin) -->
-  <path id="A01" class="edge" data-from="SN" data-to="Purpose"
-        d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-340)"/>
+  <path d="M555,338 C640,320 710,270 768,230"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen2)"/>
+  <text x="590" y="305" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path id="A02" class="edge" data-from="SN" data-to="ES"
-        d="M194,195 C110,230 130,395 180,490"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
-
-  <path id="A03" class="edge" data-from="SN" data-to="SA"
-        d="M194,195 C90,210 120,440 180,540"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
-
-  <path id="A04" class="edge" data-from="CP" data-to="Purpose"
-        d="M456,260 C470,340 440,540 410,590"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
-
-  <path id="A05" class="edge" data-from="CP" data-to="Downshift"
-        d="M456,260 C490,390 450,610 420,640"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
-
-  <path id="A06" class="edge" data-from="CP" data-to="PA"
-        d="M456,260 C560,330 640,560 704,595"
-        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
-
-  <!-- Green (Environmental-origin) -->
-  <path id="A07" class="edge" data-from="PS" data-to="SN"
-        d="M740,140 C615,125 480,135 406,195"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A08" class="edge" data-from="PS" data-to="SA"
-        d="M740,140 C690,180 520,470 420,520"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A09" class="edge" data-from="GS" data-to="CP"
-        d="M750,185 C620,190 535,255 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A10" class="edge" data-from="GS" data-to="Downshift"
-        d="M750,185 C680,240 520,575 420,640"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A11" class="edge" data-from="MA" data-to="CP"
-        d="M740,230 C610,235 535,268 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A12" class="edge" data-from="SI" data-to="SN"
-        d="M750,275 C620,265 490,190 406,195"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A13" class="edge" data-from="SI" data-to="CP"
-        d="M750,275 C620,280 535,280 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A14" class="edge" data-from="Safety" data-to="CP"
-        d="M700,320 C610,330 540,300 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A15" class="edge" data-from="Safety" data-to="Downshift"
-        d="M700,320 C640,380 510,600 420,640"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <path id="A16" class="edge" data-from="ENV" data-to="PA"
-        d="M860,380 C835,450 795,520 760,575"
-        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
-
-  <!-- ====== Interactivity script ====== -->
-  <script><![CDATA[
-    (function () {{
-      const svg = document.getElementById('drivers-svg');
-      const nodes = Array.from(svg.querySelectorAll('.node'));
-      const edges = Array.from(svg.querySelectorAll('.edge'));
-
-      // Build adjacency maps
-      const outgoing = {{}};
-      const incoming = {{}};
-
-      edges.forEach(e => {{
-        const from = e.getAttribute('data-from');
-        const to   = e.getAttribute('data-to');
-        if (!from || !to) return;
-        (outgoing[from] = outgoing[from] || []).push(e);
-        (incoming[to]   = incoming[to]   || []).push(e);
-      }});
-
-      function clearAll() {{
-        nodes.forEach(n => n.classList.remove('highlight', 'faded'));
-        edges.forEach(e => e.classList.remove('highlight', 'faded'));
-      }}
-
-      function fadeAll() {{
-        nodes.forEach(n => n.classList.add('faded'));
-        edges.forEach(e => e.classList.add('faded'));
-      }}
-
-      function highlightNode(nodeId) {{
-        fadeAll();
-        // highlight the node itself
-        const me = svg.querySelector(`.node[data-node="${{nodeId}}"]`);
-        if (me) me.classList.add('highlight');
-
-        // outgoing edges + their targets
-        (outgoing[nodeId] || []).forEach(e => {{
-          e.classList.add('highlight');
-          const tgt = e.getAttribute('data-to');
-          const n   = svg.querySelector(`.node[data-node="${{tgt}}"]`);
-          if (n) n.classList.add('highlight');
-        }});
-
-        // incoming edges + their sources
-        (incoming[nodeId] || []).forEach(e => {{
-          e.classList.add('highlight');
-          const src = e.getAttribute('data-from');
-          const n   = svg.querySelector(`.node[data-node="${{src}}"]`);
-          if (n) n.classList.add('highlight');
-        }});
-      }}
-
-      // Hover on nodes
-      nodes.forEach(n => {{
-        const id = n.getAttribute('data-node');
-        n.addEventListener('mouseenter', () => highlightNode(id));
-        n.addEventListener('mouseleave', clearAll);
-
-        // Tap/click toggle for touch users
-        n.addEventListener('click', (ev) => {{
-          ev.stopPropagation();
-          const active = n.classList.contains('highlight');
-          clearAll();
-          if (!active) highlightNode(id);
-        }});
-      }});
-
-      // Hover on edges (highlight edge + its endpoints)
-      edges.forEach(e => {{
-        e.addEventListener('mouseenter', () => {{
-          fadeAll();
-          e.classList.add('highlight');
-          const from = e.getAttribute('data-from');
-          const to   = e.getAttribute('data-to');
-          const nf   = svg.querySelector(`.node[data-node="${{from}}"]`);
-          const nt   = svg.querySelector(`.node[data-node="${{to}}"]`);
-          if (nf) nf.classList.add('highlight');
-          if (nt) nt.classList.add('highlight');
-        }});
-        e.addEventListener('mouseleave', clearAll);
-
-        e.addEventListener('click', (ev) => {{
-          ev.stopPropagation();
-          const isOn = e.classList.contains('highlight');
-          clearAll();
-          if (!isOn) {{
-            e.classList.add('highlight');
-            const from = e.getAttribute('data-from');
-            const to   = e.getAttribute('data-to');
-            const nf   = svg.querySelector(`.node[data-node="${{from}}"]`);
-            const nt   = svg.querySelector(`.node[data-node="${{to}}"]`);
-            if (nf) nf.classList.add('highlight');
-            if (nt) nt.classList.add('highlight');
-          }}
-        }});
-      }});
-
-      // Click on empty canvas clears
-      svg.addEventListener('click', clearAll);
-    }})();
-  ]]></script>
+  <path d="M565,460 C670,440 740,330 768,230"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        stroke-linecap="butt" marker-end="url(#arrowGreen1)"/>
+  <text x="690" y="410" class="cap" font-size="18" fill="#19a974">x1</text>
 </svg>
-"""
+'''
 
-st.components.v1.html(svg, height=860, scrolling=False)
+st.components.v1.html(svg, height=520, scrolling=False)
 
+# ---------------- KPIs + gauge ----------------
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("Δ Social interactions",  sgn(d_social))
+c2.metric("Δ Physical activity",    sgn(d_physical))
+c3.metric("Δ Safety",               sgn(d_safety))
+c4.metric("Δ QoL (composite)",      sgn(q_total))
 
+BASE_QOL = 70
+qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
 
+g = go.Figure(go.Indicator(
+    mode="gauge+number+delta",
+    value=qol_after,
+    number={"suffix": " / 100"},
+    delta={"reference": BASE_QOL,
+           "increasing": {"color": "#27ae60"},
+           "decreasing": {"color": "#c0392b"}},
+    gauge={"axis": {"range": [0, 100]},
+           "bar": {"color": "#34495e"},
+           "steps": [{"range": [0, 40]},
+                     {"range": [40, 70]},
+                     {"range": [70, 100]}]},
+    title={"text": "QoL index (mock)", "font": {"size": 16}}
+))
+g.update_layout(height=210, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
+st.plotly_chart(g, use_container_width=True)
