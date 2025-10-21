@@ -18,29 +18,35 @@ if "b" not in st.session_state:
 def clamp(v): return int(max(BMIN, min(BMAX, v)))
 def sgn(v):  return f"{int(v):+d}"
 
+# Callback helpers (avoid direct state/value clashes during a run)
+def set_b(v: int):
+    st.session_state.b = clamp(v)
+
+def inc_b():
+    st.session_state.b = clamp(st.session_state.get("b", 0) + 1)
+
+def dec_b():
+    st.session_state.b = clamp(st.session_state.get("b", 0) - 1)
+
 # ---------------- Controls ----------------
-# Row 1: presets (equal left/right spacers)
+# Row 1: presets (even spacers so the three buttons are horizontally centered)
 left_spacer, col_minus5, col_base, col_plus5, right_spacer = st.columns([1, 1, 1, 1, 1])
 with col_minus5:
-    if st.button("-5 Benches"):
-        st.session_state.b = -5
+    st.button("-5 Benches", on_click=set_b, args=(-5,), use_container_width=True)
 with col_base:
-    if st.button("Baseline (0)"):
-        st.session_state.b = 0
+    st.button("Baseline (0)", on_click=set_b, args=(0,), use_container_width=True)
 with col_plus5:
-    if st.button("+5 Benches"):
-        st.session_state.b = +5
+    st.button("+5 Benches", on_click=set_b, args=(+5,), use_container_width=True)
 
-# Row 2: − / slider / ＋ (original placement)
+# Row 2: − / slider / ＋ (centered block)
 cm, cs, cp = st.columns([1, 8, 1])
 with cm:
-    if st.button("−"):
-        st.session_state.b = clamp(st.session_state.b - 1)
+    st.button("−", on_click=dec_b, use_container_width=True)
 with cs:
-    st.slider("Benches (add/remove)", BMIN, BMAX, value=int(st.session_state.b), step=1, key="b")
+    # IMPORTANT: do NOT pass a 'value' when also using session state. Let the key drive it.
+    st.slider("Benches (add/remove)", BMIN, BMAX, step=1, key="b")
 with cp:
-    if st.button("＋"):
-        st.session_state.b = clamp(st.session_state.b + 1)
+    st.button("＋", on_click=inc_b, use_container_width=True)
 
 b = int(st.session_state.b)
 
@@ -86,7 +92,7 @@ INT_H = 100
 INT_INNER_W = 120
 INT_INNER_H = 60
 
-# QoL (unchanged)
+# QoL (unchanged size)
 Q_W = 160
 Q_H = 210
 Q_RX = 24
@@ -108,7 +114,10 @@ ENV_Y = 285
 PSY_Y = 405
 
 INT_X, INT_Y = 40, 180
-QOL_X, QOL_Y = 770, 170
+
+# Align QoL vertically to Benches (same center-y)
+QOL_X = 770
+QOL_Y = INT_Y + INT_H / 2 - Q_H / 2  # <- keeps vertical centers matched
 
 # ---------------- Small numeric badges (near each dimension) ----------------
 BADGE_R   = 16
@@ -166,7 +175,7 @@ svg = f'''
       <path d="M0,0 L{HEAD_W_X2},{HEAD_H_X2/2} L0,{HEAD_H_X2} z" fill="#e85959"/>
     </marker>
 
-    <filter id="soft" x="-10%" y="-10%" width="120%">
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
     </filter>
     <style>
@@ -351,59 +360,3 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
