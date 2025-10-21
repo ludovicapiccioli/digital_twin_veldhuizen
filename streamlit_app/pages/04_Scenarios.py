@@ -4,10 +4,10 @@ import numpy as np
 import plotly.graph_objects as go
 
 # Must be first Streamlit call
-st.set_page_config(layout="wide", page_title="Scenarios • Veldhuizen")
+st.set_page_config(layout="wide", page_title="Simulation of interventions • Veldhuizen")
 
 # Header (keep)
-st.subheader("Concept demo - Simulation of scenarios")
+st.subheader("Concept demo - Simulation of interventions")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # ---------------- State & helpers ----------------
@@ -18,16 +18,16 @@ if "b" not in st.session_state:
 def clamp(v): return int(max(BMIN, min(BMAX, v)))
 def sgn(v):  return f"{int(v):+d}"
 
-# ---------------- Controls (restored layout) ----------------
-# Row 1: three preset buttons (original placement)
-c1, c2, c3 = st.columns(3)
-with c1:
+# ---------------- Controls ----------------
+# Row 1: presets (equal left/right spacers)
+left_spacer, col_minus5, col_base, col_plus5, right_spacer = st.columns([1, 1, 1, 1, 1])
+with col_minus5:
     if st.button("-5 Benches"):
         st.session_state.b = -5
-with c2:
+with col_base:
     if st.button("Baseline (0)"):
         st.session_state.b = 0
-with c3:
+with col_plus5:
     if st.button("+5 Benches"):
         st.session_state.b = +5
 
