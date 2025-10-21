@@ -112,8 +112,8 @@ QOL_X, QOL_Y = 770, 170
 
 # ---------------- Small numeric badges (near each dimension) ----------------
 BADGE_R   = 16
-BADGE_DX  = 10
-BADGE_DY  = 10
+BADGE_DX  = 0
+BADGE_DY  = 25
 
 SOC_CY = 28 + DIM_H/2
 PHY_CY = 18 + DIM_H/2
@@ -351,6 +351,7 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
+
 
 
 
