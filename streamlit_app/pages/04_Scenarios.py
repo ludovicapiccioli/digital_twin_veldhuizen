@@ -49,7 +49,9 @@ q_env      = W_ENV * d_safety
 q_psych    = W_PSY * d_psych
 q_total    = q_social + q_physical + q_env + q_psych
 
-# ---------- Dynamic SVG (white background + white dimension panels) ----------
+# ---------- Dynamic SVG (white background + white panels) ----------
+PHYS_COL = "#B39DDB"  # <— new Physical activity color
+
 svg = f'''
 <svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg"
      style="width:100%;height:auto;display:block;background:#ffffff;">
@@ -85,7 +87,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- Social (WHITE background, colored border/label retained) -->
+  <!-- Social -->
   <g transform="translate(420,20)">
     <text x="160" y="20" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
     <rect x="0" y="30" rx="22" ry="22" width="320" height="90" fill="#ffffff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
@@ -93,11 +95,11 @@ svg = f'''
     <text x="160" y="82" text-anchor="middle" class="pill">Social networks</text>
   </g>
 
-  <!-- Physical -->
+  <!-- Physical (now using PHYS_COL everywhere) -->
   <g transform="translate(420,170)">
-    <text x="120" y="10" class="cap" fill="#d90429" font-size="16">Physical dimension</text>
-    <rect x="0" y="20" rx="22" ry="22" width="240" height="90" fill="#ffffff" stroke="#d90429" stroke-width="4" filter="url(#soft)"/>
-    <rect x="20" y="38" rx="18" ry="18" width="200" height="54" fill="#b60021"/>
+    <text x="120" y="10" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
+    <rect x="0" y="20" rx="22" ry="22" width="240" height="90" fill="#ffffff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
+    <rect x="20" y="38" rx="18" ry="18" width="200" height="54" fill="{PHYS_COL}"/>
     <text x="120" y="72" text-anchor="middle" class="pill">Physical activity</text>
   </g>
 
@@ -188,7 +190,7 @@ g = go.Figure(go.Indicator(
            "decreasing": {"color": "#c0392b"}},
     gauge={"axis": {"range": [0, 100]},
            "bar": {"color": "#34495e"},
-           "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}]},
+           "steps": [{"range": [0, 40)}, {"range": [40, 70]}, {"range": [70, 100]}]},
     title={"text": "QoL index (mock)", "font": {"size": 16}}
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
