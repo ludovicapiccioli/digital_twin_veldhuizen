@@ -130,6 +130,14 @@ PHY_BADGE_Y = PHY_Y + PHY_CY + BADGE_DY
 ENV_BADGE_Y = ENV_Y + ENV_CY + BADGE_DY
 PSY_BADGE_Y = PSY_Y + PSY_CY + BADGE_DY
 
+# ---------------- Header centering helpers ----------------
+HDR_FONT = 16
+# Place headers a consistent amount above panel tops
+HDR_OFFSET_ABOVE = 10  # px above the panel top line
+
+SOC_PANEL_TOP = 28
+OTH_PANEL_TOP = 18  # Physical/Environmental/Psychological share this
+
 # ---------------- Dynamic SVG ----------------
 svg = f'''
 <svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg"
@@ -188,51 +196,55 @@ svg = f'''
 
   <!-- Social -->
   <g transform="translate({SOC_X},{SOC_Y})">
-    <text x="{DIM_W_SOC/2}" y="18" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
-    {f'<ellipse cx="{DIM_W_SOC/2}" cy="{28 + DIM_H/2}" rx="{(DIM_W_SOC/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-    <rect x="0" y="28" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
+    <text x="{DIM_W_SOC/2}" y="{SOC_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
+          class="cap" fill="#ff80bf" font-size="{HDR_FONT}">SOCIAL DIMENSION</text>
+    {f'<ellipse cx="{DIM_W_SOC/2}" cy="{SOC_PANEL_TOP + DIM_H/2}" rx="{(DIM_W_SOC/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+    <rect x="0" y="{SOC_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
-    <rect x="{PILL_PAD_X}" y="42" rx="{PILL_R}" ry="{PILL_R}"
+    <rect x="{PILL_PAD_X}" y="{SOC_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
           width="{DIM_W_SOC - 2*PILL_PAD_X}" height="{PILL_H}" fill="#ff9ad5"/>
-    <text x="{DIM_W_SOC/2}" y="{42 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Social networks</text>
+    <text x="{DIM_W_SOC/2}" y="{SOC_PANEL_TOP + 14 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Social networks</text>
   </g>
 
   <!-- Physical -->
   <g transform="translate({PHY_X},{PHY_Y})">
-    <text x="{DIM_W_PHY/2}" y="8" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
-    {f'<ellipse cx="{DIM_W_PHY/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_PHY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
+    <text x="{DIM_W_PHY/2}" y="{OTH_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
+          class="cap" fill="{PHYS_COL}" font-size="{HDR_FONT}">Physical dimension</text>
+    {f'<ellipse cx="{DIM_W_PHY/2}" cy="{OTH_PANEL_TOP + DIM_H/2}" rx="{(DIM_W_PHY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+    <rect x="0" y="{OTH_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
           fill="#ffffff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
-    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+    <rect x="{PILL_PAD_X}" y="{OTH_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
           width="{DIM_W_PHY - 2*PILL_PAD_X}" height="{PILL_H}" fill="{PHYS_COL}"/>
-    <text x="{DIM_W_PHY/2}" y="{32 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Physical activity</text>
+    <text x="{DIM_W_PHY/2}" y="{OTH_PANEL_TOP + 14 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Physical activity</text>
   </g>
 
   <!-- Environmental -->
   <g transform="translate({ENV_X},{ENV_Y})">
-    <text x="{DIM_W_ENV/2}" y="8" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
-    {f'<ellipse cx="{DIM_W_ENV/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_ENV/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
+    <text x="{DIM_W_ENV/2}" y="{OTH_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
+          class="cap" fill="#00b894" font-size="{HDR_FONT}">ENVIRONMENTAL DIMENSION</text>
+    {f'<ellipse cx="{DIM_W_ENV/2}" cy="{OTH_PANEL_TOP + DIM_H/2}" rx="{(DIM_W_ENV/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+    <rect x="0" y="{OTH_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
           fill="#ffffff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
-    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+    <rect x="{PILL_PAD_X}" y="{OTH_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
           width="{DIM_W_ENV - 2*PILL_PAD_X}" height="{PILL_H}" fill="#00c853"/>
-    <text x="{DIM_W_ENV/2}" y="{32 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Safety</text>
+    <text x="{DIM_W_ENV/2}" y="{OTH_PANEL_TOP + 14 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Safety</text>
   </g>
 
   <!-- Psychological -->
   <g transform="translate({PSY_X},{PSY_Y})">
-    <text x="{DIM_W_PSY/2}" y="8" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
-    {f'<ellipse cx="{DIM_W_PSY/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_PSY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-    <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
+    <text x="{DIM_W_PSY/2}" y="{OTH_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
+          class="cap" fill="#ff9800" font-size="{HDR_FONT}">Psychological dimension</text>
+    {f'<ellipse cx="{DIM_W_PSY/2}" cy="{OTH_PANEL_TOP + DIM_H/2}" rx="{(DIM_W_PSY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+    <rect x="0" y="{OTH_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
-    <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
+    <rect x="{PILL_PAD_X}" y="{OTH_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
           width="{DIM_W_PSY - 2*PILL_PAD_X}" height="{PILL_H}" fill="#ff8f2d"/>
-    <text x="{DIM_W_PSY/2}" y="{32 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Downshift</text>
+    <text x="{DIM_W_PSY/2}" y="{OTH_PANEL_TOP + 14 + PILL_H/2 + 6}" text-anchor="middle" class="pill">Downshift</text>
   </g>
 
   <!-- QoL -->
   <g transform="translate({QOL_X},{QOL_Y})">
-    <text x="{Q_W/2}" y="-20" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
+    <text x="{Q_W/2}" y="-20" text-anchor="middle" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
     <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_H}"
           fill="#fff" stroke="#6fa28e" stroke-width="3" filter="url(#soft)"/>
     <g transform="translate(0,{Q_H - Q_SCORE_H})">
@@ -247,7 +259,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- ===== Small numeric badges (DYNAMIC, follow the boxes) ===== -->
+  <!-- ===== Small numeric badges (follow the boxes) ===== -->
   <g>
     <g transform="translate({SOC_BADGE_X},{SOC_BADGE_Y})">
       <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
@@ -267,8 +279,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- ===== Arrows (STATIC as before) + x1/x2 labels restored ===== -->
-
+  <!-- ===== Arrows (static) + x1/x2 labels ===== -->
   <!-- Intervention -> Dimensions -->
   <path d="M240,245 C350,140 370,110 440,90"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
