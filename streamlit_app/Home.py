@@ -23,6 +23,11 @@ st.markdown("""
 }
 .hero {
   background: var(--green);
+  color: white;          /* ensures all text inside hero is white */
+}
+.hero h1 {
+  color: white;          /* makes title text white */
+  margin-top: 0;
 }
 .section {
   background: var(--orange);
