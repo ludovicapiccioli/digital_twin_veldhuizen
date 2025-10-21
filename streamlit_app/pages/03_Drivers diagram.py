@@ -9,7 +9,7 @@ ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
 BLUE   = "#3498db"   # Kept for reference if needed elsewhere
 
-# New Physical color (distinct from orange/green/pink)
+# Physical color (distinct from orange/green/pink)
 PHYSICAL = "#B39DDB"   # Deep Purple 200
 LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
 
@@ -46,11 +46,6 @@ svg = f"""
         fill: {LIGHTBLUE};
       }}
 
-      /* Slightly darker outline for the Physical pill so it reads on light fill */
-      .node[data-node="PA"] .pill {{
-        stroke: rgba(0,0,0,.25);
-      }}
-
       /* Interactivity styles */
       .node {{ cursor: pointer; }}
       .edge {{ pointer-events: stroke; }}
@@ -81,7 +76,7 @@ svg = f"""
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
   <text class="titleV dim-title" x="1090" y="130" fill="{GREEN}" transform="rotate(90 1090 130)">ENVIRONMENTAL</text>
 
-  <!-- PHYSICAL frame/title now PURPLE -->
+  <!-- PHYSICAL frame/title -->
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{PHYSICAL}"/>
   <text class="titleV dim-title" x="1090" y="555" fill="{PHYSICAL}" transform="rotate(90 1090 555)">Physical</text>
 
@@ -144,7 +139,7 @@ svg = f"""
     <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
   </g>
 
-  <!-- PHYSICAL node pill now PURPLE + blue label -->
+  <!-- PHYSICAL node pill (purple) with blue label, standard white outline -->
   <g class="node" data-node="PA">
     <rect class="pill" x="700" y="575" width="320" height="44" fill="{PHYSICAL}"/>
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
@@ -287,7 +282,7 @@ svg = f"""
         }});
       }});
       svg.addEventListener('click', clearAll);
-    }})();
+    }})()
   ]]></script>
 </svg>
 """
