@@ -7,7 +7,7 @@ st.set_page_config(page_title="Concept prototype for a DT for Ede-Veldhuizen")
 st.markdown("""
 <style>
 :root{
-  --green:#214F1E;
+  --green:#AFC9A0;        /* lighter, faded green */
   --orange:#E3702A;
   --blue:#1E5A7B;
   --card-green:#2E6A2A;
@@ -18,15 +18,14 @@ st.markdown("""
 .block {
   border-radius: var(--radius);
   padding: 22px 26px;
-  color: #fff;
   margin: 8px 0 18px 0;
 }
 .hero {
   background: var(--green);
-  color: white;          /* ensures all text inside hero is white */
+  color: #000;           /* black text */
 }
 .hero h1 {
-  color: white;          /* makes title text white */
+  color: #000;           /* ensure title text is black */
   margin-top: 0;
 }
 .section {
@@ -59,7 +58,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Header in a colored block ----------
+# ---------- Header in a faded green block ----------
 st.markdown(f"""
 <div class="block hero">
   <h1>Concept prototype for a Digital Twin for Ede-Veldhuizen</h1>
