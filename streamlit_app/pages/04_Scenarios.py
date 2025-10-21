@@ -18,7 +18,7 @@ def plus(v):  return f"{int(v):+d}"
 def sign_color(v):  # green / red / grey
     return "#27ae60" if v > 0 else ("#c0392b" if v < 0 else "#7f8c8d")
 
-# ── Preset chips (functional, no hacks) ─────────────────────
+# ── Preset chips ────────────────────────────────────────────
 pc1, pc2, pc3 = st.columns(3)
 with pc1:
     if st.button("-5 Benches"):
@@ -47,7 +47,7 @@ with c_slider:
         key="benches"  # slider manages this key
     )
 
-# IMPORTANT: read, don't set (avoids the error)
+# read the value after slider renders
 b = int(st.session_state.benches)
 
 # ── Model logic (matches your mock) ─────────────────────────
@@ -84,9 +84,9 @@ QBOX_BG = "#8fb197"; QBOX_BR = "#5e8c6a"
 fig = go.Figure()
 
 # Intervention / Benches block
-fig.add_shape("rect", x0=bench_x-1.5, y0=bench_y-1.0, x1=bench_x+1.5, y1=bench_y+1.0,
+fig.add_shape(type="rect", x0=bench_x-1.5, y0=bench_y-1.0, x1=bench_x+1.5, y1=bench_y+1.0,
               fillcolor="black", line=dict(color="#111", width=2), layer="below")
-fig.add_shape("rect", x0=bench_x-1.6, y0=bench_y-1.1, x1=bench_x+1.6, y1=bench_y+1.1,
+fig.add_shape(type="rect", x0=bench_x-1.6, y0=bench_y-1.1, x1=bench_x+1.6, y1=bench_y+1.1,
               fillcolor="rgba(0,0,0,0)", line=dict(color="#fff", width=2))
 fig.add_annotation(x=bench_x, y=bench_y+0.65, text="<b>Intervention</b>", showarrow=False,
                    font=dict(color="#eee", size=12))
@@ -97,11 +97,11 @@ fig.add_annotation(x=bench_x-1.9, y=bench_y+0.9, text=f"<b>{plus(b)}</b>", showa
 
 # bubble + card + badge
 def bubble_card(x, y, title, title_color, label, value):
-    fig.add_shape("circle", x0=x-oval_w/2, y0=y-oval_h/2, x1=x+oval_w/2, y1=y+oval_h/2,
+    fig.add_shape(type="circle", x0=x-oval_w/2, y0=y-oval_h/2, x1=x+oval_w/2, y1=y+oval_h/2,
                   fillcolor="rgba(255,255,255,0.65)", line=dict(color="#e9e9e9", width=2), layer="below")
     fig.add_annotation(x=x, y=y+oval_h/2-0.2, text=f"<b>{title}</b>", showarrow=False,
                        font=dict(color=title_color, size=13), yshift=10)
-    fig.add_shape("rect", x0=x-card_w/2, y0=y-card_h/2, x1=x+card_w/2, y1=y+card_h/2,
+    fig.add_shape(type="rect", x0=x-card_w/2, y0=y-card_h/2, x1=x+card_w/2, y1=y+card_h/2,
                   fillcolor="white", line=dict(color=title_color, width=2))
     fig.add_annotation(x=x, y=y, text=f"<b>{label}</b>", showarrow=False,
                        font=dict(color="white", size=12), bgcolor=title_color, bordercolor=title_color)
@@ -114,7 +114,7 @@ bubble_card(env_x, env_y, "ENVIRONMENTAL DIMENSION", COL_ENV, "Safety", d_safety
 bubble_card(psy_x, psy_y, "Psychological dimension", COL_PSY, "Downshift", d_psych)
 
 # QoL box
-fig.add_shape("rect", x0=qol_x-2.0, y0=qol_y-1.9, x1=qol_x+2.0, y1=qol_y+1.9,
+fig.add_shape(type="rect", x0=qol_x-2.0, y0=qol_y-1.9, x1=qol_x+2.0, y1=qol_y+1.9,
               fillcolor=QBOX_BG, line=dict(color=QBOX_BR, width=3))
 fig.add_annotation(x=qol_x, y=qol_y+1.1, text="<b>QUALITY OF LIFE</b>", showarrow=False,
                    font=dict(size=14, color="#31563e"))
@@ -127,7 +127,7 @@ fig.add_annotation(x=qol_x, y=qol_y-0.3,
 fig.add_annotation(x=qol_x, y=qol_y-1.15, text=f"<b>{int(np.clip(70+q_total, 0, 100))}</b>",
                    showarrow=False, font=dict(size=26, color="white"))
 
-# arrows
+# arrow helper
 def arrow(x0, y0, x1, y1, color, width):
     fig.add_annotation(x=x1, y=y1, ax=x0, ay=y0, xref="x", yref="y", axref="x", ayref="y",
                        showarrow=True, arrowhead=3, arrowsize=1.0, arrowwidth=width, arrowcolor=color)
@@ -138,7 +138,7 @@ arrow(bench_x+1.6, bench_y, phy_x-card_w/2, phy_y, sign_color(+1), 3)
 arrow(bench_x+1.6, bench_y, env_x-card_w/2, env_y, sign_color(-1), 3)
 arrow(bench_x+1.6, bench_y, psy_x-card_w/2, psy_y, sign_color(+1), 3)
 
-# Dimensions → QoL (green; thickness encodes x1/x2 exactly)
+# Dimensions → QoL (green; thickness encodes x1/x2)
 QGREEN = "#27ae60"
 arrow(soc_x+card_w/2, soc_y, qol_x-2.0+0.05, qol_y+1.25, QGREEN, 5)  # x2
 arrow(phy_x+card_w/2, phy_y, qol_x-2.0+0.05, phy_y,       QGREEN, 3)  # x1
@@ -154,6 +154,7 @@ weight_label((phy_x+qol_x)/2, phy_y+0.25, 1)
 weight_label((env_x+qol_x)/2, qol_y-1.45, 2)
 weight_label((psy_x+qol_x)/2, qol_y-1.85, 1)
 
+# canvas
 fig.update_xaxes(visible=False, range=[0, 10])
 fig.update_yaxes(visible=False, range=[0, 10])
 fig.update_layout(template="plotly_white", height=560,
