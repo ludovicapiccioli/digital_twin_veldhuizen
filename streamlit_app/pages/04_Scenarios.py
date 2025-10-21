@@ -103,12 +103,32 @@ PSY_Y = 405
 INT_X, INT_Y = 40, 180
 QOL_X, QOL_Y = 770, 170
 
-# ---------------- Grey bubbles behind dimensions ----------------
+# ---------------- Grey bubbles (behind panels) ----------------
 SHOW_BUBBLES = True
 BUBBLE_FILL  = "#eeeeee"
 BUBBLE_OPAC  = 0.55
 BUBBLE_PAD_X = 18
 BUBBLE_PAD_Y = 14
+
+# ---------------- Small numeric badges (near each dimension) ----------------
+BADGE_R   = 16
+BADGE_DX  = 60
+BADGE_DY  = 0
+
+SOC_CY = 28 + DIM_H/2
+PHY_CY = 18 + DIM_H/2
+ENV_CY = 18 + DIM_H/2
+PSY_CY = 18 + DIM_H/2
+
+SOC_BADGE_X = SOC_X + DIM_W_SOC + BADGE_DX
+PHY_BADGE_X = PHY_X + DIM_W_PHY + BADGE_DX
+ENV_BADGE_X = ENV_X + DIM_W_ENV + BADGE_DX
+PSY_BADGE_X = PSY_X + DIM_W_PSY + BADGE_DX
+
+SOC_BADGE_Y = SOC_Y + SOC_CY + BADGE_DY
+PHY_BADGE_Y = PHY_Y + PHY_CY + BADGE_DY
+ENV_BADGE_Y = ENV_Y + ENV_CY + BADGE_DY
+PSY_BADGE_Y = PSY_Y + PSY_CY + BADGE_DY
 
 # ---------------- Dynamic SVG ----------------
 svg = f'''
@@ -169,9 +189,7 @@ svg = f'''
   <!-- Social -->
   <g transform="translate({SOC_X},{SOC_Y})">
     <text x="{DIM_W_SOC/2}" y="18" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
-
     {f'<ellipse cx="{DIM_W_SOC/2}" cy="{28 + DIM_H/2}" rx="{(DIM_W_SOC/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-
     <rect x="0" y="28" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="42" rx="{PILL_R}" ry="{PILL_R}"
@@ -182,9 +200,7 @@ svg = f'''
   <!-- Physical -->
   <g transform="translate({PHY_X},{PHY_Y})">
     <text x="{DIM_W_PHY/2}" y="8" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
-
     {f'<ellipse cx="{DIM_W_PHY/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_PHY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-
     <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
           fill="#ffffff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
@@ -195,9 +211,7 @@ svg = f'''
   <!-- Environmental -->
   <g transform="translate({ENV_X},{ENV_Y})">
     <text x="{DIM_W_ENV/2}" y="8" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
-
     {f'<ellipse cx="{DIM_W_ENV/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_ENV/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-
     <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
           fill="#ffffff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
@@ -208,9 +222,7 @@ svg = f'''
   <!-- Psychological -->
   <g transform="translate({PSY_X},{PSY_Y})">
     <text x="{DIM_W_PSY/2}" y="8" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
-
     {f'<ellipse cx="{DIM_W_PSY/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_PSY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
-
     <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
@@ -235,35 +247,69 @@ svg = f'''
     </g>
   </g>
 
-  <!-- ===== Arrows (STATIC as before) ===== -->
+  <!-- ===== Small numeric badges (DYNAMIC, follow the boxes) ===== -->
+  <g>
+    <g transform="translate({SOC_BADGE_X},{SOC_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_social)}</text>
+    </g>
+    <g transform="translate({PHY_BADGE_X},{PHY_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_physical)}</text>
+    </g>
+    <g transform="translate({ENV_BADGE_X},{ENV_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_safety)}</text>
+    </g>
+    <g transform="translate({PSY_BADGE_X},{PSY_BADGE_Y})">
+      <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
+      <text x="0" y="4" text-anchor="middle" class="cap" font-size="13" fill="#fff">{sgn(d_psych)}</text>
+    </g>
+  </g>
+
+  <!-- ===== Arrows (STATIC as before) + x1/x2 labels restored ===== -->
 
   <!-- Intervention -> Dimensions -->
   <path d="M240,245 C350,140 370,110 440,90"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
         marker-end="url(#arrowGreen2)"/>
+  <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
+
   <path d="M240,245 C330,235 350,230 420,240"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowGreen1)"/>
+  <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
+
   <path d="M240,245 C320,300 350,315 420,330"
         fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowRed1)"/>
+  <text x="320" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
+
   <path d="M240,245 C320,360 360,400 420,460"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowGreen1)"/>
+  <text x="320" y="380" class="cap" font-size="18" fill="#19a974">x1</text>
 
   <!-- Dimensions -> QoL -->
   <path d="M740,90 C800,140 820,220 860,280"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
         marker-end="url(#arrowGreen2)"/>
+  <text x="790" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
+
   <path d="M660,230 C740,230 760,250 860,280"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowGreen1)"/>
+  <text x="745" y="225" class="cap" font-size="18" fill="#19a974">x1</text>
+
   <path d="M680,360 C760,340 780,320 860,300"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
         marker-end="url(#arrowGreen2)"/>
+  <text x="755" y="330" class="cap" font-size="18" fill="#19a974">x2</text>
+
   <path d="M720,480 C780,440 800,420 860,360"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         marker-end="url(#arrowGreen1)"/>
+  <text x="780" y="430" class="cap" font-size="18" fill="#19a974">x1</text>
 
 </svg>
 '''
