@@ -52,6 +52,28 @@ q_env      = W_ENV * d_safety
 q_psych    = W_PSY * d_psych
 q_total    = q_social + q_physical + q_env + q_psych
 
+# ---------------- Arrow sizing knobs (weight-aware) ----------------
+# Stroke widths
+ARROW_W_X1 = 3.0   # thickness for x1 arrows
+ARROW_W_X2 = 4.5   # thickness for x2 arrows
+ARROW_W_IN = {      # Intervention -> dimension (by weight)
+    "social": ARROW_W_X2,  # x2
+    "physical": ARROW_W_X1,  # x1
+    "environmental": ARROW_W_X1,  # x1 (negative, red)
+    "psych": ARROW_W_X1,  # x1
+}
+
+# Arrowhead sizes (userSpace units, independent of stroke)
+HEAD_W_X1 = 7
+HEAD_H_X1 = 7
+HEAD_REF_X_X1 = 6
+HEAD_REF_Y_X1 = HEAD_H_X1 / 2
+
+HEAD_W_X2 = 9
+HEAD_H_X2 = 9
+HEAD_REF_X_X2 = 7.5
+HEAD_REF_Y_X2 = HEAD_H_X2 / 2
+
 # ---------------- Dynamic SVG (white background + white panels) ----------------
 PHYS_COL = "#B39DDB"  # Physical activity theme color (your request)
 
@@ -61,12 +83,30 @@ svg = f'''
      style="width:100%;height:auto;display:block;background:#ffffff;">
 
   <defs>
-    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M0,0 L12,6 L0,12 z" fill="#19a974"/>
+    <!-- Green arrowheads: x1 and x2 -->
+    <marker id="arrowGreen1" markerUnits="userSpaceOnUse"
+            markerWidth="{HEAD_W_X1}" markerHeight="{HEAD_H_X1}"
+            refX="{HEAD_REF_X_X1}" refY="{HEAD_REF_Y_X1}" orient="auto">
+      <path d="M0,0 L{HEAD_W_X1},{HEAD_H_X1/2} L0,{HEAD_H_X1} z" fill="#19a974"/>
     </marker>
-    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
-      <path d="M0,0 L12,6 L0,12 z" fill="#e85959"/>
+    <marker id="arrowGreen2" markerUnits="userSpaceOnUse"
+            markerWidth="{HEAD_W_X2}" markerHeight="{HEAD_H_X2}"
+            refX="{HEAD_REF_X_X2}" refY="{HEAD_REF_Y_X2}" orient="auto">
+      <path d="M0,0 L{HEAD_W_X2},{HEAD_H_X2/2} L0,{HEAD_H_X2} z" fill="#19a974"/>
     </marker>
+
+    <!-- Red arrowheads: x1 and x2 (we only use x1 for environmental from intervention, but keep both for flexibility) -->
+    <marker id="arrowRed1" markerUnits="userSpaceOnUse"
+            markerWidth="{HEAD_W_X1}" markerHeight="{HEAD_H_X1}"
+            refX="{HEAD_REF_X_X1}" refY="{HEAD_REF_Y_X1}" orient="auto">
+      <path d="M0,0 L{HEAD_W_X1},{HEAD_H_X1/2} L0,{HEAD_H_X1} z" fill="#e85959"/>
+    </marker>
+    <marker id="arrowRed2" markerUnits="userSpaceOnUse"
+            markerWidth="{HEAD_W_X2}" markerHeight="{HEAD_H_X2}"
+            refX="{HEAD_REF_X_X2}" refY="{HEAD_REF_Y_X2}" orient="auto">
+      <path d="M0,0 L{HEAD_W_X2},{HEAD_H_X2/2} L0,{HEAD_H_X2} z" fill="#e85959"/>
+    </marker>
+
     <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
       <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
     </filter>
@@ -166,30 +206,54 @@ svg = f'''
     </g>
   </g>
 
-  <!-- Arrows from Intervention to dimensions -->
-  <path d="M240,245 C350,140 370,110 440,90" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <!-- ========== Arrows from Intervention to dimensions (weight-aware size) ========== -->
+  <!-- to Social (x2, green) -->
+  <path d="M240,245 C350,140 370,110 440,90"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_IN['social']}"
+        marker-end="url(#arrowGreen2)"/>
   <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M240,245 C330,235 350,230 420,240" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <!-- to Physical (x1, green) -->
+  <path d="M240,245 C330,235 350,230 420,240"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_IN['physical']}"
+        marker-end="url(#arrowGreen1)"/>
   <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M240,245 C320,300 350,315 420,330" fill="none" stroke="#e85959" stroke-width="6" marker-end="url(#arrowRed)"/>
+  <!-- to Environmental (x1 magnitude, negative red) -->
+  <path d="M240,245 C320,300 350,315 420,330"
+        fill="none" stroke="#e85959" stroke-width="{ARROW_W_IN['environmental']}"
+        marker-end="url(#arrowRed1)"/>
   <text x="320" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
 
-  <path d="M240,245 C320,360 360,400 420,460" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <!-- to Psychological (x1, green) -->
+  <path d="M240,245 C320,360 360,400 420,460"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_IN['psych']}"
+        marker-end="url(#arrowGreen1)"/>
   <text x="320" y="380" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <!-- Arrows from dimensions to QoL -->
-  <path d="M740,90 C800,140 820,220 860,280" fill="none" stroke="#19a974" stroke-width="8" marker-end="url(#arrowGreen)"/>
+  <!-- ========== Arrows from dimensions to QoL (weight-aware size) ========== -->
+  <!-- Social -> QoL (x2) -->
+  <path d="M740,90 C800,140 820,220 860,280"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        marker-end="url(#arrowGreen2)"/>
   <text x="790" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M660,230 C740,230 760,250 860,280" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <!-- Physical -> QoL (x1) -->
+  <path d="M660,230 C740,230 760,250 860,280"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowGreen1)"/>
   <text x="745" y="225" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M680,360 C760,340 780,320 860,300" fill="none" stroke="#19a974" stroke-width="8" marker-end="url(#arrowGreen)"/>
+  <!-- Environmental -> QoL (x2) -->
+  <path d="M680,360 C760,340 780,320 860,300"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        marker-end="url(#arrowGreen2)"/>
   <text x="755" y="330" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M720,480 C780,440 800,420 860,360" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <!-- Psychological -> QoL (x1) -->
+  <path d="M720,480 C780,440 800,420 860,360"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowGreen1)"/>
   <text x="780" y="430" class="cap" font-size="18" fill="#19a974">x1</text>
 
 </svg>
