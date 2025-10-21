@@ -121,17 +121,20 @@ svg = f'''
 
   <defs>
     <!-- Perfectly aligned arrowheads -->
-    <marker id="arrowGreen1" viewBox="0 0 10 10" refX="10" refY="5"
-            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#19a974"/>
+    <marker id="arrowGreen1" markerUnits="userSpaceOnUse"
+            markerWidth="8" markerHeight="8"
+            refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#19a974"/>
     </marker>
-    <marker id="arrowGreen2" viewBox="0 0 12 12" refX="12" refY="6"
-            markerWidth="10" markerHeight="10" orient="auto-start-reverse">
-      <path d="M 0 0 L 12 6 L 0 12 z" fill="#19a974"/>
+    <marker id="arrowGreen2" markerUnits="userSpaceOnUse"
+            markerWidth="10" markerHeight="10"
+            refX="9" refY="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#19a974"/>
     </marker>
-    <marker id="arrowRed1" viewBox="0 0 10 10" refX="10" refY="5"
-            markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#e85959"/>
+    <marker id="arrowRed1" markerUnits="userSpaceOnUse"
+            markerWidth="8" markerHeight="8"
+            refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#e85959"/>
     </marker>
 
     <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
@@ -145,7 +148,7 @@ svg = f'''
     </style>
   </defs>
 
-  <!-- === INTERVENTION BOX === -->
+  <!-- Intervention -->
   <g transform="translate({INT_X},{INT_Y})">
     <rect x="0" y="0" rx="20" ry="20" width="{INT_W}" height="{INT_H}"
           fill="#fff" stroke="#111" stroke-width="3" filter="url(#soft)"/>
@@ -159,7 +162,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- === DIMENSION BOXES === -->
+  <!-- Dimension Boxes -->
   <g transform="translate({SOC_X},{SOC_Y})">
     <text x="{DIM_W_SOC/2}" y="10" text-anchor="middle" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
     <rect x="0" y="28" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
@@ -196,7 +199,7 @@ svg = f'''
     <text x="{DIM_W_PSY/2}" y="58" text-anchor="middle" class="pill">Downshift</text>
   </g>
 
-  <!-- === QoL === -->
+  <!-- QoL -->
   <g transform="translate({QOL_X},{QOL_Y})">
     <text x="{Q_W/2}" y="-20" text-anchor="middle" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
     <rect x="0" y="0" rx="{Q_RX}" ry="{Q_RX}" width="{Q_W}" height="{Q_H}"
@@ -213,7 +216,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- === Small numeric bubbles === -->
+  <!-- Small numeric bubbles -->
   <g>
     <g transform="translate({SOC_BADGE_X},{SOC_BADGE_Y})">
       <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
@@ -233,7 +236,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- === Arrows + labels (exactly as before) === -->
+  <!-- Arrows + x1/x2/x-1 labels -->
   <path d="M190,230 C210,170 285,105 339,80" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}" marker-end="url(#arrowGreen2)"/>
   <text x="290" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
@@ -257,6 +260,7 @@ svg = f'''
 
   <path d="M565,460 C670,440 740,330 768,230" fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
   <text x="690" y="410" class="cap" font-size="18" fill="#19a974">x1</text>
+
 </svg>
 '''
 
