@@ -18,28 +18,28 @@ if "b" not in st.session_state:
 def clamp(v): return int(max(BMIN, min(BMAX, v)))
 def sgn(v):  return f"{int(v):+d}"
 
-# ---------------- Controls (centered) ----------------
-# Row 1: presets centered
-pcols = st.columns([1, 1, 1, 1, 1, 1, 1])  # 7 cols; use the middle three
-with pcols[2]:
-    if st.button("−5 Benches", use_container_width=True):
+# ---------------- Controls (restored layout) ----------------
+# Row 1: three preset buttons (original placement)
+c1, c2, c3 = st.columns(3)
+with c1:
+    if st.button("-5 Benches"):
         st.session_state.b = -5
-with pcols[3]:
-    if st.button("Baseline (0)", use_container_width=True):
+with c2:
+    if st.button("Baseline (0)"):
         st.session_state.b = 0
-with pcols[4]:
-    if st.button("+5 Benches", use_container_width=True):
+with c3:
+    if st.button("+5 Benches"):
         st.session_state.b = +5
 
-# Row 2: − / slider / ＋ centered as a block
-rcols = st.columns([1, 1, 6, 1, 1])  # center the control cluster
-with rcols[1]:
-    if st.button("−", use_container_width=True):
+# Row 2: − / slider / ＋ (original placement)
+cm, cs, cp = st.columns([1, 8, 1])
+with cm:
+    if st.button("−"):
         st.session_state.b = clamp(st.session_state.b - 1)
-with rcols[2]:
+with cs:
     st.slider("Benches (add/remove)", BMIN, BMAX, value=int(st.session_state.b), step=1, key="b")
-with rcols[3]:
-    if st.button("＋", use_container_width=True):
+with cp:
+    if st.button("＋"):
         st.session_state.b = clamp(st.session_state.b + 1)
 
 b = int(st.session_state.b)
@@ -195,7 +195,7 @@ svg = f'''
   <!-- Social -->
   <g transform="translate({SOC_X},{SOC_Y})">
     <text x="{DIM_W_SOC/2}" y="{SOC_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
-          class="cap" fill="#ff80bf" font-size="{HDR_FONT}">SOCIAL DIMENSION</text>
+          class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
     <rect x="0" y="{SOC_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="{SOC_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
@@ -206,7 +206,7 @@ svg = f'''
   <!-- Physical -->
   <g transform="translate({PHY_X},{PHY_Y})">
     <text x="{DIM_W_PHY/2}" y="{OTH_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
-          class="cap" fill="{PHYS_COL}" font-size="{HDR_FONT}">Physical dimension</text>
+          class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
     <rect x="0" y="{OTH_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
           fill="#ffffff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="{OTH_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
@@ -217,7 +217,7 @@ svg = f'''
   <!-- Environmental -->
   <g transform="translate({ENV_X},{ENV_Y})">
     <text x="{DIM_W_ENV/2}" y="{OTH_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
-          class="cap" fill="#00b894" font-size="{HDR_FONT}">ENVIRONMENTAL DIMENSION</text>
+          class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
     <rect x="0" y="{OTH_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
           fill="#ffffff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="{OTH_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
@@ -228,7 +228,7 @@ svg = f'''
   <!-- Psychological -->
   <g transform="translate({PSY_X},{PSY_Y})">
     <text x="{DIM_W_PSY/2}" y="{OTH_PANEL_TOP - HDR_OFFSET_ABOVE}" text-anchor="middle"
-          class="cap" fill="#ff9800" font-size="{HDR_FONT}">Psychological dimension</text>
+          class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
     <rect x="0" y="{OTH_PANEL_TOP}" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="{OTH_PANEL_TOP + 14}" rx="{PILL_R}" ry="{PILL_R}"
@@ -253,7 +253,7 @@ svg = f'''
     </g>
   </g>
 
-  <!-- ===== Small numeric badges (follow the boxes) ===== -->
+  <!-- ===== Small numeric badges ===== -->
   <g>
     <g transform="translate({SOC_BADGE_X},{SOC_BADGE_Y})">
       <circle cx="0" cy="0" r="{BADGE_R}" fill="#bdbdbd"/>
