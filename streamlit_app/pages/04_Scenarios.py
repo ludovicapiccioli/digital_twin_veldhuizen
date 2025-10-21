@@ -3,13 +3,14 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
+# Must be first Streamlit call
 st.set_page_config(layout="wide", page_title="Scenarios • Veldhuizen")
 
-# Keep: title/caption
+# Header (keep)
 st.subheader("Concept demo - Simulation of scenarios")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
-# ---------- State & helpers ----------
+# ---------------- State & helpers ----------------
 BMIN, BMAX = -10, 10
 if "b" not in st.session_state:
     st.session_state.b = 0
@@ -17,7 +18,7 @@ if "b" not in st.session_state:
 def clamp(v): return int(max(BMIN, min(BMAX, v)))
 def sgn(v):  return f"{int(v):+d}"
 
-# ---------- Controls ----------
+# ---------------- Controls (presets + +/- + single slider) ----------------
 c1, c2, c3 = st.columns(3)
 with c1:
     if st.button("-5 Benches"): st.session_state.b = -5
@@ -36,12 +37,14 @@ with cs:
 
 b = int(st.session_state.b)
 
-# ---------- Logic ----------
+# ---------------- Logic (matches the picture) ----------------
+# per bench deltas
 d_social   =  2 * b
 d_physical =  1 * b
 d_safety   = -1 * b
 d_psych    =  1 * b
 
+# weights to QoL
 W_SOC, W_PHY, W_ENV, W_PSY = 2, 1, 2, 1
 q_social   = W_SOC * d_social
 q_physical = W_PHY * d_physical
@@ -49,9 +52,10 @@ q_env      = W_ENV * d_safety
 q_psych    = W_PSY * d_psych
 q_total    = q_social + q_physical + q_env + q_psych
 
-# ---------- Dynamic SVG (white background + white panels) ----------
-PHYS_COL = "#B39DDB"  # <— new Physical activity color
+# ---------------- Dynamic SVG (white background + white panels) ----------------
+PHYS_COL = "#B39DDB"  # Physical activity theme color (your request)
 
+# Note: double {{ }} in <style> to escape Python f-string braces.
 svg = f'''
 <svg viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg"
      style="width:100%;height:auto;display:block;background:#ffffff;">
@@ -81,6 +85,7 @@ svg = f'''
     <text x="100" y="-18" text-anchor="middle" class="cap" fill="#111" font-size="16">Intervention</text>
     <rect x="20" y="25" rx="20" ry="20" width="160" height="80" fill="#000"/>
     <text x="100" y="75" text-anchor="middle" class="pill">Benches</text>
+    <!-- round badge with current benches -->
     <g transform="translate(-8,35)">
       <circle cx="20" cy="30" r="22" fill="#bdbdbd"/>
       <text x="20" y="35" text-anchor="middle" class="cap" font-size="16" fill="#fff">{sgn(b)}</text>
@@ -90,15 +95,19 @@ svg = f'''
   <!-- Social -->
   <g transform="translate(420,20)">
     <text x="160" y="20" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
+    <!-- WHITE panel with pink border -->
     <rect x="0" y="30" rx="22" ry="22" width="320" height="90" fill="#ffffff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
+    <!-- colored pill -->
     <rect x="30" y="48" rx="18" ry="18" width="260" height="54" fill="#ff9ad5"/>
     <text x="160" y="82" text-anchor="middle" class="pill">Social networks</text>
   </g>
 
-  <!-- Physical (now using PHYS_COL everywhere) -->
+  <!-- Physical (using PHYS_COL everywhere for the card title/border/pill) -->
   <g transform="translate(420,170)">
     <text x="120" y="10" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
+    <!-- WHITE panel with PHYS_COL border -->
     <rect x="0" y="20" rx="22" ry="22" width="240" height="90" fill="#ffffff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
+    <!-- PHYS_COL pill -->
     <rect x="20" y="38" rx="18" ry="18" width="200" height="54" fill="{PHYS_COL}"/>
     <text x="120" y="72" text-anchor="middle" class="pill">Physical activity</text>
   </g>
@@ -106,6 +115,7 @@ svg = f'''
   <!-- Environmental -->
   <g transform="translate(420,300)">
     <text x="120" y="10" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
+    <!-- WHITE panel with green border -->
     <rect x="0" y="20" rx="22" ry="22" width="260" height="90" fill="#ffffff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
     <rect x="30" y="38" rx="18" ry="18" width="200" height="54" fill="#00c853"/>
     <text x="130" y="72" text-anchor="middle" class="pill">Safety</text>
@@ -114,6 +124,7 @@ svg = f'''
   <!-- Psychological -->
   <g transform="translate(420,430)">
     <text x="150" y="10" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
+    <!-- WHITE panel with orange border -->
     <rect x="0" y="20" rx="22" ry="22" width="300" height="90" fill="#ffffff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
     <rect x="30" y="38" rx="18" ry="18" width="240" height="54" fill="#ff8f2d"/>
     <text x="150" y="72" text-anchor="middle" class="pill">Downshift</text>
@@ -135,16 +146,28 @@ svg = f'''
     </g>
   </g>
 
-  <!-- Node badges -->
+  <!-- Node badges (dynamic) -->
   <g>
-    <g transform="translate(740,78)"><circle cx="0" cy="0" r="18" fill="#bdbdbd"/><text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_social)}</text></g>
-    <g transform="translate(670,240)"><circle cx="0" cy="0" r="18" fill="#bdbdbd"/><text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_physical)}</text></g>
-    <g transform="translate(660,372)"><circle cx="0" cy="0" r="18" fill="#bdbdbd"/><text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_safety)}</text></g>
-    <g transform="translate(620,520)"><circle cx="0" cy="0" r="18" fill="#bdbdbd"/><text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_psych)}</text></g>
+    <g transform="translate(740,78)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_social)}</text>
+    </g>
+    <g transform="translate(670,240)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_physical)}</text>
+    </g>
+    <g transform="translate(660,372)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_safety)}</text>
+    </g>
+    <g transform="translate(620,520)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">{sgn(d_psych)}</text>
+    </g>
   </g>
 
-  <!-- Arrows (unchanged) -->
-  <path d="M240,245 C350,140 370,110 440,90"  fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <!-- Arrows from Intervention to dimensions -->
+  <path d="M240,245 C350,140 370,110 440,90" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
   <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
   <path d="M240,245 C330,235 350,230 420,240" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
@@ -156,7 +179,8 @@ svg = f'''
   <path d="M240,245 C320,360 360,400 420,460" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
   <text x="320" y="380" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M740,90  C800,140 820,220 860,280" fill="none" stroke="#19a974" stroke-width="8" marker-end="url(#arrowGreen)"/>
+  <!-- Arrows from dimensions to QoL -->
+  <path d="M740,90 C800,140 820,220 860,280" fill="none" stroke="#19a974" stroke-width="8" marker-end="url(#arrowGreen)"/>
   <text x="790" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
 
   <path d="M660,230 C740,230 760,250 860,280" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
@@ -167,12 +191,13 @@ svg = f'''
 
   <path d="M720,480 C780,440 800,420 860,360" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
   <text x="780" y="430" class="cap" font-size="18" fill="#19a974">x1</text>
+
 </svg>
 '''
 
 st.components.v1.html(svg, height=640, scrolling=False)
 
-# ---------- KPIs + gauge ----------
+# ---------------- KPIs + gauge (fixed steps syntax) ----------------
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Δ Social interactions",  sgn(d_social))
 c2.metric("Δ Physical activity",    sgn(d_physical))
@@ -181,6 +206,7 @@ c4.metric("Δ QoL (composite)",      sgn(q_total))
 
 BASE_QOL = 70
 qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
+
 g = go.Figure(go.Indicator(
     mode="gauge+number+delta",
     value=qol_after,
@@ -188,9 +214,15 @@ g = go.Figure(go.Indicator(
     delta={"reference": BASE_QOL,
            "increasing": {"color": "#27ae60"},
            "decreasing": {"color": "#c0392b"}},
-    gauge={"axis": {"range": [0, 100]},
-           "bar": {"color": "#34495e"},
-           "steps": [{"range": [0, 40)}, {"range": [40, 70]}, {"range": [70, 100]}]},
+    gauge={
+        "axis": {"range": [0, 100]},
+        "bar": {"color": "#34495e"},
+        "steps": [
+            {"range": [0, 40]},
+            {"range": [40, 70]},
+            {"range": [70, 100]}
+        ]
+    },
     title={"text": "QoL index (mock)", "font": {"size": 16}}
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
