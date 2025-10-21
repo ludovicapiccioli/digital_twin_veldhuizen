@@ -12,39 +12,18 @@ st.subheader("Concept demo - Simulation of scenarios")
 st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
 
 # =====================================================================
-# STYLE HELPERS
+# SMALL STYLE HELPERS (pure Streamlit-safe CSS)
 # =====================================================================
-PILL_CSS = """
+st.markdown("""
 <style>
-/* preset "pills" */
-div.stButton > button.kpi-pill {
-  background: #ffffff;
-  border: 2px solid #111;
-  border-radius: 20px;
-  padding: 0.4rem 1rem;
+div.stButton > button {
+  border-radius: 18px;
   font-weight: 700;
-  color: #111;
 }
-div.stButton > button.kpi-pill:hover {
-  background:#f6f6f6;
-}
-
-/* small +/- buttons */
-div.stButton > button.bump {
-  background:#e6e6e6;
-  color:#111;
-  border: 0px;
-  border-radius: 10px;
-  padding: 0.25rem 0.7rem;
-  font-weight: 900;
-}
-div.stButton > button.bump:hover{ background:#d7d7d7; }
-
-/* compact caption beneath bar ends */
-.small-note{ font-size:0.85rem; color:#666; }
+div.stButton > button.pill { background:#fff; border:2px solid #111; color:#111; }
+div.stButton > button.bump { background:#e6e6e6; color:#111; border:0; border-radius:10px; }
 </style>
-"""
-st.markdown(PILL_CSS, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # =====================================================================
 # STATE
@@ -56,63 +35,47 @@ def clamp(v, a=-10, b=10):
     return max(a, min(b, v))
 
 # =====================================================================
-# PRESET BUTTONS (like the chips above the bar in fig. 1)
+# PRESET BUTTONS (chips like the first figure)
 # =====================================================================
-c1, c2, c3 = st.columns([1,1,1])
-with c1:
-    if st.button("-5 Benches", key="p_neg5", type="secondary", use_container_width=True):
+p1, p2, p3 = st.columns(3)
+with p1:
+    if st.button("-5 Benches", key="preset_neg5", use_container_width=True):
         st.session_state.bench_delta = -5
-    st.session_state["__style_p1"] = st.markdown(
-        "<style>div[data-testid='stVerticalBlock'] button#p_neg5.kpi-pill {}</style>",
-        unsafe_allow_html=True
-    )
-with c2:
-    if st.button("Baseline (0)", key="p_base", type="secondary", use_container_width=True):
+with p2:
+    if st.button("Baseline (0)", key="preset_0", use_container_width=True):
         st.session_state.bench_delta = 0
-with c3:
-    if st.button("+5 Benches", key="p_pos5", type="secondary", use_container_width=True):
+with p3:
+    if st.button("+5 Benches", key="preset_pos5", use_container_width=True):
         st.session_state.bench_delta = +5
 
-# Turn the three into “pills”
-for key in ("p_neg5","p_base","p_pos5"):
-    st.session_state[key]  # touch to avoid linter warning
-st.write(
-    """
-    <script>
-    for (const el of window.parent.document.querySelectorAll('button')) {
-      if (['p_neg5','p_base','p_pos5'].some(id => el.id.endsWith(id))) { el.classList.add('kpi-pill'); }
-    }
-    </script>
-    """,
-    unsafe_allow_html=True
-)
+# make them look like "pills"
+st.markdown("""
+<script>
+for (const b of window.parent.document.querySelectorAll('button')) {
+  if (b.innerText === '-5 Benches' || b.innerText === 'Baseline (0)' || b.innerText === '+5 Benches') {
+    b.classList.add('pill');
+  }
+}
+</script>
+""", unsafe_allow_html=True)
 
 # =====================================================================
 # CUSTOM CONTROL BAR (−10 … +10) with − / ＋ and current value
 # =====================================================================
+BMIN, BMAX = -10, 10
+span = BMAX - BMIN
+
 bar_cols = st.columns([0.25, 5, 0.25])
 with bar_cols[0]:
     if st.button("−", key="dec", help="Decrease", use_container_width=True):
         st.session_state.bench_delta = clamp(st.session_state.bench_delta - 1)
-    st.write(
-        "<script>window.parent.document.querySelector(\"button#dec\").classList.add('bump')</script>",
-        unsafe_allow_html=True
-    )
+    st.markdown("<script>window.parent.document.querySelector(\"button[kind='secondary']\");</script>", unsafe_allow_html=True)
 
 with bar_cols[2]:
     if st.button("＋", key="inc", help="Increase", use_container_width=True):
         st.session_state.bench_delta = clamp(st.session_state.bench_delta + 1)
-    st.write(
-        "<script>window.parent.document.querySelector(\"button#inc\").classList.add('bump')</script>",
-        unsafe_allow_html=True
-    )
 
-# Build the visual bar in Plotly so it matches the mock
 b = int(st.session_state.bench_delta)
-BMIN, BMAX = -10, 10
-span = BMAX - BMIN
-
-# Map current b to x from 0..1 for drawing
 x_pos = (b - BMIN) / span
 
 fig_bar = go.Figure()
@@ -127,11 +90,9 @@ knob_x = 0.05 + 0.90 * x_pos
 fig_bar.add_trace(go.Scatter(
     x=[knob_x], y=[0.5], mode="markers+text",
     marker=dict(size=16, color="black"),
-    text=[f"{b:+d}"],
-    textposition="top center",
+    text=[f"{b:+d}"], textposition="top center",
     hoverinfo="skip"
 ))
-
 # labels -10 / +10
 fig_bar.add_annotation(x=0.05, y=0.35, text=str(BMIN), showarrow=False, font=dict(size=12, color="#444"))
 fig_bar.add_annotation(x=0.95, y=0.35, text=f"+{BMAX}", showarrow=False, font=dict(size=12, color="#444"))
@@ -139,44 +100,38 @@ fig_bar.add_annotation(x=0.95, y=0.35, text=f"+{BMAX}", showarrow=False, font=di
 fig_bar.update_xaxes(visible=False, range=[0,1])
 fig_bar.update_yaxes(visible=False, range=[0,1])
 fig_bar.update_layout(height=110, margin=dict(l=10, r=10, t=10, b=0), template="plotly_white")
-
 with bar_cols[1]:
     st.plotly_chart(fig_bar, use_container_width=True)
 
-# Hidden slider to still allow keyboard/mouse updates (and keep URL state if needed)
-# (Also lets users drag value precisely.)
+# Hidden slider for precise control + state sync
 b = st.slider("Benches (add/remove)", BMIN, BMAX, value=b, label_visibility="collapsed", key="slider_sync")
 st.session_state.bench_delta = int(b)
 
 # =====================================================================
-# MODEL LOGIC (matches fig. 2)
+# MODEL LOGIC (as per figure 2)
 # =====================================================================
-# Per-bench effects on factors
-# (b=+3 in the mock → +6 Social, +3 Physical, -3 Safety, +3 Psychological)
-d_social   =  2 * b
-d_physical =  1 * b
-d_safety   = -1 * b
-d_psych    =  1 * b
+d_social   =  2 * b   # +2 per bench
+d_physical =  1 * b   # +1 per bench
+d_safety   = -1 * b   # −1 per bench
+d_psych    =  1 * b   # +1 per bench
 
-# Weights from dimensions → QoL (thickness/labels x2, x1, x2, x1 in the mock)
 W_SOC, W_PHY, W_ENV, W_PSY = 2, 1, 2, 1
 
-q_social = W_SOC * d_social
+q_social   = W_SOC * d_social
 q_physical = W_PHY * d_physical
-q_env = W_ENV * d_safety
-q_psych = W_PSY * d_psych
-q_total = q_social + q_physical + q_env + q_psych
+q_env      = W_ENV * d_safety
+q_psych    = W_PSY * d_psych
+q_total    = q_social + q_physical + q_env + q_psych
 
-def sign_color(v):
+def sign_color(v):  # green for positive, red for negative, grey for zero
     return "#27ae60" if v > 0 else ("#c0392b" if v < 0 else "#7f8c8d")
 
 def plus(v):
     return f"{int(v):+d}" if isinstance(v, (int, np.integer)) else f"{v:+.0f}"
 
 # =====================================================================
-# INTERACTIVE DIAGRAM (fig. 2)
+# INTERACTIVE DIAGRAM
 # =====================================================================
-# Canvas coordinates
 bench_x, bench_y = 1.5, 5.0
 soc_x, soc_y     = 4.2, 8.3
 phy_x, phy_y     = 4.2, 5.9
@@ -187,12 +142,10 @@ qol_x, qol_y     = 9.1, 5.0
 oval_w, oval_h = 3.9, 2.2
 card_w, card_h = 2.5, 1.05
 
-# Colors (approximate the mock)
 COL_SOC = "#ff7eb6"  # pink label
-COL_PHY = "#c0392b"  # deep red label
-COL_ENV = "#16a085"  # green label
+COL_PHY = "#b50d28"  # deep red label
+COL_ENV = "#138a72"  # green label
 COL_PSY = "#f39c12"  # orange label
-COL_QBG = "#6b8f71"  # QoL box
 
 fig = go.Figure()
 
@@ -208,12 +161,12 @@ fig.add_annotation(x=bench_x, y=bench_y, text="<b>Benches</b>", showarrow=False,
 fig.add_annotation(x=bench_x-1.9, y=bench_y+0.9, text=f"<b>{plus(b)}</b>", showarrow=False,
                    font=dict(size=12), bgcolor="#ddd", bordercolor="#bbb", borderwidth=0, xanchor="right")
 
-# Helper to add “bubble + card + badge”
-def bubble_card(x, y, title, title_color, card_text, badge_value):
-    # bubble
-    fig.add_shape(type="rect",
+# bubble + card + badge — uses ellipse (Plotly circle) instead of rounded-rect
+def bubble_card(x, y, title, title_color, card_label, badge_value):
+    # ellipse bubble (circle shape with different x/y span)
+    fig.add_shape(type="circle",
                   x0=x-oval_w/2, y0=y-oval_h/2, x1=x+oval_w/2, y1=y+oval_h/2,
-                  rx=25, ry=25, fillcolor="rgba(255,255,255,0.6)",
+                  fillcolor="rgba(255,255,255,0.6)",
                   line=dict(color="#eee", width=2), layer="below")
     fig.add_annotation(x=x, y=y+oval_h/2-0.2, text=f"<b>{title}</b>",
                        showarrow=False, font=dict(color=title_color, size=13), yshift=10)
@@ -221,18 +174,18 @@ def bubble_card(x, y, title, title_color, card_text, badge_value):
     fig.add_shape(type="rect",
                   x0=x-card_w/2, y0=y-card_h/2, x1=x+card_w/2, y1=y+card_h/2,
                   fillcolor="white", line=dict(color=title_color, width=2))
-    fig.add_annotation(x=x, y=y, text=f"<b>{card_text}</b>", showarrow=False,
+    fig.add_annotation(x=x, y=y, text=f"<b>{card_label}</b>", showarrow=False,
                        font=dict(color="white", size=12),
                        bgcolor=title_color, bordercolor=title_color)
-    # small round badge with value
+    # round badge with delta
     fig.add_annotation(x=x+card_w/2+0.35, y=y, text=f"{plus(badge_value)}",
                        showarrow=False, font=dict(size=12),
                        bgcolor="#ddd", bordercolor="#bbb", borderwidth=0)
 
 # Nodes
 bubble_card(soc_x, soc_y, "SOCIAL DIMENSION", COL_SOC, "Social networks", d_social)
-bubble_card(phy_x, phy_y, "Physical dimension", "#b50d28", "Physical activity", d_physical)
-bubble_card(env_x, env_y, "ENVIRONMENTAL DIMENSION", "#138a72", "Safety", d_safety)
+bubble_card(phy_x, phy_y, "Physical dimension", COL_PHY, "Physical activity", d_physical)
+bubble_card(env_x, env_y, "ENVIRONMENTAL DIMENSION", COL_ENV, "Safety", d_safety)
 bubble_card(psy_x, psy_y, "Psychological dimension", COL_PSY, "Downshift", d_psych)
 
 # QoL box
@@ -257,13 +210,13 @@ def arrow(x0, y0, x1, y1, color, width):
     fig.add_annotation(x=x1, y=y1, ax=x0, ay=y0, xref="x", yref="y", axref="x", ayref="y",
                        showarrow=True, arrowhead=3, arrowsize=1.0, arrowwidth=width, arrowcolor=color)
 
-# Bench → dimensions (color by sign, width by |weight|)
-arrow(bench_x+1.6, bench_y, soc_x-card_w/2, soc_y, sign_color(+1), 4)     # x2 visually thicker in next leg
+# Bench → dimensions (color by sign)
+arrow(bench_x+1.6, bench_y, soc_x-card_w/2, soc_y, sign_color(+1), 4)
 arrow(bench_x+1.6, bench_y, phy_x-card_w/2, phy_y, sign_color(+1), 3)
 arrow(bench_x+1.6, bench_y, env_x-card_w/2, env_y, sign_color(-1), 3)
 arrow(bench_x+1.6, bench_y, psy_x-card_w/2, psy_y, sign_color(+1), 3)
 
-# dimensions → QoL (all green, thickness = weight)
+# dimensions → QoL (thickness = weight)
 QGREEN = "#27ae60"
 arrow(soc_x+card_w/2, soc_y, qol_x-2.0+0.05, qol_y+1.25, QGREEN, 5 if W_SOC==2 else 3)
 arrow(phy_x+card_w/2, phy_y, qol_x-2.0+0.05, phy_y,       QGREEN, 5 if W_PHY==2 else 3)
@@ -279,15 +232,13 @@ weight_label((phy_x+qol_x)/2, phy_y+0.25, W_PHY)
 weight_label((env_x+qol_x)/2, qol_y-1.45, W_ENV)
 weight_label((psy_x+qol_x)/2, qol_y-1.85, W_PSY)
 
-# Canvas style
 fig.update_xaxes(visible=False, range=[0, 10])
 fig.update_yaxes(visible=False, range=[0, 10])
 fig.update_layout(template="plotly_white", height=560, margin=dict(l=20, r=20, t=15, b=15))
-
 st.plotly_chart(fig, use_container_width=True)
 
 # =====================================================================
-# KPIs + QoL gauge (fig. 3; title no longer clipped)
+# KPIs + QoL gauge (title not clipped)
 # =====================================================================
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("Δ Social interactions", plus(d_social))
