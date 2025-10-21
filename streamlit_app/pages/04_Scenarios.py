@@ -91,7 +91,7 @@ fig.add_shape(type="rect",
               x0=soc_x-card_w/2, y0=soc_y-card_h/2, x1=soc_x+card_w/2, y1=soc_y+card_h/2,
               fillcolor="white", line=dict(color=SOC_COL, width=2))
 fig.add_annotation(x=soc_x, y=soc_y,
-                   text=f"<b>{plus(d_social)}</b>&nbsp; Social network",
+                   text=f"<b>{plus(d_social)}</b>&nbsp; Social networks",
                    showarrow=False, font=dict(color=SOC_COL, size=12))
 
 # Physical bubble + card
@@ -206,6 +206,7 @@ with st.expander("Notes (prototype logic)"):
 - Dimensions contribute to QoL with equal weights (2, 2, 2) → for +1 bench: **+4**, **+2**, **−4**.
 - This is a **conceptual** demo to communicate relationships, not a predictive model.
 """)
+
 
 
 
