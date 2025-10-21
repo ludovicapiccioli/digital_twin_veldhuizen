@@ -289,12 +289,12 @@ svg = f'''
         stroke-linecap="round" marker-end="url(#arrowGreen2)"/>
   <text x="290" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M170,230 C230,220 300,210 370,210"
+  <path d="M190,230 C230,220 300,210 370,210"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
         stroke-linecap="round" marker-end="url(#arrowGreen1)"/>
   <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M180,230 C235,275 300,320 355,338"
+  <path d="M190,230 C235,275 300,320 355,338"
         fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}"
         stroke-linecap="round" marker-end="url(#arrowRed1)"/>
   <text x="295" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
@@ -360,6 +360,7 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
+
 
 
 
