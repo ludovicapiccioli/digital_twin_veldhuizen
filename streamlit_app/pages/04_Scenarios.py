@@ -282,47 +282,47 @@ svg = f'''
     </g>
   </g>
 
-  <!-- ===== Arrows (static) + x1/x2 labels ===== -->
-  <!-- Intervention -> Dimensions -->
-  <path d="M190,230 C250,140 270,110 339,80"
+  <!-- ===== Arrows (SMOOTH) + x1/x2 labels ===== -->
+  <!-- Intervention -> Dimensions (same endpoints, smoother control points) -->
+  <path d="M190,230 C220,180 300,120 339,80"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
-        marker-end="url(#arrowGreen2)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen2)"/>
   <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M190,230 C330,205 350,207 370,210"
+  <path d="M190,230 C230,220 300,210 370,210"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
-        marker-end="url(#arrowGreen1)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen1)"/>
   <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M190,230 C320,330 340,338 355,338"
+  <path d="M190,230 C235,275 300,320 355,338"
         fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}"
-        marker-end="url(#arrowRed1)"/>
+        stroke-linecap="round" marker-end="url(#arrowRed1)"/>
   <text x="320" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
 
-  <path d="M190,230 C245,360 250,400 344,460"
+  <path d="M190,230 C210,300 270,390 344,460"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
-        marker-end="url(#arrowGreen1)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen1)"/>
   <text x="320" y="380" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <!-- Dimensions -> QoL -->
-  <path d="M570,80 C800,140 720,220 768,230"
+  <!-- Dimensions -> QoL (end at 768,230; smoother control points) -->
+  <path d="M570,80  C630,110 710,180 768,230"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
-        marker-end="url(#arrowGreen2)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen2)"/>
   <text x="590" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M560,210 C740,230 760,250 768,230"
+  <path d="M560,210 C630,215 700,225 768,230"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
-        marker-end="url(#arrowGreen1)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen1)"/>
   <text x="745" y="225" class="cap" font-size="18" fill="#19a974">x1</text>
 
-  <path d="M570,338 C760,340 780,250 768,230"
+  <path d="M570,338 C640,320 710,260 768,230"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
-        marker-end="url(#arrowGreen2)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen2)"/>
   <text x="755" y="330" class="cap" font-size="18" fill="#19a974">x2</text>
 
-  <path d="M570,460 C780,440 720,420 768,230"
+  <path d="M570,460 C650,420 720,320 768,230"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
-        marker-end="url(#arrowGreen1)"/>
+        stroke-linecap="round" marker-end="url(#arrowGreen1)"/>
   <text x="780" y="430" class="cap" font-size="18" fill="#19a974">x1</text>
 
 </svg>
@@ -360,5 +360,3 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
-
-
