@@ -53,12 +53,6 @@ q_total    = q_social + q_physical + q_env + q_psych
 # ---------------- Arrow sizing (weight-aware) ----------------
 ARROW_W_X1 = 3.0
 ARROW_W_X2 = 4.5
-ARROW_W_IN = {
-    "social": ARROW_W_X2,
-    "physical": ARROW_W_X1,
-    "environmental": ARROW_W_X1,
-    "psych": ARROW_W_X1,
-}
 
 HEAD_W_X1 = 7; HEAD_H_X1 = 7
 HEAD_REF_X_X1 = HEAD_W_X1 + 1.0
@@ -93,8 +87,8 @@ Q_SCORE_H = 96
 
 PHYS_COL = "#B39DDB"  # Physical activity theme color
 
-# ---------------- Positions: center the dimension boxes ----------------
-CENTER_X = 455  # move this to nudge all dimension boxes L/R together
+# ---------------- Positions (center-ish for dimensions) ----------------
+CENTER_X = 455  # tweak this to move all dimension boxes left/right together
 
 SOC_X = CENTER_X - DIM_W_SOC / 2
 PHY_X = CENTER_X - DIM_W_PHY / 2
@@ -109,73 +103,12 @@ PSY_Y = 405
 INT_X, INT_Y = 40, 180
 QOL_X, QOL_Y = 770, 170
 
-# ---- Precompute anchor points for arrows (so they survive position changes) ----
-# Left/right centers of each panel (note: Social panel top padding differs)
-SOC_CY = SOC_Y + 28 + DIM_H/2
-PHY_CY = PHY_Y + 18 + DIM_H/2
-ENV_CY = ENV_Y + 18 + DIM_H/2
-PSY_CY = PSY_Y + 18 + DIM_H/2
-
-SOC_LEFT_X  = SOC_X + 8
-PHY_LEFT_X  = PHY_X + 8
-ENV_LEFT_X  = ENV_X + 8
-PSY_LEFT_X  = PSY_X + 8
-
-SOC_RIGHT_X = SOC_X + DIM_W_SOC - 8
-PHY_RIGHT_X = PHY_X + DIM_W_PHY - 8
-ENV_RIGHT_X = ENV_X + DIM_W_ENV - 8
-PSY_RIGHT_X = PSY_X + DIM_W_PSY - 8
-
-# Intervention arrow "hub" (where curves originate)
-HUB_X = INT_X + INT_W + 35
-HUB_Y = INT_Y + INT_H/2
-
-# QoL left edge points to target (a few vertical positions inside the box)
-QOL_LEFT_X = QOL_X + 2
-QOL_T_SOCY = QOL_Y + 80
-QOL_T_PHYY = QOL_Y + 120
-QOL_T_ENVY = QOL_Y + 140
-QOL_T_PSYY = QOL_Y + 170
-
-# Curvature knobs (bigger magnitude = more curve)
-DX_IN  = 120  # control point distance along x from the hub/card for left-hand arrows
-DX_OUT = 120
-DY_SOC_UP   = -100
-DY_PHY_MID  = 0
-DY_ENV_DOWN =  40
-DY_PSY_DOWN = 150
-
-DX_DIM2Q   = 130  # x distance for first control point from a dimension to QoL
-DX_Q2DIM   = 80   # x distance for second control point before QoL
-DY_SOC2Q   = -70
-DY_PHY2Q   = -10
-DY_ENV2Q   =  10
-DY_PSY2Q   =  40
-
-# Build cubic Bezier path strings
-def path_in(x0, y0, x1, y1, dy0, dy1):
-    """From Intervention hub (x0,y0) to dimension left edge (x1,y1)."""
-    c1x, c1y = x0 + DX_IN,  y0 + dy0
-    c2x, c2y = x1 - DX_OUT, y1 + dy1
-    return f"M{x0:.1f},{y0:.1f} C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {x1:.1f},{y1:.1f}"
-
-def path_q(x0, y0, x1, y1, dy0, dy1):
-    """From dimension right edge (x0,y0) to QoL left edge (x1,y1)."""
-    c1x, c1y = x0 + DX_DIM2Q, y0 + dy0
-    c2x, c2y = x1 - DX_Q2DIM, y1 + dy1
-    return f"M{x0:.1f},{y0:.1f} C{c1x:.1f},{c1y:.1f} {c2x:.1f},{c2y:.1f} {x1:.1f},{y1:.1f}"
-
-# Left arrows: Intervention -> Dimensions
-P_SOC_IN = path_in(HUB_X, HUB_Y, SOC_LEFT_X, SOC_CY, DY_SOC_UP,  -40)
-P_PHY_IN = path_in(HUB_X, HUB_Y, PHY_LEFT_X, PHY_CY, DY_PHY_MID,   0)
-P_ENV_IN = path_in(HUB_X, HUB_Y, ENV_LEFT_X, ENV_CY,  60,        20)  # red, x-1
-P_PSY_IN = path_in(HUB_X, HUB_Y, PSY_LEFT_X, PSY_CY, DY_PSY_DOWN, 40)
-
-# Right arrows: Dimensions -> QoL
-P_SOC_Q  = path_q(SOC_RIGHT_X, SOC_CY, QOL_LEFT_X, QOL_T_SOCY, DY_SOC2Q, -40)
-P_PHY_Q  = path_q(PHY_RIGHT_X, PHY_CY, QOL_LEFT_X, QOL_T_PHYY, DY_PHY2Q, -10)
-P_ENV_Q  = path_q(ENV_RIGHT_X, ENV_CY, QOL_LEFT_X, QOL_T_ENVY, DY_ENV2Q,  10)
-P_PSY_Q  = path_q(PSY_RIGHT_X, PSY_CY, QOL_LEFT_X, QOL_T_PSYY, DY_PSY2Q,  30)
+# ---------------- Grey bubbles behind dimensions ----------------
+SHOW_BUBBLES = True
+BUBBLE_FILL  = "#eeeeee"
+BUBBLE_OPAC  = 0.55
+BUBBLE_PAD_X = 18
+BUBBLE_PAD_Y = 14
 
 # ---------------- Dynamic SVG ----------------
 svg = f'''
@@ -236,6 +169,9 @@ svg = f'''
   <!-- Social -->
   <g transform="translate({SOC_X},{SOC_Y})">
     <text x="{DIM_W_SOC/2}" y="18" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
+
+    {f'<ellipse cx="{DIM_W_SOC/2}" cy="{28 + DIM_H/2}" rx="{(DIM_W_SOC/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+
     <rect x="0" y="28" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_SOC}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="42" rx="{PILL_R}" ry="{PILL_R}"
@@ -246,6 +182,9 @@ svg = f'''
   <!-- Physical -->
   <g transform="translate({PHY_X},{PHY_Y})">
     <text x="{DIM_W_PHY/2}" y="8" class="cap" fill="{PHYS_COL}" font-size="16">Physical dimension</text>
+
+    {f'<ellipse cx="{DIM_W_PHY/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_PHY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+
     <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PHY}" height="{DIM_H}"
           fill="#ffffff" stroke="{PHYS_COL}" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
@@ -256,6 +195,9 @@ svg = f'''
   <!-- Environmental -->
   <g transform="translate({ENV_X},{ENV_Y})">
     <text x="{DIM_W_ENV/2}" y="8" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
+
+    {f'<ellipse cx="{DIM_W_ENV/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_ENV/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+
     <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_ENV}" height="{DIM_H}"
           fill="#ffffff" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
@@ -266,6 +208,9 @@ svg = f'''
   <!-- Psychological -->
   <g transform="translate({PSY_X},{PSY_Y})">
     <text x="{DIM_W_PSY/2}" y="8" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
+
+    {f'<ellipse cx="{DIM_W_PSY/2}" cy="{18 + DIM_H/2}" rx="{(DIM_W_PSY/2) + BUBBLE_PAD_X}" ry="{(DIM_H/2) + BUBBLE_PAD_Y}" fill="{BUBBLE_FILL}" opacity="{BUBBLE_OPAC}" filter="url(#soft)"/>' if SHOW_BUBBLES else ''}
+
     <rect x="0" y="18" rx="{DIM_RX}" ry="{DIM_RX}" width="{DIM_W_PSY}" height="{DIM_H}"
           fill="#ffffff" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
     <rect x="{PILL_PAD_X}" y="32" rx="{PILL_R}" ry="{PILL_R}"
@@ -290,25 +235,35 @@ svg = f'''
     </g>
   </g>
 
-  <!-- ===== Arrows: Intervention -> Dimensions (left set) ===== -->
-  <path d="{P_SOC_IN}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_IN['social']}" marker-end="url(#arrowGreen2)"/>
-  <path d="{P_PHY_IN}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_IN['physical']}" marker-end="url(#arrowGreen1)"/>
-  <path d="{P_ENV_IN}" fill="none" stroke="#e85959"
-        stroke-width="{ARROW_W_IN['environmental']}" marker-end="url(#arrowRed1)"/>
-  <path d="{P_PSY_IN}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_IN['psych']}" marker-end="url(#arrowGreen1)"/>
+  <!-- ===== Arrows (STATIC as before) ===== -->
 
-  <!-- ===== Arrows: Dimensions -> QoL (right set) ===== -->
-  <path d="{P_SOC_Q}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_X2}" marker-end="url(#arrowGreen2)"/>
-  <path d="{P_PHY_Q}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
-  <path d="{P_ENV_Q}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_X2}" marker-end="url(#arrowGreen2)"/>
-  <path d="{P_PSY_Q}" fill="none" stroke="#19a974"
-        stroke-width="{ARROW_W_X1}" marker-end="url(#arrowGreen1)"/>
+  <!-- Intervention -> Dimensions -->
+  <path d="M240,245 C350,140 370,110 440,90"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        marker-end="url(#arrowGreen2)"/>
+  <path d="M240,245 C330,235 350,230 420,240"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowGreen1)"/>
+  <path d="M240,245 C320,300 350,315 420,330"
+        fill="none" stroke="#e85959" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowRed1)"/>
+  <path d="M240,245 C320,360 360,400 420,460"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowGreen1)"/>
+
+  <!-- Dimensions -> QoL -->
+  <path d="M740,90 C800,140 820,220 860,280"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        marker-end="url(#arrowGreen2)"/>
+  <path d="M660,230 C740,230 760,250 860,280"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowGreen1)"/>
+  <path d="M680,360 C760,340 780,320 860,300"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
+        marker-end="url(#arrowGreen2)"/>
+  <path d="M720,480 C780,440 800,420 860,360"
+        fill="none" stroke="#19a974" stroke-width="{ARROW_W_X1}"
+        marker-end="url(#arrowGreen1)"/>
 
 </svg>
 '''
