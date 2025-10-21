@@ -9,7 +9,7 @@ ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
 BLUE   = "#3498db"   # (kept for reference if needed elsewhere)
 RED    = "#E53935"   # Physical frame/pill — now red
-LIGHTBLUE = "#87CEFA"  # Label color for Purpose/Downshift/Community participation
+LIGHTBLUE = "##1E88E5"  # Label color for Purpose/Downshift/Community participation
 
 svg = f"""
 <svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
@@ -319,3 +319,4 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
+
