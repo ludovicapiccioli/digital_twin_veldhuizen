@@ -120,7 +120,7 @@ svg = f'''
      style="width:100%;height:auto;display:block;background:#ffffff;">
 
   <defs>
-    <!-- Arrowhead definitions -->
+    <!-- Good arrowhead definitions -->
     <marker id="arrowGreen1" viewBox="0 0 10 6"
             markerWidth="6.5" markerHeight="6.5"
             refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -156,8 +156,7 @@ svg = f'''
     </style>
   </defs>
 
-  <!-- [SVG contents: boxes, arrows, bubbles, etc.] -->
-  <!-- (kept identical to your current working setup) -->
+  <!-- [SVG contents unchanged: boxes, arrows, bubbles, etc.] -->
 
 </svg>
 '''
@@ -191,23 +190,21 @@ g = go.Figure(go.Indicator(
 g.update_layout(height=210, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
 
-# ---------------- Concept notes (collapsible) ----------------
-with st.expander("🧭 Concept Notes (click to expand)", expanded=False):
-    st.markdown("""
-**What this shows**
-- A conceptual demo of how adding/removing benches (`b`) can ripple through **Social, Physical, Environmental (Safety),** and **Psychological** dimensions.
-- Each dimension’s Δ feeds a weighted **QoL composite**.
+# ---------------- Concept notes ----------------
+st.markdown("""
+---
+### 🧭 Concept Notes
 
-**How the math works (mock)**
-- Per-bench effects:  
-  - Social = `+2 × b`  
-  - Physical = `+1 × b`  
-  - Safety = `−1 × b`  
-  - Psychological = `+1 × b`
-- QoL weights: Social `×2`, Physical `×1`, Environmental `×2`, Psychological `×1`.
-- QoL total = sum of weighted deltas (shown as Δ in the box and the bottom KPIs/gauge).
+This simulation is a **conceptual demonstration** of how local urban interventions (here, adding or removing benches)
+can influence various **dimensions of quality of life (QoL)**.
 
-**Important**
-- Arrows visualize **influences**, not causation or predictions.
-- Baseline QoL is **70/100**; the gauge reflects baseline ± total Δ.
+**Logic summary:**
+- The number of benches (`b`) affects social, physical, safety, and psychological dimensions using simple mock coefficients.
+- Each dimension’s change (`Δ`) contributes to an aggregated QoL composite score using predefined weights.
+- Arrows in the diagram visualize directional relationships, not statistical causation.
+- The gauge at the bottom gives an indicative QoL score out of 100, starting from a baseline of 70.
+
+**Purpose:**  
+This visualization is intended to **communicate relationships and trade-offs**, not empirical results.
+It helps explore how physical design changes could ripple across multiple wellbeing dimensions.
 """)
