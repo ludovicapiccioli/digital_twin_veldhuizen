@@ -7,7 +7,9 @@ st.subheader("Drivers Diagram - Key interrelations of QoL drivers")
 PINK   = "#ff69b4"   # Social-origin / pink arrows
 ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
-BLUE   = "#3498db"   # Physical frame/pill
+BLUE   = "#3498db"   # (kept for reference if needed elsewhere)
+RED    = "#E53935"   # Physical frame/pill — now red
+LIGHTBLUE = "#87CEFA"  # Label color for Purpose/Downshift/Community participation
 
 svg = f"""
 <svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
@@ -70,8 +72,9 @@ svg = f"""
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
   <text class="titleV dim-title" x="1090" y="130" fill="{GREEN}" transform="rotate(90 1090 130)">ENVIRONMENTAL</text>
 
-  <rect class="frame" x="640" y="400" width="440" height="310" stroke="{BLUE}"/>
-  <text class="titleV dim-title" x="1090" y="555" fill="{BLUE}" transform="rotate(90 1090 555)">Physical</text>
+  <!-- PHYSICAL frame/title now RED -->
+  <rect class="frame" x="640" y="400" width="440" height="310" stroke="{RED}"/>
+  <text class="titleV dim-title" x="1090" y="555" fill="{RED}" transform="rotate(90 1090 555)">Physical</text>
 
   <!-- ===== Nodes (pills) with data-node ids ===== -->
   <!-- SOCIAL -->
@@ -82,7 +85,7 @@ svg = f"""
 
   <g class="node" data-node="CP">
     <rect class="pill" x="180" y="240" width="280" height="40" fill="{PINK}"/>
-    <text class="label" x="320" y="266" text-anchor="middle">Community participation</text>
+    <text class="label" x="320" y="266" text-anchor="middle" fill="{LIGHTBLUE}">Community participation</text>
   </g>
 
   <!-- PSYCHOLOGICAL -->
@@ -98,12 +101,12 @@ svg = f"""
 
   <g class="node" data-node="Purpose">
     <rect class="pill" x="200" y="570" width="210" height="40" fill="{ORANGE}"/>
-    <text class="label" x="305" y="596" text-anchor="middle">Purpose</text>
+    <text class="label" x="305" y="596" text-anchor="middle" fill="{LIGHTBLUE}">Purpose</text>
   </g>
 
   <g class="node" data-node="Downshift">
     <rect class="pill" x="180" y="620" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="646" text-anchor="middle">Downshift</text>
+    <text class="label" x="300" y="646" text-anchor="middle" fill="{LIGHTBLUE}">Downshift</text>
   </g>
 
   <!-- ENVIRONMENTAL -->
@@ -132,9 +135,9 @@ svg = f"""
     <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
   </g>
 
-  <!-- PHYSICAL -->
+  <!-- PHYSICAL node pill now RED -->
   <g class="node" data-node="PA">
-    <rect class="pill" x="700" y="575" width="320" height="44" fill="{BLUE}"/>
+    <rect class="pill" x="700" y="575" width="320" height="44" fill="{RED}"/>
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
@@ -316,13 +319,3 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
-
-
-
-
-
-
-
-
-
-
