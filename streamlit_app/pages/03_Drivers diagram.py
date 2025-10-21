@@ -9,7 +9,7 @@ ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
 BLUE   = "#3498db"   # Kept for reference if needed elsewhere
 RED    = "#E53935"   # Physical frame/pill — now red
-LIGHTBLUE = "#1E88E5"  # Darker blue for "Purpose", "Downshift", "Community participation"
+LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
 
 svg = f"""
 <svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
@@ -37,10 +37,11 @@ svg = f"""
       .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
       .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
 
-      /* --- Override label color for 3 specific nodes --- */
+      /* --- Override label color for specific nodes --- */
       .node[data-node="Purpose"] .label,
       .node[data-node="Downshift"] .label,
-      .node[data-node="CP"] .label {{
+      .node[data-node="CP"] .label,
+      .node[data-node="PA"] .label {{
         fill: {LIGHTBLUE};
       }}
 
@@ -142,7 +143,7 @@ svg = f"""
     <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
   </g>
 
-  <!-- PHYSICAL node pill now RED -->
+  <!-- PHYSICAL node pill now RED + blue label -->
   <g class="node" data-node="PA">
     <rect class="pill" x="700" y="575" width="320" height="44" fill="{RED}"/>
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
