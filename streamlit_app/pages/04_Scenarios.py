@@ -1,193 +1,151 @@
-# pages/04_Scenarios.py
 import streamlit as st
-import numpy as np
-import plotly.graph_objects as go
 
-# ── keep: header ─────────────────────────────────────────────
-st.set_page_config(page_title="Scenarios • Veldhuizen", layout="wide")
-st.subheader("Concept demo - Simulation of scenarios")
-st.caption("Concept demo with mock relationships. Adjust benches and see how dimensions and QoL change.")
+st.set_page_config(layout="wide", page_title="Intervention Diagram")
 
-# ── state & helpers ─────────────────────────────────────────
-BMIN, BMAX = -10, 10
-if "benches" not in st.session_state:
-    st.session_state.benches = 0
+# Inline SVG so the diagram renders exactly and consistently in Streamlit
+svg = r'''
+<svg width="960" height="560" viewBox="0 0 960 560" xmlns="http://www.w3.org/2000/svg" style="background:#f2f2f2;">
 
-def clamp(v): return int(max(BMIN, min(BMAX, v)))
-def plus(v):  return f"{int(v):+d}"
-def sign_color(v):  # green / red / grey
-    return "#23a455" if v > 0 else ("#d14a3a" if v < 0 else "#7f8c8d")
+  <!-- ========== defs ========== -->
+  <defs>
+    <marker id="arrowGreen" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#19a974"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M0,0 L12,6 L0,12 z" fill="#e85959"/>
+    </marker>
+    <filter id="soft" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+    <style>
+      .cap { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; font-weight:600; }
+      .text { font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial; }
+      .tiny { font-size:12px; fill:#666; }
+      .label { font-size:16px; font-weight:700; fill:#111; }
+      .pill { font-size:14px; font-weight:600; fill:#fff; }
+      .score { font-size:36px; font-weight:800; fill:#fff; }
+      .sub { font-size:14px; fill:#2e7d32; font-weight:700; }
+    </style>
+  </defs>
 
-# ── presets exactly as requested ─────────────────────────────
-p1, p2, p3 = st.columns(3)
-with p1:
-    if st.button("-5 Benches"): st.session_state.benches = -5
-with p2:
-    if st.button("Baseline (0)"): st.session_state.benches = 0
-with p3:
-    if st.button("+5 Benches"): st.session_state.benches = +5
+  <!-- ========== Left: Intervention ========== -->
+  <g transform="translate(40,180)">
+    <rect x="0" y="0" rx="20" ry="20" width="200" height="130" fill="#fff" stroke="#111" stroke-width="3" filter="url(#soft)"/>
+    <text x="100" y="-18" text-anchor="middle" class="cap" fill="#111" font-size="16">Intervention</text>
+    <rect x="20" y="25" rx="20" ry="20" width="160" height="80" fill="#000"/>
+    <text x="100" y="75" text-anchor="middle" class="pill">Benches</text>
 
-# ── single slider with − / ＋ (no duplicates) ───────────────
-c_minus, c_slider, c_plus = st.columns([1, 8, 1])
-with c_minus:
-    if st.button("−"): st.session_state.benches = clamp(st.session_state.benches - 1)
-with c_plus:
-    if st.button("＋"): st.session_state.benches = clamp(st.session_state.benches + 1)
-with c_slider:
-    st.slider("Benches (add/remove)", BMIN, BMAX, value=int(st.session_state.benches),
-              step=1, key="benches")
+    <!-- small +3 badge -->
+    <g transform="translate(-8,35)">
+      <circle cx="20" cy="30" r="22" fill="#bdbdbd"/>
+      <text x="20" y="35" text-anchor="middle" class="cap" font-size="16" fill="#fff">+3</text>
+    </g>
+  </g>
 
-b = int(st.session_state.benches)
+  <!-- Node helpers -->
+  <!-- Social -->
+  <g transform="translate(420,20)">
+    <text x="160" y="20" class="cap" fill="#ff80bf" font-size="16">SOCIAL DIMENSION</text>
+    <rect x="0" y="30" rx="22" ry="22" width="320" height="90" fill="#ffd6eb" stroke="#ff80bf" stroke-width="4" filter="url(#soft)"/>
+    <rect x="30" y="48" rx="18" ry="18" width="260" height="54" fill="#ff9ad5"/>
+    <text x="160" y="82" text-anchor="middle" class="pill">Social networks</text>
+  </g>
 
-# ── logic matching the picture ───────────────────────────────
-# per bench: +2 Social, +1 Physical, −1 Safety, +1 Psychological
-d_social, d_physical, d_safety, d_psych = 2*b, 1*b, -1*b, 1*b
-# to QoL weights shown as x2/x1
-W_SOC, W_PHY, W_ENV, W_PSY = 2, 1, 2, 1
-q_social   = W_SOC * d_social
-q_physical = W_PHY * d_physical
-q_env      = W_ENV * d_safety
-q_psych    = W_PSY * d_psych
-q_total    = q_social + q_physical + q_env + q_psych
+  <!-- Physical -->
+  <g transform="translate(420,170)">
+    <text x="120" y="10" class="cap" fill="#d90429" font-size="16">Physical dimension</text>
+    <rect x="0" y="20" rx="22" ry="22" width="240" height="90" fill="#ffd6d6" stroke="#d90429" stroke-width="4" filter="url(#soft)"/>
+    <rect x="20" y="38" rx="18" ry="18" width="200" height="54" fill="#b60021"/>
+    <text x="120" y="72" text-anchor="middle" class="pill">Physical activity</text>
+  </g>
 
-# ── drawing helpers ──────────────────────────────────────────
-def add_arrow(fig, x0, y0, x1, y1, color="#23a455", width=4):
-    fig.add_annotation(
-        x=x1, y=y1, ax=x0, ay=y0,
-        xref="x", yref="y", axref="x", ayref="y",
-        showarrow=True, arrowhead=3, arrowsize=1.0,
-        arrowwidth=width, arrowcolor=color
-    )
+  <!-- Environmental -->
+  <g transform="translate(420,300)">
+    <text x="120" y="10" class="cap" fill="#00b894" font-size="16">ENVIRONMENTAL DIMENSION</text>
+    <rect x="0" y="20" rx="22" ry="22" width="260" height="90" fill="#c8ffe6" stroke="#00b894" stroke-width="4" filter="url(#soft)"/>
+    <rect x="30" y="38" rx="18" ry="18" width="200" height="54" fill="#00c853"/>
+    <text x="130" y="72" text-anchor="middle" class="pill">Safety</text>
+  </g>
 
-def card(fig, *, x, y, title, title_col, label):
-    """Colored rectangular card like the screenshot (no ellipses)."""
-    # section title above card
-    fig.add_annotation(x=x, y=y+0.95, text=f"<b>{title}</b>",
-                       showarrow=False, font=dict(size=14, color=title_col))
-    # white card with colored border
-    fig.add_shape(
-        type="rect", x0=x-1.9, y0=y-0.5, x1=x+1.9, y1=y+0.5,
-        line=dict(color=title_col, width=3), fillcolor="white"
-    )
-    # colored inner label
-    fig.add_annotation(x=x, y=y, text=f"<b>{label}</b>", showarrow=False,
-                       font=dict(size=13, color="white"),
-                       bgcolor=title_col, bordercolor=title_col)
-    # small grey **square** badge on the right (delta box)
-    fig.add_shape(
-        type="rect", x0=x+2.2, y0=y-0.22, x1=x+2.52, y1=y+0.22,
-        line=dict(color="#bfbfbf", width=1), fillcolor="#d9d9d9"
-    )
+  <!-- Psychological -->
+  <g transform="translate(420,430)">
+    <text x="150" y="10" class="cap" fill="#ff9800" font-size="16">Psychological dimension</text>
+    <rect x="0" y="20" rx="22" ry="22" width="300" height="90" fill="#ffe6c7" stroke="#ff9800" stroke-width="4" filter="url(#soft)"/>
+    <rect x="30" y="38" rx="18" ry="18" width="240" height="54" fill="#ff8f2d"/>
+    <text x="150" y="72" text-anchor="middle" class="pill">Downshift</text>
+  </g>
 
-def badge_text(fig, *, x, y, val):
-    fig.add_annotation(x=x, y=y, text=f"{plus(val)}",
-                       showarrow=False, font=dict(size=12, color="#444"))
+  <!-- Right: Quality of Life -->
+  <g transform="translate(770,170)">
+    <text x="100" y="-20" class="cap" fill="#5f9ea0" font-size="18">QUALITY OF LIFE</text>
+    <rect x="0" y="0" rx="26" ry="26" width="180" height="230" fill="#fff" stroke="#6fa28e" stroke-width="3" filter="url(#soft)"/>
+    <g transform="translate(0,120)">
+      <rect x="0" y="0" rx="26" ry="26" width="180" height="110" fill="#5f8f75"/>
+      <text x="90" y="70" text-anchor="middle" class="score">+12</text>
+    </g>
+    <g transform="translate(14,24)">
+      <text class="tiny" x="0" y="0">+12 from Social</text>
+      <text class="tiny" x="0" y="18">+3 from Physical</text>
+      <text class="tiny" x="0" y="36">-6 from Environmental</text>
+      <text class="tiny" x="0" y="54">+3 from Psychological</text>
+    </g>
+  </g>
 
-# ── figure ───────────────────────────────────────────────────
-# canvas coordinates ~0..10
-bench_x, bench_y = 1.2, 5.0
-soc_x, soc_y     = 4.7, 8.0
-phy_x, phy_y     = 4.7, 5.9
-env_x, env_y     = 4.7, 3.7
-psy_x, psy_y     = 4.7, 1.6
-qol_x, qol_y     = 9.0, 5.0
+  <!-- Small grey badges on nodes -->
+  <g>
+    <g transform="translate(740,78)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">+6</text>
+    </g>
+    <g transform="translate(670,240)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">+3</text>
+    </g>
+    <g transform="translate(660,372)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">-3</text>
+    </g>
+    <g transform="translate(620,520)">
+      <circle cx="0" cy="0" r="18" fill="#bdbdbd"/>
+      <text x="0" y="5" text-anchor="middle" class="cap" font-size="14" fill="#fff">+3</text>
+    </g>
+  </g>
 
-COL_SOC = "#ff7eb6"  # pink
-COL_PHY = "#a20f23"  # deep red
-COL_ENV = "#138a72"  # teal-green
-COL_PSY = "#f39c12"  # orange
-QGREEN  = "#23a455"  # arrows to QoL
-QBOX_BG = "#6f8e74"; QBOX_BR = "#4f6f57"
+  <!-- ========== Arrows from Intervention to dimensions ========== -->
+  <!-- to Social (x2, green curve) -->
+  <path d="M240,245 C350,140 370,110 440,90" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <text x="335" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
 
-fig = go.Figure()
+  <!-- to Physical (x1, green curve) -->
+  <path d="M240,245 C330,235 350,230 420,240" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <text x="330" y="232" class="cap" font-size="18" fill="#19a974">x1</text>
 
-# left black block
-fig.add_shape(type="rect",
-              x0=bench_x-3.4, y0=bench_y-1.8, x1=bench_x+0.4, y1=bench_y+1.8,
-              fillcolor="black", line=dict(color="black", width=0))
-fig.add_annotation(x=bench_x-1.5, y=bench_y+0.7, text="<b>Intervention</b>",
-                   showarrow=False, font=dict(color="white", size=14))
-fig.add_annotation(x=bench_x-1.5, y=bench_y-0.2, text="<b>Benches</b>",
-                   showarrow=False, font=dict(color="white", size=18))
+  <!-- to Environmental (x-1, red curve) -->
+  <path d="M240,245 C320,300 350,315 420,330" fill="none" stroke="#e85959" stroke-width="6" marker-end="url(#arrowRed)"/>
+  <text x="320" y="300" class="cap" font-size="18" fill="#e85959">x-1</text>
 
-# cards (no ellipses)
-card(fig, x=soc_x, y=soc_y, title="SOCIAL DIMENSION", title_col=COL_SOC, label="Social networks")
-badge_text(fig, x=soc_x+2.36, y=soc_y, val=d_social)
+  <!-- to Psychological (x1, green curve) -->
+  <path d="M240,245 C320,360 360,400 420,460" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <text x="320" y="380" class="cap" font-size="18" fill="#19a974">x1</text>
 
-card(fig, x=phy_x, y=phy_y, title="Physical dimension", title_col=COL_PHY, label="Physical activity")
-badge_text(fig, x=phy_x+2.36, y=phy_y, val=d_physical)
+  <!-- ========== Arrows from dimensions to QoL ========== -->
+  <!-- Social -> QoL (x2) -->
+  <path d="M740,90 C800,140 820,220 860,280" fill="none" stroke="#19a974" stroke-width="8" marker-end="url(#arrowGreen)"/>
+  <text x="790" y="130" class="cap" font-size="18" fill="#19a974">x2</text>
 
-card(fig, x=env_x, y=env_y, title="ENVIRONMENTAL DIMENSION", title_col=COL_ENV, label="Safety")
-badge_text(fig, x=env_x+2.36, y=env_y, val=d_safety)
+  <!-- Physical -> QoL (x1) -->
+  <path d="M660,230 C740,230 760,250 860,280" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <text x="745" y="225" class="cap" font-size="18" fill="#19a974">x1</text>
 
-card(fig, x=psy_x, y=psy_y, title="Psychological dimension", title_col=COL_PSY, label="Downshift")
-badge_text(fig, x=psy_x+2.36, y=psy_y, val=d_psych)
+  <!-- Environmental -> QoL (x2) -->
+  <path d="M680,360 C760,340 780,320 860,300" fill="none" stroke="#19a974" stroke-width="8" marker-end="url(#arrowGreen)"/>
+  <text x="755" y="330" class="cap" font-size="18" fill="#19a974">x2</text>
 
-# QoL box
-fig.add_shape(type="rect",
-              x0=qol_x-2.5, y0=qol_y-2.1, x1=qol_x+2.5, y1=qol_y+2.1,
-              fillcolor=QBOX_BG, line=dict(color=QBOX_BR, width=4))
-fig.add_annotation(x=qol_x, y=qol_y+1.3, text="<b>QUALITY OF LIFE</b>",
-                   showarrow=False, font=dict(size=16, color="#1c3525"))
-fig.add_annotation(
-    x=qol_x, y=qol_y-0.2, showarrow=False, font=dict(size=12, color="white"),
-    text=(f"{plus(q_social)} from Social<br>"
-          f"{plus(q_physical)} from Physical<br>"
-          f"{plus(q_env)} from Environmental<br>"
-          f"{plus(q_psych)} from Psychological")
-)
-fig.add_annotation(x=qol_x, y=qol_y-1.3,
-                   text=f"<b>{int(np.clip(70+q_total,0,100))}</b>",
-                   showarrow=False, font=dict(size=32, color="white"))
+  <!-- Psychological -> QoL (x1) -->
+  <path d="M720,480 C780,440 800,420 860,360" fill="none" stroke="#19a974" stroke-width="6" marker-end="url(#arrowGreen)"/>
+  <text x="780" y="430" class="cap" font-size="18" fill="#19a974">x1</text>
 
-# arrows: Intervention → dimensions (green/grey/red per sign)
-add_arrow(fig, bench_x+0.4, bench_y+0.9, soc_x-2.1, soc_y+0.2, color=sign_color(+1), width=5)
-add_arrow(fig, bench_x+0.4, bench_y+0.2, phy_x-2.1, phy_y,     color=sign_color(+1), width=4)
-add_arrow(fig, bench_x+0.4, bench_y-0.7, env_x-2.1, env_y,     color=sign_color(-1), width=5)
-add_arrow(fig, bench_x+0.4, bench_y-1.4, psy_x-2.1, psy_y-0.1, color=sign_color(+1), width=4)
+</svg>
+'''
 
-# arrows: dimensions → QoL (all green; thickness encodes x1/x2)
-add_arrow(fig, soc_x+2.1, soc_y+0.1, qol_x-2.5, qol_y+1.1, color=QGREEN, width=7)  # x2
-add_arrow(fig, phy_x+2.1, phy_y,     qol_x-2.5, phy_y,       color=QGREEN, width=4)  # x1
-add_arrow(fig, env_x+2.1, env_y,     qol_x-2.5, qol_y-1.1,   color=QGREEN, width=7)  # x2
-add_arrow(fig, psy_x+2.1, psy_y+0.1, qol_x-2.5, qol_y-2.0,   color=QGREEN, width=4)  # x1
-
-# x1/x2 labels near the green arrows
-def wlabel(x, y, w):
-    fig.add_annotation(x=x, y=y, text=f"x{w}", showarrow=False,
-                       font=dict(size=12, color="#118a52"))
-wlabel((soc_x+qol_x)/2, qol_y+1.15, 2)
-wlabel((phy_x+qol_x)/2, phy_y+0.18, 1)
-wlabel((env_x+qol_x)/2, qol_y-1.15, 2)
-wlabel((psy_x+qol_x)/2, qol_y-2.05, 1)
-
-# canvas look
-fig.update_xaxes(visible=False, range=[0, 10])
-fig.update_yaxes(visible=False, range=[0, 10])
-fig.update_layout(template="plotly_white", height=600,
-                  margin=dict(l=18, r=18, t=10, b=10))
-st.plotly_chart(fig, use_container_width=True)
-
-# ── KPIs + gauge (kept, adapted) ────────────────────────────
-c1, c2, c3, c4 = st.columns(4)
-c1.metric("Δ Social interactions", plus(d_social))
-c2.metric("Δ Physical activity",   plus(d_physical))
-c3.metric("Δ Safety",              plus(d_safety))
-c4.metric("Δ QoL (composite)",     plus(q_total))
-
-BASE_QOL = 70
-q_after = float(np.clip(BASE_QOL + q_total, 0, 100))
-g = go.Figure(go.Indicator(
-    mode="gauge+number+delta",
-    value=q_after,
-    number={"suffix": " / 100"},
-    delta={"reference": BASE_QOL,
-           "increasing": {"color": "#23a455"},
-           "decreasing": {"color": "#d14a3a"}},
-    gauge={"axis": {"range": [0, 100]},
-           "bar": {"color": "#34495e"},
-           "steps": [{"range": [0, 40]}, {"range": [40, 70]}, {"range": [70, 100]}]},
-    title={"text": "QoL index (mock)", "font": {"size": 16}}
-))
-g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
-st.plotly_chart(g, use_container_width=True)
+st.components.v1.html(svg, height=600, scrolling=False)
