@@ -284,7 +284,7 @@ svg = f'''
 
   <!-- ===== Arrows (SMOOTH) + x1/x2 labels ===== -->
   <!-- Intervention -> Dimensions (same endpoints, smoother control points) -->
-  <path d="M190,230 C220,180 300,120 339,80"
+  <path d="M190,230 C210,170 285,105 339,80"
         fill="none" stroke="#19a974" stroke-width="{ARROW_W_X2}"
         stroke-linecap="round" marker-end="url(#arrowGreen2)"/>
   <text x="290" y="155" class="cap" font-size="18" fill="#19a974">x2</text>
@@ -360,6 +360,7 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=240, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
+
 
 
 
