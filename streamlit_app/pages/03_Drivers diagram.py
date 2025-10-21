@@ -7,9 +7,9 @@ st.subheader("Drivers Diagram - Key interrelations of QoL drivers")
 PINK   = "#ff69b4"   # Social-origin / pink arrows
 ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
-BLUE   = "#3498db"   # (kept for reference if needed elsewhere)
+BLUE   = "#3498db"   # Kept for reference if needed elsewhere
 RED    = "#E53935"   # Physical frame/pill — now red
-LIGHTBLUE = "#3498db"  # Label color for Purpose/Downshift/Community participation
+LIGHTBLUE = "#1E88E5"  # Darker blue for "Purpose", "Downshift", "Community participation"
 
 svg = f"""
 <svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
@@ -37,9 +37,16 @@ svg = f"""
       .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
       .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
 
+      /* --- Override label color for 3 specific nodes --- */
+      .node[data-node="Purpose"] .label,
+      .node[data-node="Downshift"] .label,
+      .node[data-node="CP"] .label {{
+        fill: {LIGHTBLUE};
+      }}
+
       /* --- Interactivity styles --- */
       .node {{ cursor: pointer; }}
-      .edge {{ pointer-events: stroke; }} /* allow hover on lines */
+      .edge {{ pointer-events: stroke; }}
       .dim-title {{ pointer-events: none; }}
 
       /* default opacity */
@@ -85,7 +92,7 @@ svg = f"""
 
   <g class="node" data-node="CP">
     <rect class="pill" x="180" y="240" width="280" height="40" fill="{PINK}"/>
-    <text class="label" x="320" y="266" text-anchor="middle" fill="{LIGHTBLUE}">Community participation</text>
+    <text class="label" x="320" y="266" text-anchor="middle">Community participation</text>
   </g>
 
   <!-- PSYCHOLOGICAL -->
@@ -101,12 +108,12 @@ svg = f"""
 
   <g class="node" data-node="Purpose">
     <rect class="pill" x="200" y="570" width="210" height="40" fill="{ORANGE}"/>
-    <text class="label" x="305" y="596" text-anchor="middle" fill="{LIGHTBLUE}">Purpose</text>
+    <text class="label" x="305" y="596" text-anchor="middle">Purpose</text>
   </g>
 
   <g class="node" data-node="Downshift">
     <rect class="pill" x="180" y="620" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="646" text-anchor="middle" fill="{LIGHTBLUE}">Downshift</text>
+    <text class="label" x="300" y="646" text-anchor="middle">Downshift</text>
   </g>
 
   <!-- ENVIRONMENTAL -->
@@ -319,5 +326,3 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
-
-
