@@ -16,4 +16,5 @@ It is not predictive and does not display real-time data.
 Developed by: Ludovica Piccioli
 
 Contributors: Beatrice Ronconi, Jes Kallen, Annamaria Vorstenbosch, Els van Omme, Mirza van Mazijk
+
 Within: ACT Team 3538, Academic Consultancy Training (Period 1, 2025–2026)
