@@ -1,3 +1,4 @@
+# pages/01_Dashboard.py
 import json
 from pathlib import Path
 
@@ -139,6 +140,7 @@ x_upper = xmax + pad
 x_lower = min(0.0, vmin, float(muni_value) if np.isfinite(muni_value) else 0.0)
 
 # ---------- Try interactive Plotly, else Matplotlib ----------
+rendered_interactive = False
 try:
     import plotly.express as px
 
@@ -217,64 +219,66 @@ try:
     table_df = pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel})
     table_df = table_df[["Neighbourhood", "Group", xlabel]]
     st.dataframe(table_df, use_container_width=True, hide_index=True)
-    st.stop()
+
+    rendered_interactive = True  # <-- keep running so notes render
 except Exception:
-    pass  # fall back to static
+    rendered_interactive = False
 
-# ---------- Static chart ----------
-plt.style.use("default")
-row_h     = 0.48
-fig_h     = max(3.6, row_h * n + 1.2) * HEIGHT_SCALE
-left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
+# ---------- Static chart fallback ----------
+if not rendered_interactive:
+    plt.style.use("default")
+    row_h     = 0.48
+    fig_h     = max(3.6, row_h * n + 1.2) * HEIGHT_SCALE
+    left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
 
-fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
-ypos = np.arange(n)
-bar_colors = np.where(df["is_A"].to_numpy(), COL_A, COL_B)
-ax.barh(ypos, vals, height=0.62, color=bar_colors)
+    fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
+    ypos = np.arange(n)
+    bar_colors = np.where(df["is_A"].to_numpy(), COL_A, COL_B)
+    ax.barh(ypos, vals, height=0.62, color=bar_colors)
 
-ax.set_yticks(ypos)
-ax.set_yticklabels(names)
-ax.invert_yaxis()
-ax.set_xlabel(xlabel)
-ax.set_ylabel("")
-ax.set_xlim(x_lower, x_upper)
-ax.grid(axis="x", linestyle=":", linewidth=0.8, alpha=0.6)
-ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+    ax.set_yticks(ypos)
+    ax.set_yticklabels(names)
+    ax.invert_yaxis()
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("")
+    ax.set_xlim(x_lower, x_upper)
+    ax.grid(axis="x", linestyle=":", linewidth=0.8, alpha=0.6)
+    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
 
-if show_labels:
-    span = (x_upper - x_lower); thr = 0.15 * span
-    for y, v in zip(ypos, vals):
-        text = fmt.format(v)
-        if v - x_lower > thr:
-            ax.text(v - 0.01*span, y, text, va="center", ha="right",
-                    color="white", fontsize=9, fontweight="semibold")
-        else:
-            ax.text(v + 0.01*span, y, text, va="center", ha="left", color="#222", fontsize=9)
+    if show_labels:
+        span = (x_upper - x_lower); thr = 0.15 * span
+        for y, v in zip(ypos, vals):
+            text = fmt.format(v)
+            if v - x_lower > thr:
+                ax.text(v - 0.01*span, y, text, va="center", ha="right",
+                        color="white", fontsize=9, fontweight="semibold")
+            else:
+                ax.text(v + 0.01*span, y, text, va="center", ha="left", color="#222", fontsize=9)
 
-if np.isfinite(muni_value):
-    xavg = float(muni_value)
-    ax.axvline(x=xavg, color=COL_AVG, linewidth=2)
-    ax.text(xavg, -0.7, f"Ede average: {fmt.format(xavg)}",
-            color=COL_AVG, ha="left", va="bottom", fontsize=10,
-            bbox=dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.5))
+    if np.isfinite(muni_value):
+        xavg = float(muni_value)
+        ax.axvline(x=xavg, color=COL_AVG, linewidth=2)
+        ax.text(xavg, -0.7, f"Ede average: {fmt.format(xavg)}",
+                color=COL_AVG, ha="left", va="bottom", fontsize=10,
+                bbox=dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.5))
 
-# Legend for Veldhuizen A/B
-legend_handles = [
-    Patch(facecolor=COL_A, edgecolor=COL_A, label="Veldhuizen A"),
-    Patch(facecolor=COL_B, edgecolor=COL_B, label="Veldhuizen B"),
-]
-ax.legend(handles=legend_handles, title="", loc="lower right", frameon=False)
+    # Legend for Veldhuizen A/B
+    legend_handles = [
+        Patch(facecolor=COL_A, edgecolor=COL_A, label="Veldhuizen A"),
+        Patch(facecolor=COL_B, edgecolor=COL_B, label="Veldhuizen B"),
+    ]
+    ax.legend(handles=legend_handles, title="", loc="lower right", frameon=False)
 
-fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
-st.pyplot(fig)
+    fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
+    st.pyplot(fig)
 
-# Table
-tbl = df.rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})[
-    ["LabelName", "Group", var_col]
-].rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})
-st.dataframe(tbl, use_container_width=True, hide_index=True)
+    # Table
+    tbl = df.rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})[
+        ["LabelName", "Group", var_col]
+    ].rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})
+    st.dataframe(tbl, use_container_width=True, hide_index=True)
 
-# Caption
+# ---------- Caption ----------
 if np.isfinite(muni_value):
     st.caption(f"Tip: the dark green line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
