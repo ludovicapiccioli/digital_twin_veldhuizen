@@ -114,7 +114,7 @@ fmt    = f"{{:,.{dec}f}}"
 xlabel = f"{sel_label}" + (f" [{unit}]" if unit else "")
 
 # Make charts ~5% shorter
-HEIGHT_SCALE = 0.95  # ~5% shorter
+HEIGHT_SCALE = 0.90  
 
 # Axis bounds with headroom (consider municipal average too)
 cands  = [vmax]
@@ -213,3 +213,4 @@ if np.isfinite(muni_value):
     st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
     st.caption("Tip: the red line marks the Ede municipal average.")
+
