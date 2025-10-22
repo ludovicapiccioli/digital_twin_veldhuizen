@@ -85,7 +85,6 @@ if var_col not in neigh_df.columns:
     st.error(f"Column `{var_col}` not found in neighbourhoods table.")
     st.stop()
 
-# base data
 df = neigh_df[[name_col, var_col]].copy()
 df[name_col] = df[name_col].astype(str)
 df[var_col]  = pd.to_numeric(df[var_col], errors="coerce")
@@ -129,7 +128,8 @@ HEIGHT_SCALE = 0.90  # ~5% shorter
 
 # Axis bounds with headroom (consider municipal average too)
 cands  = [vmax]
-if np.isfinite(muni_value): cands.append(float(muni_value))
+if np.isfinite(muni_value):
+    cands.append(float(muni_value))
 xmax    = max(cands)
 pad     = 0.08 * xmax if xmax > 0 else 1.0
 x_upper = xmax + pad
@@ -195,20 +195,19 @@ if interactive:
         # Place legend just OUTSIDE top-right to avoid covering bars
         fig.update_layout(
             height=height_px,
-            # give more right margin to host the legend outside the plot area
-            margin=dict(l=160, r=180, t=30, b=50),
+            margin=dict(l=160, r=180, t=30, b=50),  # reserve space for legend
             showlegend=True,
             legend=dict(
                 orientation="v",
                 yanchor="top",
                 y=1.0,
                 xanchor="left",
-                x=1.02,  # push just outside the plotting area
+                x=1.02,  # just outside plotting area
                 bgcolor="rgba(255,255,255,0.9)",
             ),
             legend_title_text="",
         )
-        )
+
         st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
         # Table (show group as well for clarity)
@@ -219,7 +218,7 @@ if interactive:
     except Exception:
         pass  # fall back to static
 
-# Static chart
+# ---------- Static chart ----------
 plt.style.use("default")
 row_h     = 0.48
 fig_h     = max(3.6, row_h * n + 1.2) * HEIGHT_SCALE
@@ -266,7 +265,7 @@ ax.legend(handles=legend_handles, title="", loc="lower right", frameon=False)
 fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
 st.pyplot(fig)
 
-# Table (with group)
+# Table
 tbl = df.rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})[
     ["LabelName", "Group", var_col]
 ].rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})
