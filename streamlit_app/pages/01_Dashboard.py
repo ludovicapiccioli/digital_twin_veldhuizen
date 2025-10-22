@@ -76,7 +76,6 @@ unit    = str(sel_row["unit"]).strip()
 st.sidebar.markdown("---")
 sort_order  = st.sidebar.radio("Sort by", ["Descending", "Ascending", "Alphabetical"], horizontal=True)
 show_labels = st.sidebar.checkbox("Show value labels on bars", value=True)
-interactive = st.sidebar.checkbox("Interactive hover (tooltips)", value=True)
 
 # Small info line
 bits = [f"**Variable:** {sel_label}"]
@@ -141,87 +140,87 @@ x_upper = xmax + pad
 x_lower = min(0.0, vmin, float(muni_value) if np.isfinite(muni_value) else 0.0)
 
 # ---------- Try interactive Plotly, else Matplotlib ----------
-if interactive:
-    try:
-        import plotly.express as px
-        height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
+try:
+    import plotly.express as px
 
-        pldf = df.rename(columns={"LabelName": "Neighbourhood", var_col: "Value"})[
-            ["Neighbourhood", "Value", "Group"]
-        ].astype({"Value": float})
-        # Pre-format labels to avoid trace misalignment
-        pldf["ValueText"] = [fmt.format(v) for v in pldf["Value"].values]
+    height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
-        fig = px.bar(
-            pldf,
-            x="Value",
-            y="Neighbourhood",
-            color="Group",
-            text="ValueText",
-            hover_data={"ValueText": False, "Group": True},
-            orientation="h",
-            category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
-            template="plotly_white",
-            color_discrete_map={
-                "Veldhuizen A": COL_A,
-                "Veldhuizen B": COL_B,
-            },
-        )
-        fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
-        fig.update_yaxes(title_text="", automargin=True, fixedrange=True)
+    pldf = df.rename(columns={"LabelName": "Neighbourhood", var_col: "Value"})[
+        ["Neighbourhood", "Value", "Group"]
+    ].astype({"Value": float})
+    # Pre-format labels to avoid trace misalignment
+    pldf["ValueText"] = [fmt.format(v) for v in pldf["Value"].values]
 
-        # Clean hover: show neighbourhood + formatted value; hide text field
-        hover_tmpl = f"%{{y}}<br>{xlabel}: %{{x:.{dec}f}}<extra></extra>"
-        fig.update_traces(hovertemplate=hover_tmpl)
+    fig = px.bar(
+        pldf,
+        x="Value",
+        y="Neighbourhood",
+        color="Group",
+        text="ValueText",
+        hover_data={"ValueText": False, "Group": True},
+        orientation="h",
+        category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
+        template="plotly_white",
+        color_discrete_map={
+            "Veldhuizen A": COL_A,
+            "Veldhuizen B": COL_B,
+        },
+    )
+    fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
+    fig.update_yaxes(title_text="", automargin=True, fixedrange=True)
 
-        # Ensure enough right-side headroom so labels don't clip
-        _xmax = float(np.nanmax(pldf["Value"]))
-        if np.isfinite(muni_value):
-            _xmax = max(_xmax, float(muni_value))
-        _pad_factor = 0.15 if show_labels else 0.08
-        _xpad = _pad_factor * _xmax if _xmax > 0 else 1.0
-        fig.update_xaxes(range=[x_lower, _xmax + _xpad])
+    # Clean hover: show neighbourhood + formatted value; hide text field
+    hover_tmpl = f"%{{y}}<br>{xlabel}: %{{x:.{dec}f}}<extra></extra>"
+    fig.update_traces(hovertemplate=hover_tmpl)
 
-        if show_labels:
-            fig.update_traces(textposition="outside", cliponaxis=False)
-        else:
-            fig.update_traces(text=None)
+    # Ensure enough right-side headroom so labels don't clip
+    _xmax = float(np.nanmax(pldf["Value"]))
+    if np.isfinite(muni_value):
+        _xmax = max(_xmax, float(muni_value))
+    _pad_factor = 0.15 if show_labels else 0.08
+    _xpad = _pad_factor * _xmax if _xmax > 0 else 1.0
+    fig.update_xaxes(range=[x_lower, _xmax + _xpad])
 
-        if np.isfinite(muni_value):
-            xavg = float(muni_value)
-            fig.add_vline(x=xavg, line_width=2, line_color=COL_AVG)
-            fig.add_annotation(
-                x=xavg, y=1, xref="x", yref="paper",
-                text=f"Ede average: {fmt.format(xavg)}",
-                showarrow=False, xanchor="left", yanchor="bottom", xshift=6,
-                font=dict(color=COL_AVG),
-            )
+    if show_labels:
+        fig.update_traces(textposition="outside", cliponaxis=False)
+    else:
+        fig.update_traces(text=None)
 
-        # Place legend just OUTSIDE top-right to avoid covering bars
-        fig.update_layout(
-            height=height_px,
-            margin=dict(l=160, r=180, t=30, b=50),  # reserve space for legend
-            showlegend=True,
-            legend=dict(
-                orientation="v",
-                yanchor="top",
-                y=1.0,
-                xanchor="left",
-                x=1.02,  # just outside plotting area
-                bgcolor="rgba(255,255,255,0.9)",
-            ),
-            legend_title_text="",
+    if np.isfinite(muni_value):
+        xavg = float(muni_value)
+        fig.add_vline(x=xavg, line_width=2, line_color=COL_AVG)
+        fig.add_annotation(
+            x=xavg, y=1, xref="x", yref="paper",
+            text=f"Ede average: {fmt.format(xavg)}",
+            showarrow=False, xanchor="left", yanchor="bottom", xshift=6,
+            font=dict(color=COL_AVG),
         )
 
-        st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
+    # Place legend just OUTSIDE top-right to avoid covering bars
+    fig.update_layout(
+        height=height_px,
+        margin=dict(l=160, r=180, t=30, b=50),  # reserve space for legend
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1.0,
+            xanchor="left",
+            x=1.02,  # just outside plotting area
+            bgcolor="rgba(255,255,255,0.9)",
+        ),
+        legend_title_text="",
+    )
 
-        # Table (show group as well for clarity)
-        table_df = pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel})
-        table_df = table_df[["Neighbourhood", "Group", xlabel]]
-        st.dataframe(table_df, use_container_width=True, hide_index=True)
-        st.stop()
-    except Exception:
-        pass  # fall back to static
+    st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
+
+    # Table (show group as well for clarity)
+    table_df = pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel})
+    table_df = table_df[["Neighbourhood", "Group", xlabel]]
+    st.dataframe(table_df, use_container_width=True, hide_index=True)
+    st.stop()
+except Exception:
+    pass  # fall back to static
 
 # ---------- Static chart ----------
 plt.style.use("default")
