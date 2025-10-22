@@ -153,6 +153,7 @@ if interactive:
             y="Neighbourhood",
             color="Group",
             text="ValueText",
+            hover_data={"ValueText": False, "Group": True},
             orientation="h",
             category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
             template="plotly_white",
@@ -163,6 +164,18 @@ if interactive:
         )
         fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
         fig.update_yaxes(title_text="", automargin=True, fixedrange=True)
+
+        # Clean hover: show neighbourhood + formatted value; hide text field
+        hover_tmpl = f"%{{y}}<br>{xlabel}: %{{x:.{dec}f}}<extra></extra>"
+        fig.update_traces(hovertemplate=hover_tmpl)
+
+        # Ensure enough right-side headroom so labels don't clip
+        _xmax = float(np.nanmax(pldf["Value"]))
+        if np.isfinite(muni_value):
+            _xmax = max(_xmax, float(muni_value))
+        _pad_factor = 0.15 if show_labels else 0.08
+        _xpad = _pad_factor * _xmax if _xmax > 0 else 1.0
+        fig.update_xaxes(range=[x_lower, _xmax + _xpad])
 
         if show_labels:
             fig.update_traces(textposition="outside", cliponaxis=False)
@@ -179,10 +192,19 @@ if interactive:
                 font=dict(color="#D62728"),
             )
 
+        # Put legend inside the plot at the top-right
         fig.update_layout(
             height=height_px,
-            margin=dict(l=160, r=40, t=30, b=50),
+            margin=dict(l=160, r=24, t=30, b=50),
             showlegend=True,
+            legend=dict(
+                orientation="v",
+                yanchor="top",
+                y=0.98,
+                xanchor="right",
+                x=0.98,
+                bgcolor="rgba(255,255,255,0.8)",
+            ),
             legend_title_text="",
         )
         st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
