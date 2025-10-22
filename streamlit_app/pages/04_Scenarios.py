@@ -3,7 +3,6 @@ import streamlit as st
 import numpy as np
 import plotly.graph_objects as go
 
-# Must be first Streamlit call
 st.set_page_config(layout="wide", page_title="Simulation of interventions • Veldhuizen")
 
 # Header
@@ -328,4 +327,5 @@ illustrative, designed to show how the effects of interventions could be visuali
 interactive local digital twin.
 """
     )
+
 
