@@ -9,9 +9,9 @@ ORANGE = "#f39c12"   # Psychological frame/pills
 GREEN  = "#27ae60"   # Environmental-origin / green arrows
 BLUE   = "#3498db"   # Kept for reference if needed elsewhere
 
-# Physical color (distinct from orange/green/pink)
-PHYSICAL = "#B39DDB"   # Deep Purple 200
-LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
+# Physical color 
+PHYSICAL = "#B39DDB"   # Deep Purple
+LIGHTBLUE = "#1E88E5"  # Darker blue
 
 svg = f"""
 <svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
@@ -288,3 +288,4 @@ svg = f"""
 """
 
 st.components.v1.html(svg, height=860, scrolling=False)
+
