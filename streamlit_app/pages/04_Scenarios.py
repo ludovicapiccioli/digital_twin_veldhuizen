@@ -310,7 +310,7 @@ with st.expander("Notes", expanded=False):
 **What this view shows.** This page presents a conceptual demonstration of how an intervention
 (such as adding benches) could influence different Quality of Life (QoL) dimensions. By adjusting
 the number of benches, you can see how the four driver dimensions and the overall QoL index change
-in this simplified model.
+in this simplified mock model.
 
 **How it works.** In this mock setup, the change in each dimension is applied **per bench**:
 - Each added bench increases the **social** dimension by **2 points**.  
@@ -328,3 +328,4 @@ illustrative, designed to show how the effects of interventions could be visuali
 interactive local digital twin.
 """
     )
+
