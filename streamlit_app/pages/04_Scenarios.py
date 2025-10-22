@@ -307,21 +307,24 @@ st.divider()
 with st.expander("Notes", expanded=False):
     st.markdown(
         """
-**What this view shows.** This page is a simple demonstration of how a small local intervention might
-influence different aspects of Quality of Life (QoL). You can adjust the number of benches to see how
-the four driver dimensions respond and how the overall QoL score changes.
+**What this view shows.** This page presents a conceptual demonstration of how an intervention
+(such as adding benches) could influence different Quality of Life (QoL) dimensions. By adjusting
+the number of benches, you can see how the four driver dimensions and the overall QoL index change
+in this simplified model.
 
-**How it works.** When benches are added or removed, each dimension shifts in a fixed, symbolic way:
-- **Social** connections improve more strongly.  
-- **Physical** activity increases slightly.  
-- **Safety** decreases a little (as a simplified trade-off).  
-- **Psychological** wellbeing improves modestly.  
+**How it works.** In this mock setup, the change in each dimension is applied **per bench**:
+- Each added bench increases the **social** dimension by **2 points**.  
+- It increases the **physical** dimension by **1 point**.  
+- It decreases the **environmental (safety)** dimension by **1 point**.  
+- It increases the **psychological** dimension by **1 point**.  
 
-These changes are combined into a single QoL index using simple weights. The gauge starts from a baseline
-of **350 (out of 500)** and updates as you move the slider.
+Each dimension contributes to the overall QoL through simple weightings—**social** and **environmental**
+dimensions count twice as much as the **physical** and **psychological** ones.  
+The combined QoL score is shown on a gauge ranging from **0 to 500**, with a baseline value of **350**.
+The diagram and gauge update automatically as benches are added or removed.
 
-**Why it matters.** The example is not based on real data or prediction. It’s a mock scenario meant to
-illustrate how an intervention could be visualised in a local digital twin—helping explore possible
-trade-offs and communicate ideas, not produce forecasts.
+**Why it matters.** This is a **concept-only prototype**, not a predictive model. The relationships are
+illustrative, designed to show how the effects of interventions could be visualised and discussed in an
+interactive local digital twin.
 """
     )
