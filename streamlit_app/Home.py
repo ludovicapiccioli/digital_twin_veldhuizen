@@ -67,8 +67,8 @@ st.markdown(f"""
   </p>
   <p>
     We translate research on <b>drivers of Quality of Life (QoL)</b> into an interactive demonstrator for policy reflection.
-    The prototype organises available indicators for residents <b>65+</b> under four driver dimensions—<b>Social</b>, <b>Physical</b>,
-    <b>Psychological</b>, and <b>Environmental</b>—and is a <b>proof of concept</b> intended for communication and exploration; it is
+    The prototype organises available indicators for residents <b>65+</b> under four driver dimensions, <b>Social</b>, <b>Physical</b>,
+    <b>Psychological</b>, and <b>Environmental</b>, and is a <b>proof of concept</b> intended for communication and exploration; it is
     <b>not</b> predictive and does not use real-time data.
   </p>
 </div>
@@ -150,4 +150,5 @@ st.markdown(
 )
 
 st.caption("Built with QGIS & Streamlit • Team 3538 • ACT 2025")
+
 
