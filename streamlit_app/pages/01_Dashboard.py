@@ -19,13 +19,13 @@ st.set_page_config(page_title="Dashboard • Veldhuizen vs Ede", layout="wide")
 
 # ---------- Chart sizing (edit here) ----------
 # Multiply computed height by this factor (applies to Plotly + Matplotlib)
-HEIGHT_SCALE = 0.95  # e.g., 0.90 for 10% shorter, 1.10 for 10% taller
+HEIGHT_SCALE = 0.90  
 
 # If True, charts fill the container width. If False, use CUSTOM_WIDTH_PX.
-FILL_CONTAINER_WIDTH = True
+FILL_CONTAINER_WIDTH = False
 
 # Only used when FILL_CONTAINER_WIDTH is False. Set to an int (pixels) or None.
-CUSTOM_WIDTH_PX = 1150  # e.g., 900, 1200; ignored when FILL_CONTAINER_WIDTH=True
+CUSTOM_WIDTH_PX = 1200  # e.g., 900, 1200; ignored when FILL_CONTAINER_WIDTH=True
 
 # ---------- Helpers ----------
 def geojson_to_table(path: Path) -> pd.DataFrame:
@@ -251,3 +251,4 @@ if np.isfinite(muni_value):
     st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
     st.caption("Tip: the red line marks the Ede municipal average.")
+
