@@ -13,8 +13,6 @@ streamlit run Home.py
 This prototype is a demonstration only.
 It is not predictive and does not display real-time data.
 
-Code developed by: Ludovica Piccioli
-
-Contributors: Beatrice Ronconi, Jes Kallen, Annamaria Vorstenbosch, Els van Omme, Mirza van Mazijk
+Developed by: Ludovica Piccioli, Beatrice Ronconi, Jes Kallen, Annamaria Vorstenbosch, Els van Omme, Mirza van Mazijk
 
 Within: ACT Team 3538, Academic Consultancy Training (Period 1, 2025–2026)
