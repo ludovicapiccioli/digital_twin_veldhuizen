@@ -290,9 +290,6 @@ with st.expander("Notes", expanded=False):
     st.markdown(
         """
 **What this view demonstrates.** A single indicator (selected from the catalog) is compared across all neighbourhoods in Veldhuizen, with the Ede municipal value shown as a reference line for context. Neighbourhoods are coloured by a simple display grouping: **Veldhuizen A** (De Horsten, De Burgen) versus **Veldhuizen B** (all others). The grouping affects colour and labels only.
-
-**Data and configuration.** Indicator definitions (dimension, label, column, unit) are read from `variables_catalog.csv`. Values are taken from the GeoJSON feature properties (`neighbourhoods_veld.geojson` and `municipality_ede.geojson`), coerced to numeric, and rows with missing values are omitted. Units and sorting options affect presentation but not the underlying values.
-
-**Interpretation and limits.** This is a static snapshot for communication and exploration. It is not predictive and does not infer causality. Some relevant indicators may be unavailable at neighbourhood resolution or not age-filterable; differences reflect the available inputs.
 """
     )
+
