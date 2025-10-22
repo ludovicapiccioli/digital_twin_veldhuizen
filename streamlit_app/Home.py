@@ -120,7 +120,7 @@ st.subheader("About the data & limitations")
 st.info(
     "Data sources: CBS **Wijken en Buurten 2024**, RIVM **Gezondheid per wijk en buurt 2022** "
     "and CBS **Nabijheid voorzieningen 2022** (neighbourhood/municipality level). "
-    "Health indicators are filtered to **65+**."
+    "Health indicators are filtered to age **65+**."
 )
 st.warning(
     "This is an **early prototype**. Indicators are **static** and **selected** (not exhaustive); "
@@ -150,5 +150,6 @@ st.markdown(
 )
 
 st.caption("Built with QGIS & Streamlit • Team 3538 • ACT 2025")
+
 
 
