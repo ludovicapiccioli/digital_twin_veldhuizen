@@ -280,21 +280,21 @@ c2.metric("Δ Physical activity",    sgn(d_physical))
 c3.metric("Δ Safety",               sgn(d_safety))
 c4.metric("Δ QoL (composite)",      sgn(q_total))
 
-BASE_QOL = 70
-qol_after = float(np.clip(BASE_QOL + q_total, 0, 100))
+BASE_QOL = 350
+qol_after = float(np.clip(BASE_QOL + q_total, 0, 500))
 
 g = go.Figure(go.Indicator(
     mode="gauge+number+delta",
     value=qol_after,
-    number={"suffix": " / 100"},
+    number={"suffix": " / 500"},
     delta={"reference": BASE_QOL,
            "increasing": {"color": "#27ae60"},
            "decreasing": {"color": "#c0392b"}},
-    gauge={"axis": {"range": [0, 100]},
+    gauge={"axis": {"range": [0, 500]},
            "bar": {"color": "#34495e"},
-           "steps": [{"range": [0, 40]},
-                     {"range": [40, 70]},
-                     {"range": [70, 100]}]},
+           "steps": [{"range": [0, 200]},
+                     {"range": [200, 350]},
+                     {"range": [350, 500]}]},
     title={"text": "QoL index (mock)", "font": {"size": 16}}
 ))
 g.update_layout(height=210, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
