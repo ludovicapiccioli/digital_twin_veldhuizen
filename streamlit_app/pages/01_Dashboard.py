@@ -144,7 +144,7 @@ if interactive:
         pldf = df.rename(columns={"LabelName": "Neighbourhood", var_col: "Value"})[
             ["Neighbourhood", "Value", "Group"]
         ].astype({"Value": float})
-        # Pre-format labels to avoid Plotly per-trace text misalignment
+        # Pre-format labels to avoid trace misalignment
         pldf["ValueText"] = [fmt.format(v) for v in pldf["Value"].values]
 
         fig = px.bar(
@@ -157,8 +157,8 @@ if interactive:
             category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
             template="plotly_white",
             color_discrete_map={
-                "Veldhuizen A": "#9ec9ff",
-                "Veldhuizen B": "#2E6FF2",
+                "Veldhuizen A": "#9ec9ff",  # light blue for De Horsten & De Burgen
+                "Veldhuizen B": "#2E6FF2",  # default blue for others
             },
         )
         fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
@@ -168,11 +168,6 @@ if interactive:
             fig.update_traces(textposition="outside", cliponaxis=False)
         else:
             fig.update_traces(text=None)
-        else:
-            fig.update_traces(text=None) for v in pldf["Value"].values],
-                textposition="outside",
-                cliponaxis=False,
-            )
 
         if np.isfinite(muni_value):
             xavg = float(muni_value)
