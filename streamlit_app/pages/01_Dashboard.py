@@ -192,20 +192,22 @@ if interactive:
                 font=dict(color="#D62728"),
             )
 
-        # Put legend inside the plot at the top-right
+        # Place legend just OUTSIDE top-right to avoid covering bars
         fig.update_layout(
             height=height_px,
-            margin=dict(l=160, r=24, t=30, b=50),
+            # give more right margin to host the legend outside the plot area
+            margin=dict(l=160, r=180, t=30, b=50),
             showlegend=True,
             legend=dict(
                 orientation="v",
                 yanchor="top",
-                y=0.98,
-                xanchor="right",
-                x=0.98,
-                bgcolor="rgba(255,255,255,0.8)",
+                y=1.0,
+                xanchor="left",
+                x=1.02,  # push just outside the plotting area
+                bgcolor="rgba(255,255,255,0.9)",
             ),
             legend_title_text="",
+        )
         )
         st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
