@@ -17,16 +17,6 @@ MUNI_GJSON  = DATA_DIR / "municipality_ede.geojson"
 
 st.set_page_config(page_title="Dashboard • Veldhuizen vs Ede", layout="wide")
 
-# ---------- Chart sizing (edit here) ----------
-# Multiply computed height by this factor (applies to Plotly + Matplotlib)
-HEIGHT_SCALE = 0.90  
-
-# If True, charts fill the container width. If False, use CUSTOM_WIDTH_PX.
-FILL_CONTAINER_WIDTH = False
-
-# Only used when FILL_CONTAINER_WIDTH is False. Set to an int (pixels) or None.
-CUSTOM_WIDTH_PX = 1500  # e.g., 900, 1200; ignored when FILL_CONTAINER_WIDTH=True
-
 # ---------- Helpers ----------
 def geojson_to_table(path: Path) -> pd.DataFrame:
     """Read a GeoJSON and return a pandas DataFrame of feature properties."""
@@ -102,18 +92,13 @@ if df.empty:
     st.warning("All values are missing for this indicator.")
     st.stop()
 
-# ---- Tag groups + display names ----
+# ---- Tag A/B + display names ----
 _a_names = {"de burgen", "de horsten"}  # case-insensitive match set
-def _group_full(s: str) -> str:
-    return "Veldhuizen A" if str(s).strip().lower() in _a_names else "Veldhuizen B"
-def _group_letter(s: str) -> str:
+def _tag_group(s: str) -> str:
     return "A" if str(s).strip().lower() in _a_names else "B"
 
-df["Group"] = df[name_col].apply(_group_full)  # legend/table grouping uses full text
-df["Neighbourhood_disp"] = df.apply(           # labels show only (A)/(B)
-    lambda r: f"{r[name_col]} ({_group_letter(r[name_col])})",
-    axis=1
-)
+df["Group"] = df[name_col].apply(_tag_group)
+df["Neighbourhood_disp"] = df.apply(lambda r: f"{r[name_col]} ({r['Group']})", axis=1)
 
 # Municipal average (first municipal feature)
 muni_value = np.nan
@@ -136,6 +121,9 @@ dec    = 0 if vmax >= 100 else 2
 fmt    = f"{{:,.{dec}f}}"
 xlabel = f"{sel_label}" + (f" [{unit}]" if unit else "")
 
+# Make charts ~5% shorter
+HEIGHT_SCALE = 0.95  # ~5% shorter
+
 # Axis bounds with headroom (consider municipal average too)
 cands  = [vmax]
 if np.isfinite(muni_value): cands.append(float(muni_value))
@@ -148,11 +136,11 @@ x_lower = min(0.0, vmin, float(muni_value) if np.isfinite(muni_value) else 0.0)
 if interactive:
     try:
         import plotly.express as px
-        # Height in px scales with number of bars and HEIGHT_SCALE
         height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
         pldf = df.rename(columns={"Neighbourhood_disp": "Neighbourhood", var_col: "Value"})
-        color_map = {"Veldhuizen A": "#2E6FF2", "Veldhuizen B": "#6BCB77"}
+        # Distinct colors for A/B
+        color_map = {"A": "#2E6FF2", "B": "#6BCB77"}  # blue for A, green for B
         fig = px.bar(
             pldf.astype({"Value": float}),
             x="Value", y="Neighbourhood",
@@ -179,42 +167,34 @@ if interactive:
                 font=dict(color="#D62728"),
             )
 
-        layout_kwargs = dict(height=height_px, margin=dict(l=160, r=40, t=30, b=50), showlegend=True)
-        if not FILL_CONTAINER_WIDTH and CUSTOM_WIDTH_PX:
-            layout_kwargs["width"] = int(CUSTOM_WIDTH_PX)
-        fig.update_layout(**layout_kwargs)
+        fig.update_layout(height=height_px, margin=dict(l=160, r=40, t=30, b=50), showlegend=True)
+        st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
-        st.plotly_chart(fig, use_container_width=FILL_CONTAINER_WIDTH, theme=None, config=dict(displayModeBar=False))
-
-        # Table
+        # Table (show names with A/B)
         st.dataframe(
-            pldf[["Neighbourhood", "Value", "Group"]].rename(columns={"Value": xlabel}),
+            pldf[["Neighbourhood", "Value", "Group"]]
+                .rename(columns={"Value": xlabel}),
             use_container_width=True, hide_index=True
         )
         st.stop()
     except Exception:
         pass  # fall back to static
 
-# ---------- Static chart (Matplotlib) ----------
+# Static chart
 plt.style.use("default")
 row_h     = 0.48
 fig_h     = max(3.6, row_h * n + 1.2) * HEIGHT_SCALE
-
-# Figure width: either default (fills container) or custom pixel width converted to inches at dpi=140
-if FILL_CONTAINER_WIDTH or not CUSTOM_WIDTH_PX:
-    fig_w_in = 11.5
-else:
-    fig_w_in = float(CUSTOM_WIDTH_PX) / 140.0  # px -> inches
-
 left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
-fig, ax = plt.subplots(figsize=(fig_w_in, fig_h), dpi=140)
 
+fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
 ypos = np.arange(n)
-colors = ["#2E6FF2" if g == "Veldhuizen A" else "#6BCB77" for g in df["Group"].tolist()]
+
+# Colors per bar (A/B)
+colors = ["#2E6FF2" if g == "A" else "#6BCB77" for g in df["Group"].tolist()]
 ax.barh(ypos, vals, height=0.62, color=colors)
 
 ax.set_yticks(ypos)
-ax.set_yticklabels(names)  # names include (A)/(B)
+ax.set_yticklabels(names)
 ax.invert_yaxis()
 ax.set_xlabel(xlabel)
 ax.set_ylabel("")
@@ -242,7 +222,7 @@ if np.isfinite(muni_value):
 fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
 st.pyplot(fig)
 
-# Table
+# Table (show names with A/B)
 tbl = df.rename(columns={"Neighbourhood_disp": "Neighbourhood", var_col: xlabel})
 st.dataframe(tbl[["Neighbourhood", xlabel, "Group"]], use_container_width=True, hide_index=True)
 
@@ -251,5 +231,3 @@ if np.isfinite(muni_value):
     st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
     st.caption("Tip: the red line marks the Ede municipal average.")
-
-
