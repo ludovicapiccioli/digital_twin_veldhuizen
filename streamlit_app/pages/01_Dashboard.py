@@ -92,6 +92,14 @@ if df.empty:
     st.warning("All values are missing for this indicator.")
     st.stop()
 
+# ---- Tag A/B + display names ----
+_a_names = {"de burgen", "de horsten"}  # case-insensitive match set
+def _tag_group(s: str) -> str:
+    return "A" if str(s).strip().lower() in _a_names else "B"
+
+df["Group"] = df[name_col].apply(_tag_group)
+df["Neighbourhood_disp"] = df.apply(lambda r: f"{r[name_col]} ({r['Group']})", axis=1)
+
 # Municipal average (first municipal feature)
 muni_value = np.nan
 if var_col in muni_df.columns and len(muni_df) > 0:
@@ -99,13 +107,13 @@ if var_col in muni_df.columns and len(muni_df) > 0:
 
 # Sorting
 if sort_order == "Alphabetical":
-    df = df.sort_values(name_col, ascending=True, kind="mergesort")
+    df = df.sort_values("Neighbourhood_disp", ascending=True, kind="mergesort")
 else:
     df = df.sort_values(var_col, ascending=(sort_order == "Ascending"), kind="mergesort")
 
 # ---------- Formatting ----------
 vals   = df[var_col].to_numpy()
-names  = df[name_col].tolist()
+names  = df["Neighbourhood_disp"].tolist()
 n      = len(names)
 vmax   = np.nanmax(vals)
 vmin   = np.nanmin(vals)
@@ -114,7 +122,7 @@ fmt    = f"{{:,.{dec}f}}"
 xlabel = f"{sel_label}" + (f" [{unit}]" if unit else "")
 
 # Make charts ~5% shorter
-HEIGHT_SCALE = 0.90  
+HEIGHT_SCALE = 0.95  # ~5% shorter
 
 # Axis bounds with headroom (consider municipal average too)
 cands  = [vmax]
@@ -130,11 +138,15 @@ if interactive:
         import plotly.express as px
         height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
-        pldf = df.rename(columns={name_col: "Neighbourhood", var_col: "Value"})
+        pldf = df.rename(columns={"Neighbourhood_disp": "Neighbourhood", var_col: "Value"})
+        # Distinct colors for A/B
+        color_map = {"A": "#2E6FF2", "B": "#6BCB77"}  # blue for A, green for B
         fig = px.bar(
             pldf.astype({"Value": float}),
             x="Value", y="Neighbourhood",
             orientation="h",
+            color="Group",
+            color_discrete_map=color_map,
             category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
             template="plotly_white",
         )
@@ -155,12 +167,15 @@ if interactive:
                 font=dict(color="#D62728"),
             )
 
-        fig.update_layout(height=height_px, margin=dict(l=160, r=40, t=30, b=50), showlegend=False)
+        fig.update_layout(height=height_px, margin=dict(l=160, r=40, t=30, b=50), showlegend=True)
         st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
-        # Table
-        st.dataframe(pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel}),
-                     use_container_width=True, hide_index=True)
+        # Table (show names with A/B)
+        st.dataframe(
+            pldf[["Neighbourhood", "Value", "Group"]]
+                .rename(columns={"Value": xlabel}),
+            use_container_width=True, hide_index=True
+        )
         st.stop()
     except Exception:
         pass  # fall back to static
@@ -173,7 +188,10 @@ left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
 
 fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
 ypos = np.arange(n)
-ax.barh(ypos, vals, height=0.62, color="#2E6FF2")
+
+# Colors per bar (A/B)
+colors = ["#2E6FF2" if g == "A" else "#6BCB77" for g in df["Group"].tolist()]
+ax.barh(ypos, vals, height=0.62, color=colors)
 
 ax.set_yticks(ypos)
 ax.set_yticklabels(names)
@@ -204,13 +222,12 @@ if np.isfinite(muni_value):
 fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
 st.pyplot(fig)
 
-# Table
-tbl = df.rename(columns={name_col: "Neighbourhood", var_col: xlabel})
-st.dataframe(tbl, use_container_width=True, hide_index=True)
+# Table (show names with A/B)
+tbl = df.rename(columns={"Neighbourhood_disp": "Neighbourhood", var_col: xlabel})
+st.dataframe(tbl[["Neighbourhood", xlabel, "Group"]], use_container_width=True, hide_index=True)
 
 # Caption
 if np.isfinite(muni_value):
     st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
     st.caption("Tip: the red line marks the Ede municipal average.")
-
