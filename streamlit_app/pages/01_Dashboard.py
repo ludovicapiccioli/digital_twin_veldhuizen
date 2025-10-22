@@ -18,10 +18,10 @@ MUNI_GJSON  = DATA_DIR / "municipality_ede.geojson"
 
 st.set_page_config(page_title="Dashboard • Veldhuizen vs Ede", layout="wide")
 
-# ---------- Color constants ----------
-COL_A = "#8B0000"   # Veldhuizen A (dark red)
-COL_B = "#F28E8E"   # Veldhuizen B (light red)
-COL_AVG = "#006400" # Ede average (dark green)
+# ---------- Color constants (matched to your map) ----------
+COL_A   = "#E24B35"   # Veldhuizen A (bright/darker red)
+COL_B   = "#F6A18A"   # Veldhuizen B (light red)
+COL_AVG = "#006400"   # Ede average (dark green)
 
 # ---------- Helpers ----------
 def geojson_to_table(path: Path) -> pd.DataFrame:
