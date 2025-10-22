@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Concept prototype for a DT for Ede–Veldhuizen")
 
-# ---------- Simple CSS for colored blocks ----------
+# ---------- CSS for colored blocks ----------
 st.markdown("""
 <style>
 :root{
@@ -57,7 +57,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ---------- Header in a faded green block ----------
+# ---------- Header ----------
 st.markdown(f"""
 <div class="block hero">
   <h1>Concept prototype for a Digital Twin for Ede–Veldhuizen</h1>
@@ -74,7 +74,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# ---------- What you can do here (orange block with four cards) ----------
+# ---------- What you can do here ----------
 st.markdown("""
 <div class="block section" style="color:#000;">
   <h2 style="color:#000;">What you can do here</h2>
@@ -149,7 +149,8 @@ st.markdown(
 """
 )
 
-st.caption("Built with QGIS & Streamlit • Team 3538 • ACT 2025")
+st.caption("Built with QGIS & Streamlit • Team 3538 • ACT P1 2025")
+
 
 
 
