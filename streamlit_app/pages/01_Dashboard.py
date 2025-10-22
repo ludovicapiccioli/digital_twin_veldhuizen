@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import streamlit as st
 import matplotlib.pyplot as plt
-from matplotlib.patches import Patch
 
 # ---------- Paths ----------
 APP_ROOT = Path(__file__).resolve().parents[1]
@@ -85,7 +84,6 @@ if var_col not in neigh_df.columns:
     st.error(f"Column `{var_col}` not found in neighbourhoods table.")
     st.stop()
 
-# base data
 df = neigh_df[[name_col, var_col]].copy()
 df[name_col] = df[name_col].astype(str)
 df[var_col]  = pd.to_numeric(df[var_col], errors="coerce")
@@ -94,15 +92,6 @@ if df.empty:
     st.warning("All values are missing for this indicator.")
     st.stop()
 
-# --- Tag Veldhuizen A/B ---
-# A = {De Horsten, De Burgen}; everything else is B. Case/whitespace-insensitive
-_a_names = {"de horsten", "de burgen"}
-name_norm = df[name_col].str.strip().str.casefold()
-df["is_A"] = name_norm.isin(_a_names)
-df["Group"] = np.where(df["is_A"], "Veldhuizen A", "Veldhuizen B")
-# Display labels with (A)/(B) suffix, used only for charts/tables (keeps logic intact)
-df["LabelName"] = df[name_col] + np.where(df["is_A"], " (A)", " (B)")
-
 # Municipal average (first municipal feature)
 muni_value = np.nan
 if var_col in muni_df.columns and len(muni_df) > 0:
@@ -110,13 +99,13 @@ if var_col in muni_df.columns and len(muni_df) > 0:
 
 # Sorting
 if sort_order == "Alphabetical":
-    df = df.sort_values("LabelName", ascending=True, kind="mergesort")
+    df = df.sort_values(name_col, ascending=True, kind="mergesort")
 else:
     df = df.sort_values(var_col, ascending=(sort_order == "Ascending"), kind="mergesort")
 
 # ---------- Formatting ----------
 vals   = df[var_col].to_numpy()
-names  = df["LabelName"].tolist()
+names  = df[name_col].tolist()
 n      = len(names)
 vmax   = np.nanmax(vals)
 vmin   = np.nanmin(vals)
@@ -141,32 +130,20 @@ if interactive:
         import plotly.express as px
         height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
-        pldf = df.rename(columns={"LabelName": "Neighbourhood", var_col: "Value"})[
-            ["Neighbourhood", "Value", "Group"]
-        ].astype({"Value": float})
-
+        pldf = df.rename(columns={name_col: "Neighbourhood", var_col: "Value"})
         fig = px.bar(
-            pldf,
-            x="Value",
-            y="Neighbourhood",
-            color="Group",
+            pldf.astype({"Value": float}),
+            x="Value", y="Neighbourhood",
             orientation="h",
             category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
             template="plotly_white",
-            color_discrete_map={
-                "Veldhuizen A": "#9ec9ff",  # light blue for De Horsten & De Burgen
-                "Veldhuizen B": "#2E6FF2",  # default blue for others
-            },
         )
         fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
         fig.update_yaxes(title_text="", automargin=True, fixedrange=True)
 
         if show_labels:
-            fig.update_traces(
-                text=[fmt.format(v) for v in pldf["Value"].values],
-                textposition="outside",
-                cliponaxis=False,
-            )
+            fig.update_traces(text=[fmt.format(v) for v in pldf["Value"].values],
+                              textposition="outside", cliponaxis=False)
 
         if np.isfinite(muni_value):
             xavg = float(muni_value)
@@ -178,18 +155,12 @@ if interactive:
                 font=dict(color="#D62728"),
             )
 
-        fig.update_layout(
-            height=height_px,
-            margin=dict(l=160, r=40, t=30, b=50),
-            showlegend=True,
-            legend_title_text="",
-        )
+        fig.update_layout(height=height_px, margin=dict(l=160, r=40, t=30, b=50), showlegend=False)
         st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
-        # Table (show group as well for clarity)
-        table_df = pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel})
-        table_df = table_df[["Neighbourhood", "Group", xlabel]]
-        st.dataframe(table_df, use_container_width=True, hide_index=True)
+        # Table
+        st.dataframe(pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel}),
+                     use_container_width=True, hide_index=True)
         st.stop()
     except Exception:
         pass  # fall back to static
@@ -202,8 +173,7 @@ left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
 
 fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
 ypos = np.arange(n)
-bar_colors = np.where(df["is_A"].to_numpy(), "#9ec9ff", "#2E6FF2")
-ax.barh(ypos, vals, height=0.62, color=bar_colors)
+ax.barh(ypos, vals, height=0.62, color="#2E6FF2")
 
 ax.set_yticks(ypos)
 ax.set_yticklabels(names)
@@ -231,24 +201,15 @@ if np.isfinite(muni_value):
             color="red", ha="left", va="bottom", fontsize=10,
             bbox=dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.5))
 
-# Legend for Veldhuizen A/B
-legend_handles = [
-    Patch(facecolor="#9ec9ff", edgecolor="#9ec9ff", label="Veldhuizen A"),
-    Patch(facecolor="#2E6FF2", edgecolor="#2E6FF2", label="Veldhuizen B"),
-]
-ax.legend(handles=legend_handles, title="", loc="lower right", frameon=False)
-
 fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
 st.pyplot(fig)
 
-# Table (with group)
-tbl = df.rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})[
-    ["LabelName", "Group", var_col]
-].rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})
+# Table
+tbl = df.rename(columns={name_col: "Neighbourhood", var_col: xlabel})
 st.dataframe(tbl, use_container_width=True, hide_index=True)
 
 # Caption
 if np.isfinite(muni_value):
     st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
-    st.caption("Tip: the red line marks the Ede municipal average.")
+    st.caption("Tip: the red line marks the Ede municipal average.") 
