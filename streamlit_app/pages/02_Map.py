@@ -18,8 +18,8 @@ CATALOG_CSV = DATA_DIR / "variables_catalog.csv"
 
 GJ_NEIGH = DATA_DIR / "neighbourhoods_veld.geojson"
 GJ_MUNI  = DATA_DIR / "municipality_ede.geojson"
-GJ_WIJK  = DATA_DIR / "wijkenbuurtenwijken.geojson"       # optional
-GJ_VELD  = DATA_DIR / "wijk_boundary_veld.geojson"        # optional
+GJ_WIJK  = DATA_DIR / "wijkenbuurtenwijken.geojson"     
+GJ_VELD  = DATA_DIR / "wijk_boundary_veld.geojson"       
 
 MAP_HEIGHTS = {"Half-page": 460, "Normal": 700, "Full-page": 1000}
 PALETTE_RED = [
@@ -227,7 +227,7 @@ for f in feats(neigh_gj):
     p["_subtitle"] = "Neighbourhood in Ede-Veldhuizen"
     p["_valpair"]  = f"{fmt_unit_label(sel_label, unit)}: {p['_valtxt']}"
 
-# Per-municipality feature: ensure ALL features get the tooltip fields
+# Per-municipality feature
 for f in feats(muni_gj):
     p = f.setdefault("properties", {})
     try:
@@ -243,7 +243,7 @@ for f in feats(muni_gj):
 
 # -------------------- Map --------------------
 m = folium.Map(
-    location=[52.04, 5.66],  # fallback; we’ll fit to Ede next
+    location=[52.04, 5.66],  
     zoom_start=11,
     tiles="cartodbpositron",
     control_scale=False,
@@ -252,7 +252,6 @@ m = folium.Map(
     zoom_control=True,
 )
 
-# CSS: keep tooltips above; remove attribution & layers; remove focus rings
 m.get_root().header.add_child(Element("""
 <style>
 .nohit-outline { pointer-events: none !important; }
@@ -319,7 +318,6 @@ folium.GeoJson(
     ),
 ).add_to(m)
 
-# Optional outlines
 if show_wijk and feats(wijk_gj):
     add_outline(wijk_gj, m, "Wijk boundaries", color="#222", weight=1.0, pane="outline-pane")
 if show_muni_outline:
@@ -352,7 +350,7 @@ st.markdown(
     + f"  •  **Color mode:** {mode_str}"
 )
 
-# -------------------- Render (map lowered) --------------------
+# -------------------- Render --------------------
 TOP_SPACER_PX = 40
 html = m.get_root().render()
 html_wrapped = f"<div style='height:{TOP_SPACER_PX}px'></div>{html}"
@@ -369,4 +367,5 @@ rendered for all neighbourhoods in Ede–Veldhuizen with a municipality layer fo
 The legend uses a shared scale computed from the combined neighbourhood and municipal values.
 """
     )
+
 
