@@ -42,11 +42,13 @@ with cp:
 b = int(st.session_state.b)
 
 # ---------------- Logic ----------------
+# Linear mock effects of benches on each dimension
 d_social   =  2 * b
 d_physical =  1 * b
 d_safety   = -1 * b
 d_psych    =  1 * b
 
+# Simple composite QoL weights
 W_SOC, W_PHY, W_ENV, W_PSY = 2, 1, 2, 1
 q_social   = W_SOC * d_social
 q_physical = W_PHY * d_physical
@@ -120,7 +122,7 @@ svg = f'''
      style="width:100%;height:auto;display:block;background:#ffffff;">
 
   <defs>
-    <!-- ✅ Good arrowhead definitions from Drivers Diagram -->
+    <!-- Arrowhead definitions -->
     <marker id="arrowGreen1" viewBox="0 0 10 6"
             markerWidth="6.5" markerHeight="6.5"
             refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -299,3 +301,26 @@ g = go.Figure(go.Indicator(
 ))
 g.update_layout(height=210, margin=dict(l=10, r=10, t=40, b=10), template="plotly_white")
 st.plotly_chart(g, use_container_width=True)
+
+# ---------------- Notes (collapsible) ----------------
+st.divider()
+with st.expander("Notes", expanded=False):
+    st.markdown(
+        """
+**What this view demonstrates.** A single mock intervention (“benches”) is varied within a bounded
+range (−10…+10). The slider value is treated as an abstract intervention magnitude.
+
+**Mock relationships.** Linear effects are applied to four dimensions:
+Δ Social = 2·b; Δ Physical = 1·b; Δ Safety = −1·b; Δ Psychological = 1·b.
+A composite QoL change is then computed as a weighted sum:
+QoL Δ = 2·(Δ Social) + 1·(Δ Physical) + 2·(Δ Safety) + 1·(Δ Psychological).
+The QoL gauge shows a baseline of 350 on a 0–500 scale and the baseline-adjusted value is clipped to [0, 500].
+
+**Visual encoding.** The SVG diagram displays directional effects with green (positive) and red (negative)
+arrows, and small numeric badges indicate per-dimension deltas; labels “x1/x2/x−1” are illustrative stroke weights.
+
+**Interpretation and limits.** The relationships, weights, and baseline are illustrative; they are not
+estimated from data and do not imply causal effects. This component is intended only to communicate how an
+intervention could be represented in a future, evidence-based twin.
+"""
+    )
