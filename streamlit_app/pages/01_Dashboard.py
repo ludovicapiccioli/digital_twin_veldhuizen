@@ -113,6 +113,9 @@ dec    = 0 if vmax >= 100 else 2
 fmt    = f"{{:,.{dec}f}}"
 xlabel = f"{sel_label}" + (f" [{unit}]" if unit else "")
 
+# Make charts ~5% shorter
+HEIGHT_SCALE = 0.95  # ~5% shorter
+
 # Axis bounds with headroom (consider municipal average too)
 cands  = [vmax]
 if np.isfinite(muni_value): cands.append(float(muni_value))
@@ -125,7 +128,7 @@ x_lower = min(0.0, vmin, float(muni_value) if np.isfinite(muni_value) else 0.0)
 if interactive:
     try:
         import plotly.express as px
-        height_px = int(max(3.6, 0.48 * n + 1.2) * 140)
+        height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
         pldf = df.rename(columns={name_col: "Neighbourhood", var_col: "Value"})
         fig = px.bar(
@@ -165,7 +168,7 @@ if interactive:
 # Static chart
 plt.style.use("default")
 row_h     = 0.48
-fig_h     = max(3.6, row_h * n + 1.2)
+fig_h     = max(3.6, row_h * n + 1.2) * HEIGHT_SCALE
 left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
 
 fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
