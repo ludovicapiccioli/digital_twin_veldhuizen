@@ -18,6 +18,11 @@ MUNI_GJSON  = DATA_DIR / "municipality_ede.geojson"
 
 st.set_page_config(page_title="Dashboard • Veldhuizen vs Ede", layout="wide")
 
+# ---------- Color constants ----------
+COL_A = "#8B0000"   # Veldhuizen A (dark red)
+COL_B = "#F28E8E"   # Veldhuizen B (light red)
+COL_AVG = "#006400" # Ede average (dark green)
+
 # ---------- Helpers ----------
 def geojson_to_table(path: Path) -> pd.DataFrame:
     """Read a GeoJSON and return a pandas DataFrame of feature properties."""
@@ -158,8 +163,8 @@ if interactive:
             category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
             template="plotly_white",
             color_discrete_map={
-                "Veldhuizen A": "#9ec9ff",  # light blue for De Horsten & De Burgen
-                "Veldhuizen B": "#2E6FF2",  # default blue for others
+                "Veldhuizen A": COL_A,
+                "Veldhuizen B": COL_B,
             },
         )
         fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
@@ -184,12 +189,12 @@ if interactive:
 
         if np.isfinite(muni_value):
             xavg = float(muni_value)
-            fig.add_vline(x=xavg, line_width=2, line_color="#D62728")
+            fig.add_vline(x=xavg, line_width=2, line_color=COL_AVG)
             fig.add_annotation(
                 x=xavg, y=1, xref="x", yref="paper",
                 text=f"Ede average: {fmt.format(xavg)}",
                 showarrow=False, xanchor="left", yanchor="bottom", xshift=6,
-                font=dict(color="#D62728"),
+                font=dict(color=COL_AVG),
             )
 
         # Place legend just OUTSIDE top-right to avoid covering bars
@@ -226,7 +231,7 @@ left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
 
 fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
 ypos = np.arange(n)
-bar_colors = np.where(df["is_A"].to_numpy(), "#9ec9ff", "#2E6FF2")
+bar_colors = np.where(df["is_A"].to_numpy(), COL_A, COL_B)
 ax.barh(ypos, vals, height=0.62, color=bar_colors)
 
 ax.set_yticks(ypos)
@@ -250,15 +255,15 @@ if show_labels:
 
 if np.isfinite(muni_value):
     xavg = float(muni_value)
-    ax.axvline(x=xavg, color="red", linewidth=2)
+    ax.axvline(x=xavg, color=COL_AVG, linewidth=2)
     ax.text(xavg, -0.7, f"Ede average: {fmt.format(xavg)}",
-            color="red", ha="left", va="bottom", fontsize=10,
+            color=COL_AVG, ha="left", va="bottom", fontsize=10,
             bbox=dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.5))
 
 # Legend for Veldhuizen A/B
 legend_handles = [
-    Patch(facecolor="#9ec9ff", edgecolor="#9ec9ff", label="Veldhuizen A"),
-    Patch(facecolor="#2E6FF2", edgecolor="#2E6FF2", label="Veldhuizen B"),
+    Patch(facecolor=COL_A, edgecolor=COL_A, label="Veldhuizen A"),
+    Patch(facecolor=COL_B, edgecolor=COL_B, label="Veldhuizen B"),
 ]
 ax.legend(handles=legend_handles, title="", loc="lower right", frameon=False)
 
@@ -273,6 +278,6 @@ st.dataframe(tbl, use_container_width=True, hide_index=True)
 
 # Caption
 if np.isfinite(muni_value):
-    st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
+    st.caption(f"Tip: the dark green line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
-    st.caption("Tip: the red line marks the Ede municipal average.")
+    st.caption("Tip: the dark green line marks the Ede municipal average.")
