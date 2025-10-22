@@ -25,7 +25,7 @@ HEIGHT_SCALE = 0.90
 FILL_CONTAINER_WIDTH = False
 
 # Only used when FILL_CONTAINER_WIDTH is False. Set to an int (pixels) or None.
-CUSTOM_WIDTH_PX = 1200  # e.g., 900, 1200; ignored when FILL_CONTAINER_WIDTH=True
+CUSTOM_WIDTH_PX = 1500  # e.g., 900, 1200; ignored when FILL_CONTAINER_WIDTH=True
 
 # ---------- Helpers ----------
 def geojson_to_table(path: Path) -> pd.DataFrame:
@@ -251,4 +251,5 @@ if np.isfinite(muni_value):
     st.caption(f"Tip: the red line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
 else:
     st.caption("Tip: the red line marks the Ede municipal average.")
+
 
