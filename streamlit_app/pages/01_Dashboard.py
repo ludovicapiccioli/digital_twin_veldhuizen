@@ -92,13 +92,18 @@ if df.empty:
     st.warning("All values are missing for this indicator.")
     st.stop()
 
-# ---- Tag Veldhuizen A/B + display names ----
+# ---- Tag groups + display names ----
 _a_names = {"de burgen", "de horsten"}  # case-insensitive match set
-def _tag_group(s: str) -> str:
+def _group_full(s: str) -> str:
     return "Veldhuizen A" if str(s).strip().lower() in _a_names else "Veldhuizen B"
+def _group_letter(s: str) -> str:
+    return "A" if str(s).strip().lower() in _a_names else "B"
 
-df["Group"] = df[name_col].apply(_tag_group)
-df["Neighbourhood_disp"] = df.apply(lambda r: f"{r[name_col]} ({r['Group']})", axis=1)
+df["Group"] = df[name_col].apply(_group_full)                 # "Veldhuizen A/B" for legend/table grouping
+df["Neighbourhood_disp"] = df.apply(                          # "(A)/(B)" appended to names in charts/tables
+    lambda r: f"{r[name_col]} ({_group_letter(r[name_col])})",
+    axis=1
+)
 
 # Municipal average (first municipal feature)
 muni_value = np.nan
@@ -139,7 +144,7 @@ if interactive:
         height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
         pldf = df.rename(columns={"Neighbourhood_disp": "Neighbourhood", var_col: "Value"})
-        # Distinct colors for Veldhuizen A/B
+        # Distinct colors for Veldhuizen A/B (legend shows full names)
         color_map = {"Veldhuizen A": "#2E6FF2", "Veldhuizen B": "#6BCB77"}
         fig = px.bar(
             pldf.astype({"Value": float}),
@@ -170,7 +175,7 @@ if interactive:
         fig.update_layout(height=height_px, margin=dict(l=160, r=40, t=30, b=50), showlegend=True)
         st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
-        # Table (show names with Veldhuizen A/B)
+        # Table (names show (A)/(B), Group shows full)
         st.dataframe(
             pldf[["Neighbourhood", "Value", "Group"]]
                 .rename(columns={"Value": xlabel}),
@@ -189,12 +194,12 @@ left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
 fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
 ypos = np.arange(n)
 
-# Colors per bar (Veldhuizen A/B)
+# Colors per bar driven by full Group
 colors = ["#2E6FF2" if g == "Veldhuizen A" else "#6BCB77" for g in df["Group"].tolist()]
 ax.barh(ypos, vals, height=0.62, color=colors)
 
 ax.set_yticks(ypos)
-ax.set_yticklabels(names)
+ax.set_yticklabels(names)  # names include (A)/(B)
 ax.invert_yaxis()
 ax.set_xlabel(xlabel)
 ax.set_ylabel("")
@@ -222,7 +227,7 @@ if np.isfinite(muni_value):
 fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
 st.pyplot(fig)
 
-# Table (show names with Veldhuizen A/B)
+# Table (names with (A)/(B), Group with full text)
 tbl = df.rename(columns={"Neighbourhood_disp": "Neighbourhood", var_col: xlabel})
 st.dataframe(tbl[["Neighbourhood", xlabel, "Group"]], use_container_width=True, hide_index=True)
 
