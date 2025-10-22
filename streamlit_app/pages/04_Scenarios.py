@@ -307,20 +307,21 @@ st.divider()
 with st.expander("Notes", expanded=False):
     st.markdown(
         """
-**What this view demonstrates.** A single mock intervention (“benches”) is varied within a bounded
-range (−10…+10). The slider value is treated as an abstract intervention magnitude.
+**What this view shows.** This page is a simple demonstration of how a small local intervention might
+influence different aspects of Quality of Life (QoL). You can adjust the number of benches to see how
+the four driver dimensions respond and how the overall QoL score changes.
 
-**Mock relationships.** Linear effects are applied to four dimensions:
-Δ Social = 2·b; Δ Physical = 1·b; Δ Safety = −1·b; Δ Psychological = 1·b.
-A composite QoL change is then computed as a weighted sum:
-QoL Δ = 2·(Δ Social) + 1·(Δ Physical) + 2·(Δ Safety) + 1·(Δ Psychological).
-The QoL gauge shows a baseline of 350 on a 0–500 scale and the baseline-adjusted value is clipped to [0, 500].
+**How it works.** When benches are added or removed, each dimension shifts in a fixed, symbolic way:
+- **Social** connections improve more strongly.  
+- **Physical** activity increases slightly.  
+- **Safety** decreases a little (as a simplified trade-off).  
+- **Psychological** wellbeing improves modestly.  
 
-**Visual encoding.** The SVG diagram displays directional effects with green (positive) and red (negative)
-arrows, and small numeric badges indicate per-dimension deltas; labels “x1/x2/x−1” are illustrative stroke weights.
+These changes are combined into a single QoL index using simple weights. The gauge starts from a baseline
+of **350 (out of 500)** and updates as you move the slider.
 
-**Interpretation and limits.** The relationships, weights, and baseline are illustrative; they are not
-estimated from data and do not imply causal effects. This component is intended only to communicate how an
-intervention could be represented in a future, evidence-based twin.
+**Why it matters.** The example is not based on real data or prediction. It’s a mock scenario meant to
+illustrate how an intervention could be visualised in a local digital twin—helping explore possible
+trade-offs and communicate ideas, not produce forecasts.
 """
     )
