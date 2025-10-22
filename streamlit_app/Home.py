@@ -62,7 +62,7 @@ st.markdown(f"""
 <div class="block hero">
   <h1>Concept prototype for a Digital Twin for Ede–Veldhuizen</h1>
   <p class="caption">
-    This app demonstrates how selected indicators of Quality of Life for older residents in Ede–Veldhuizen
+    This app demonstrates how selected indicators of Quality of Life for older (65+) residents in Ede–Veldhuizen
     can be explored and visualised through a local digital twin concept, including one illustrative mock intervention.
   </p>
   <p>
@@ -150,3 +150,4 @@ st.markdown(
 )
 
 st.caption("Built with QGIS & Streamlit • Team 3538 • ACT 2025")
+
