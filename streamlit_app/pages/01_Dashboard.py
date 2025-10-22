@@ -18,10 +18,10 @@ MUNI_GJSON  = DATA_DIR / "municipality_ede.geojson"
 
 st.set_page_config(page_title="Dashboard • Veldhuizen vs Ede", layout="wide")
 
-# ---------- Color constants (matched to your map) ----------
-COL_A   = "#E24B35"   # Veldhuizen A (bright/darker red)
-COL_B   = "#F6A18A"   # Veldhuizen B (light red)
-COL_AVG = "#006400"   # Ede average (dark green)
+# ---------- Color constants ----------
+COL_A   = "#E24B35"   # Veldhuizen A
+COL_B   = "#F6A18A"   # Veldhuizen B 
+COL_AVG = "#006400"   # Ede average 
 
 # ---------- Helpers ----------
 def geojson_to_table(path: Path) -> pd.DataFrame:
@@ -98,15 +98,13 @@ if df.empty:
     st.stop()
 
 # --- Tag Veldhuizen A/B ---
-# A = {De Horsten, De Burgen}; everything else is B. Case/whitespace-insensitive
 _a_names = {"de horsten", "de burgen"}
 name_norm = df[name_col].str.strip().str.casefold()
 df["is_A"] = name_norm.isin(_a_names)
 df["Group"] = np.where(df["is_A"], "Veldhuizen A", "Veldhuizen B")
-# Display labels with (A)/(B) suffix, used only for charts/tables (keeps logic intact)
 df["LabelName"] = df[name_col] + np.where(df["is_A"], " (A)", " (B)")
 
-# Municipal average (first municipal feature)
+# Municipal average 
 muni_value = np.nan
 if var_col in muni_df.columns and len(muni_df) > 0:
     muni_value = pd.to_numeric(muni_df.iloc[0][var_col], errors="coerce")
@@ -127,10 +125,9 @@ dec    = 0 if vmax >= 100 else 2
 fmt    = f"{{:,.{dec}f}}"
 xlabel = f"{sel_label}" + (f" [{unit}]" if unit else "")
 
-# Make charts ~5% shorter
-HEIGHT_SCALE = 0.90  # ~5% shorter
+HEIGHT_SCALE = 0.90  
 
-# Axis bounds with headroom (consider municipal average too)
+# Axis bounds with headroom 
 cands  = [vmax]
 if np.isfinite(muni_value):
     cands.append(float(muni_value))
@@ -170,11 +167,10 @@ try:
     fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
     fig.update_yaxes(title_text="", automargin=True, fixedrange=True)
 
-    # Clean hover: show neighbourhood + formatted value; hide text field
+    # Clean hover
     hover_tmpl = f"%{{y}}<br>{xlabel}: %{{x:.{dec}f}}<extra></extra>"
     fig.update_traces(hovertemplate=hover_tmpl)
 
-    # Ensure enough right-side headroom so labels don't clip
     _xmax = float(np.nanmax(pldf["Value"]))
     if np.isfinite(muni_value):
         _xmax = max(_xmax, float(muni_value))
@@ -197,17 +193,16 @@ try:
             font=dict(color=COL_AVG),
         )
 
-    # Place legend just OUTSIDE top-right to avoid covering bars
     fig.update_layout(
         height=height_px,
-        margin=dict(l=160, r=180, t=30, b=50),  # reserve space for legend
+        margin=dict(l=160, r=180, t=30, b=50), 
         showlegend=True,
         legend=dict(
             orientation="v",
             yanchor="top",
             y=1.0,
             xanchor="left",
-            x=1.02,  # just outside plotting area
+            x=1.02,  
             bgcolor="rgba(255,255,255,0.9)",
         ),
         legend_title_text="",
@@ -215,12 +210,11 @@ try:
 
     st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
-    # Table (show group as well for clarity)
     table_df = pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel})
     table_df = table_df[["Neighbourhood", "Group", xlabel]]
     st.dataframe(table_df, use_container_width=True, hide_index=True)
 
-    rendered_interactive = True  # <-- keep running so notes render
+    rendered_interactive = True  
 except Exception:
     rendered_interactive = False
 
@@ -292,4 +286,5 @@ with st.expander("Notes", expanded=False):
 **What this view demonstrates.** A single indicator (selected from the catalog) is compared across all neighbourhoods in Veldhuizen, with the Ede municipal value shown as a reference line for context. Neighbourhoods are coloured by a simple display grouping: **Veldhuizen A** (De Horsten, De Burgen) versus **Veldhuizen B** (all others). The grouping affects colour and labels only.
 """
     )
+
 
