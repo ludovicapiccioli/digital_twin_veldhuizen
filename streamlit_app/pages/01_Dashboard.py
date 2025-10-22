@@ -167,6 +167,8 @@ if interactive:
         if show_labels:
             fig.update_traces(textposition="outside", cliponaxis=False)
         else:
+            fig.update_traces(text=None)
+        else:
             fig.update_traces(text=None) for v in pldf["Value"].values],
                 textposition="outside",
                 cliponaxis=False,
