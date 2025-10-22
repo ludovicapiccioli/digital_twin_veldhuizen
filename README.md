@@ -13,7 +13,7 @@ streamlit run Home.py
 This prototype is a demonstration only.
 It is not predictive and does not display real-time data.
 
-Developed by: Ludovica Piccioli
+Code developed by: Ludovica Piccioli
 
 Contributors: Beatrice Ronconi, Jes Kallen, Annamaria Vorstenbosch, Els van Omme, Mirza van Mazijk
 
