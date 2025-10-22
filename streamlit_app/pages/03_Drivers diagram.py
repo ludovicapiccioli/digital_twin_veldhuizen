@@ -2,48 +2,83 @@
 import streamlit as st
 st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
 
-st.subheader("Drivers Diagram - Nodes only (no arrows)")
+st.subheader("Drivers Diagram - Key interrelations of QoL drivers")
 
-PINK   = "#ff69b4"   # Social
-ORANGE = "#f39c12"   # Psychological
-GREEN  = "#27ae60"   # Environmental
-PHYSICAL = "#B39DDB" # Physical
-LIGHTBLUE = "#1E88E5"
+PINK   = "#ff69b4"   # Social-origin / pink arrows
+ORANGE = "#f39c12"   # Psychological frame/pills
+GREEN  = "#27ae60"   # Environmental-origin / green arrows
+BLUE   = "#3498db"   # Kept for reference if needed elsewhere
+
+# Physical color (distinct from orange/green/pink)
+PHYSICAL = "#B39DDB"   # Deep Purple 200
+LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
 
 svg = f"""
-<svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram (nodes only)">
+<svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram">
   <defs>
+    <marker id="arrow-green" viewBox="0 0 10 6"
+            markerWidth="6.5" markerHeight="6.5"
+            refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="{GREEN}"/>
+    </marker>
+    <marker id="arrow-pink" viewBox="0 0 10 6"
+            markerWidth="6.5" markerHeight="6.5"
+            refX="8.3" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
+    </marker>
+    <marker id="arrow-pink-340" viewBox="0 0 10 6"
+            markerWidth="6.5" markerHeight="6.5"
+            refX="8.3" refY="3" orient="35" markerUnits="strokeWidth">
+      <path d="M0,0 L10,3 L0,6 z" fill="{PINK}"/>
+    </marker>
+
     <style><![CDATA[
       .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
       .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
       .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
       .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
 
+      /* Override label color for specific nodes */
       .node[data-node="Purpose"] .label,
       .node[data-node="Downshift"] .label,
       .node[data-node="CP"] .label,
-      .node[data-node="PA"] .label {{ fill: {LIGHTBLUE}; }}
+      .node[data-node="PA"] .label {{
+        fill: {LIGHTBLUE};
+      }}
 
+      /* Interactivity styles */
       .node {{ cursor: pointer; }}
+      .edge {{ pointer-events: stroke; }}
+      .dim-title {{ pointer-events: none; }}
+
+      .node .pill, .edge {{ opacity: 0.85; transition: opacity .15s ease, filter .15s ease, stroke-width .15s ease; }}
+      .edge {{ stroke-linecap: round; }}
+
       .faded {{ opacity: 0.15; filter: grayscale(40%); }}
+
       .highlight {{ opacity: 1; filter: none; }}
+      .edge.highlight {{ stroke-width: 4.2; }}
       .node.highlight .pill {{ stroke-width: 4; }}
+
+      .dotted {{ stroke-dasharray: 6 8; }}
+
       .node text {{ user-select: none; pointer-events: none; }}
     ]]></style>
   </defs>
 
   <!-- Frames -->
   <rect class="frame" x="80"  y="90"  width="440" height="280" stroke="{PINK}"/>
-  <text class="titleV" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
+  <text class="titleV dim-title" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
 
   <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
-  <text class="titleV" x="60"  y="650" fill="{ORANGE}" transform="rotate(-90 60 650)">Psychological</text>
+  <text class="titleV dim-title" x="60"  y="650" fill="{ORANGE}" transform="rotate(-90 60 650)">Psychological</text>
 
   <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
-  <text class="titleV" x="1090" y="130" fill="{GREEN}" transform="rotate(90 1090 130)">ENVIRONMENTAL</text>
+  <text class="titleV dim-title" x="1090" y="130" fill="{GREEN}" transform="rotate(90 1090 130)">ENVIRONMENTAL</text>
 
+  <!-- PHYSICAL frame/title -->
   <rect class="frame" x="640" y="400" width="440" height="310" stroke="{PHYSICAL}"/>
-  <text class="titleV" x="1090" y="555" fill="{PHYSICAL}" transform="rotate(90 1090 555)">Physical</text>
+  <text class="titleV dim-title" x="1090" y="555" fill="{PHYSICAL}" transform="rotate(90 1090 555)">Physical</text>
 
   <!-- Nodes -->
   <!-- SOCIAL -->
@@ -104,29 +139,110 @@ svg = f"""
     <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
   </g>
 
-  <!-- PHYSICAL -->
+  <!-- PHYSICAL node pill (purple) with blue label, standard white outline -->
   <g class="node" data-node="PA">
     <rect class="pill" x="700" y="575" width="320" height="44" fill="{PHYSICAL}"/>
     <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
   </g>
 
+  <!-- Meta arc -->
+  <path id="A00_Social_to_Env_arc" class="edge dotted"
+        data-from="SOCIAL" data-to="ENV"
+        d="M120,85 C410,20 820,20 990,68"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+
+  <!-- Edges -->
+  <path id="A01" class="edge" data-from="SN" data-to="Purpose"
+        d="M194,195 C60,190 115,560 200,590"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink-340)"/>
+  <path id="A02" class="edge" data-from="SN" data-to="ES"
+        d="M194,195 C110,230 130,395 180,490"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+  <path id="A03" class="edge" data-from="SN" data-to="SA"
+        d="M194,195 C90,210 120,440 180,540"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+  <path id="A04" class="edge" data-from="CP" data-to="Purpose"
+        d="M456,260 C470,340 440,540 410,590"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+  <path id="A05" class="edge" data-from="CP" data-to="Downshift"
+        d="M456,260 C490,390 450,610 420,640"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+  <path id="A06" class="edge" data-from="CP" data-to="PA"
+        d="M456,260 C560,330 640,560 704,595"
+        stroke="{PINK}" stroke-width="3" fill="none" marker-end="url(#arrow-pink)"/>
+  <path id="A07" class="edge" data-from="PS" data-to="SN"
+        d="M740,140 C615,125 480,135 406,195"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A08" class="edge" data-from="PS" data-to="SA"
+        d="M740,140 C690,180 520,470 420,520"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A09" class="edge" data-from="GS" data-to="CP"
+        d="M750,185 C620,190 535,255 456,260"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A10" class="edge" data-from="GS" data-to="Downshift"
+        d="M750,185 C680,240 520,575 420,640"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A11" class="edge" data-from="MA" data-to="CP"
+        d="M740,230 C610,235 535,268 456,260"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A12" class="edge" data-from="SI" data-to="SN"
+        d="M750,275 C620,265 490,190 406,195"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A13" class="edge" data-from="SI" data-to="CP"
+        d="M750,275 C620,280 535,280 456,260"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A14" class="edge" data-from="Safety" data-to="CP"
+        d="M700,320 C610,330 540,300 456,260"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A15" class="edge" data-from="Safety" data-to="Downshift"
+        d="M700,320 C640,380 510,600 420,640"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+  <path id="A16" class="edge" data-from="ENV" data-to="PA"
+        d="M860,380 C835,450 795,520 760,575"
+        stroke="{GREEN}" stroke-width="3" fill="none" marker-end="url(#arrow-green)"/>
+
   <script><![CDATA[
     (function () {{
       const svg = document.getElementById('drivers-svg');
       const nodes = Array.from(svg.querySelectorAll('.node'));
+      const edges = Array.from(svg.querySelectorAll('.edge'));
+
+      const outgoing = {{}};
+      const incoming = {{}};
+
+      edges.forEach(e => {{
+        const from = e.getAttribute('data-from');
+        const to   = e.getAttribute('data-to');
+        if (!from || !to) return;
+        (outgoing[from] = outgoing[from] || []).push(e);
+        (incoming[to]   = incoming[to]   || []).push(e);
+      }});
 
       function clearAll() {{
         nodes.forEach(n => n.classList.remove('highlight', 'faded'));
+        edges.forEach(e => e.classList.remove('highlight', 'faded'));
       }}
       function fadeAll() {{
         nodes.forEach(n => n.classList.add('faded'));
+        edges.forEach(e => e.classList.add('faded'));
       }}
       function highlightNode(nodeId) {{
         fadeAll();
         const me = svg.querySelector(`.node[data-node="${{nodeId}}"]`);
         if (me) me.classList.add('highlight');
+        (outgoing[nodeId] || []).forEach(e => {{
+          e.classList.add('highlight');
+          const tgt = e.getAttribute('data-to');
+          const n   = svg.querySelector(`.node[data-node="${{tgt}}"]`);
+          if (n) n.classList.add('highlight');
+        }});
+        (incoming[nodeId] || []).forEach(e => {{
+          e.classList.add('highlight');
+          const src = e.getAttribute('data-from');
+          const n   = svg.querySelector(`.node[data-node="${{src}}"]`);
+          if (n) n.classList.add('highlight');
+        }});
       }}
-
       nodes.forEach(n => {{
         const id = n.getAttribute('data-node');
         n.addEventListener('mouseenter', () => highlightNode(id));
@@ -138,10 +254,37 @@ svg = f"""
           if (!active) highlightNode(id);
         }});
       }});
+      edges.forEach(e => {{
+        e.addEventListener('mouseenter', () => {{
+          fadeAll();
+          e.classList.add('highlight');
+          const from = e.getAttribute('data-from');
+          const to   = e.getAttribute('data-to');
+          const nf   = svg.querySelector(`.node[data-node="${{from}}"]`);
+          const nt   = svg.querySelector(`.node[data-node="${{to}}"]`);
+          if (nf) nf.classList.add('highlight');
+          if (nt) nt.classList.add('highlight');
+        }});
+        e.addEventListener('mouseleave', clearAll);
+        e.addEventListener('click', (ev) => {{
+          ev.stopPropagation();
+          const isOn = e.classList.contains('highlight');
+          clearAll();
+          if (!isOn) {{
+            e.classList.add('highlight');
+            const from = e.getAttribute('data-from');
+            const to   = e.getAttribute('data-to');
+            const nf   = svg.querySelector(`.node[data-node="${{from}}"]`);
+            const nt   = svg.querySelector(`.node[data-node="${{to}}"]`);
+            if (nf) nf.classList.add('highlight');
+            if (nt) nt.classList.add('highlight');
+          }}
+        }});
+      }});
       svg.addEventListener('click', clearAll);
     }})()
   ]]></script>
 </svg>
 """
 
-st.components.v1.html(svg, height=860, scrolling=False)
+st.components.v1.html(svg, height=860, scrolling=False) 
