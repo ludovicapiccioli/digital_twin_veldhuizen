@@ -1,274 +1,288 @@
-# pages/03_Drivers diagram.py
+# pages/01_Dashboard.py
+import json
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
 import streamlit as st
-st.set_page_config(page_title="Drivers Diagram", page_icon="🧩", layout="wide")
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
-st.subheader("Drivers Diagram - Key interrelations of QoL drivers (no arrows)")
+# ---------- Paths ----------
+APP_ROOT = Path(__file__).resolve().parents[1]
+DATA_DIR = APP_ROOT / "data"
 
-PINK   = "#ff69b4"   # Social-origin / pink lines
-ORANGE = "#f39c12"   # Psychological frame/pills
-GREEN  = "#27ae60"   # Environmental-origin / green lines
-BLUE   = "#3498db"   # Kept for reference if needed elsewhere
+CATALOG = DATA_DIR / "variables_catalog.csv"
+NEIGH_GJSON = DATA_DIR / "neighbourhoods_veld.geojson"
+MUNI_GJSON  = DATA_DIR / "municipality_ede.geojson"
 
-# Physical color (distinct from orange/green/pink)
-PHYSICAL = "#B39DDB"   # Deep Purple 200
-LIGHTBLUE = "#1E88E5"  # Darker blue for select labels
+st.set_page_config(page_title="Dashboard • Veldhuizen vs Ede", layout="wide")
 
-svg = f"""
-<svg id="drivers-svg" viewBox="0 0 1140 820" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drivers diagram (no arrows)">
-  <defs>
-    <style><![CDATA[
-      .frame {{ fill: none; stroke-width: 4; rx: 20; ry: 20; }}
-      .label {{ font: 700 16px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; fill: #fff; }}
-      .pill  {{ rx: 22; ry: 22; stroke: #fff; stroke-width: 3; }}
-      .titleV {{ font: 800 22px 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }}
+# ---------- Color constants ----------
+COL_A   = "#E24B35"   # Veldhuizen A
+COL_B   = "#F6A18A"   # Veldhuizen B 
+COL_AVG = "#006400"   # Ede average 
 
-      /* Override label color for specific nodes */
-      .node[data-node="Purpose"] .label,
-      .node[data-node="Downshift"] .label,
-      .node[data-node="CP"] .label,
-      .node[data-node="PA"] .label {{
-        fill: {LIGHTBLUE};
-      }}
+# ---------- Helpers ----------
+def geojson_to_table(path: Path) -> pd.DataFrame:
+    """Read a GeoJSON and return a pandas DataFrame of feature properties."""
+    with open(path, "r", encoding="utf-8") as f:
+        gj = json.load(f)
+    props = [feat.get("properties", {}) for feat in gj.get("features", [])]
+    return pd.DataFrame(props)
 
-      /* Interactivity styles */
-      .node {{ cursor: pointer; }}
-      .edge {{ pointer-events: stroke; }}
-      .dim-title {{ pointer-events: none; }}
+@st.cache_data(show_spinner=False)
+def load_catalog(path: Path) -> pd.DataFrame:
+    cat = pd.read_csv(path)
+    required = {"dimension", "label", "column", "unit"}
+    missing = required - set(cat.columns)
+    if missing:
+        raise ValueError(f"variables_catalog.csv missing columns: {missing}")
+    return cat
 
-      .node .pill, .edge {{ opacity: 0.85; transition: opacity .15s ease, filter .15s ease, stroke-width .15s ease; }}
-      .edge {{ stroke-linecap: round; }}
+@st.cache_data(show_spinner=False)
+def load_tables() -> tuple[pd.DataFrame, pd.DataFrame]:
+    neigh_df = geojson_to_table(NEIGH_GJSON)
+    muni_df  = geojson_to_table(MUNI_GJSON)
+    return neigh_df, muni_df
 
-      .faded {{ opacity: 0.15; filter: grayscale(40%); }}
+# ---------- Load ----------
+try:
+    cat = load_catalog(CATALOG)
+    neigh_df, muni_df = load_tables()
+except Exception as e:
+    st.error(f"Failed to load data.\n\n{e}")
+    st.stop()
 
-      .highlight {{ opacity: 1; filter: none; }}
-      .edge.highlight {{ stroke-width: 4.2; }}
-      .node.highlight .pill {{ stroke-width: 4; }}
+# Identify neighbourhood name column
+name_col = "buurtnaam" if "buurtnaam" in neigh_df.columns else neigh_df.columns[0]
+if name_col not in neigh_df.columns:
+    st.error("Expected a neighbourhood name column (e.g., 'buurtnaam').")
+    st.stop()
 
-      .dotted {{ stroke-dasharray: 6 8; }}
+# ---------- Sidebar ----------
+st.sidebar.header("Choose indicators")
+dims = sorted(cat["dimension"].dropna().unique().tolist())
+sel_dim = st.sidebar.selectbox("Dimension", dims)
 
-      .node text {{ user-select: none; pointer-events: none; }}
-    ]]></style>
-  </defs>
+subset = cat[cat["dimension"] == sel_dim].copy()
+labels = subset["label"].tolist()
 
-  <!-- Frames -->
-  <rect class="frame" x="80"  y="90"  width="440" height="280" stroke="{PINK}"/>
-  <text class="titleV dim-title" x="60"  y="230" fill="{PINK}" transform="rotate(-90 60 230)">SOCIAL</text>
+sel_label = st.sidebar.selectbox("Variable", labels)
+sel_row = subset.loc[subset["label"] == sel_label].iloc[0]
+var_col = sel_row["column"]
+unit    = str(sel_row["unit"]).strip()
 
-  <rect class="frame" x="80"  y="410" width="440" height="280" stroke="{ORANGE}"/>
-  <text class="titleV dim-title" x="60"  y="650" fill="{ORANGE}" transform="rotate(-90 60 650)">Psychological</text>
+st.sidebar.markdown("---")
+sort_order  = st.sidebar.radio("Sort by", ["Descending", "Ascending", "Alphabetical"], horizontal=True)
+show_labels = st.sidebar.checkbox("Show value labels on bars", value=True)
 
-  <rect class="frame" x="640" y="70"  width="440" height="310" stroke="{GREEN}"/>
-  <text class="titleV dim-title" x="1090" y="130" fill="{GREEN}" transform="rotate(90 1090 130)">ENVIRONMENTAL</text>
+# Small info line
+bits = [f"**Variable:** {sel_label}"]
+if unit:
+    bits.append(f"**Unit:** {unit}")
+bits.append(f"**Dimension:** {sel_dim}")
+st.markdown("  •  ".join(bits))
 
-  <!-- PHYSICAL frame/title -->
-  <rect class="frame" x="640" y="400" width="440" height="310" stroke="{PHYSICAL}"/>
-  <text class="titleV dim-title" x="1090" y="555" fill="{PHYSICAL}" transform="rotate(90 1090 555)">Physical</text>
+# ---------- Data prep ----------
+if var_col not in neigh_df.columns:
+    st.error(f"Column `{var_col}` not found in neighbourhoods table.")
+    st.stop()
 
-  <!-- Nodes -->
-  <!-- SOCIAL -->
-  <g class="node" data-node="SN">
-    <rect class="pill" x="190" y="175" width="220" height="40" fill="{PINK}"/>
-    <text class="label" x="300" y="201" text-anchor="middle">Social networks</text>
-  </g>
+df = neigh_df[[name_col, var_col]].copy()
+df[name_col] = df[name_col].astype(str)
+df[var_col]  = pd.to_numeric(df[var_col], errors="coerce")
+df = df.dropna(subset=[var_col])
+if df.empty:
+    st.warning("All values are missing for this indicator.")
+    st.stop()
 
-  <g class="node" data-node="CP">
-    <rect class="pill" x="180" y="240" width="280" height="40" fill="{PINK}"/>
-    <text class="label" x="320" y="266" text-anchor="middle">Community participation</text>
-  </g>
+# --- Tag Veldhuizen A/B ---
+_a_names = {"de horsten", "de burgen"}
+name_norm = df[name_col].str.strip().str.casefold()
+df["is_A"] = name_norm.isin(_a_names)
+df["Group"] = np.where(df["is_A"], "Veldhuizen A", "Veldhuizen B")
+df["LabelName"] = df[name_col] + np.where(df["is_A"], " (A)", " (B)")
 
-  <!-- PSYCHOLOGICAL -->
-  <g class="node" data-node="ES">
-    <rect class="pill" x="180" y="470" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="496" text-anchor="middle">Emotional security</text>
-  </g>
+# Municipal average 
+muni_value = np.nan
+if var_col in muni_df.columns and len(muni_df) > 0:
+    muni_value = pd.to_numeric(muni_df.iloc[0][var_col], errors="coerce")
 
-  <g class="node" data-node="SA">
-    <rect class="pill" x="180" y="520" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="546" text-anchor="middle">Sense of autonomy</text>
-  </g>
+# Sorting
+if sort_order == "Alphabetical":
+    df = df.sort_values("LabelName", ascending=True, kind="mergesort")
+else:
+    df = df.sort_values(var_col, ascending=(sort_order == "Ascending"), kind="mergesort")
 
-  <g class="node" data-node="Purpose">
-    <rect class="pill" x="200" y="570" width="210" height="40" fill="{ORANGE}"/>
-    <text class="label" x="305" y="596" text-anchor="middle">Purpose</text>
-  </g>
+# ---------- Formatting ----------
+vals   = df[var_col].to_numpy()
+names  = df["LabelName"].tolist()
+n      = len(names)
+vmax   = np.nanmax(vals)
+vmin   = np.nanmin(vals)
+dec    = 0 if vmax >= 100 else 2
+fmt    = f"{{:,.{dec}f}}"
+xlabel = f"{sel_label}" + (f" [{unit}]" if unit else "")
 
-  <g class="node" data-node="Downshift">
-    <rect class="pill" x="180" y="620" width="240" height="40" fill="{ORANGE}"/>
-    <text class="label" x="300" y="646" text-anchor="middle">Downshift</text>
-  </g>
+HEIGHT_SCALE = 0.90  
 
-  <!-- ENVIRONMENTAL -->
-  <g class="node" data-node="PS">
-    <rect class="pill" x="740" y="120" width="300" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="146" text-anchor="middle">Proximity to services</text>
-  </g>
+# Axis bounds with headroom 
+cands  = [vmax]
+if np.isfinite(muni_value):
+    cands.append(float(muni_value))
+xmax    = max(cands)
+pad     = 0.08 * xmax if xmax > 0 else 1.0
+x_upper = xmax + pad
+x_lower = min(0.0, vmin, float(muni_value) if np.isfinite(muni_value) else 0.0)
 
-  <g class="node" data-node="GS">
-    <rect class="pill" x="750" y="165" width="280" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="191" text-anchor="middle">Green spaces</text>
-  </g>
+# ---------- Try interactive Plotly, else Matplotlib ----------
+rendered_interactive = False
+try:
+    import plotly.express as px
 
-  <g class="node" data-node="MA">
-    <rect class="pill" x="740" y="210" width="300" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="236" text-anchor="middle">Mobility &amp; Accessibility</text>
-  </g>
+    height_px = int(max(3.6, 0.48 * n + 1.2) * 140 * HEIGHT_SCALE)
 
-  <g class="node" data-node="SI">
-    <rect class="pill" x="750" y="255" width="280" height="40" fill="{GREEN}"/>
-    <text class="label" x="890" y="281" text-anchor="middle">Social infrastructures</text>
-  </g>
+    pldf = df.rename(columns={"LabelName": "Neighbourhood", var_col: "Value"})[
+        ["Neighbourhood", "Value", "Group"]
+    ].astype({"Value": float})
+    # Pre-format labels to avoid trace misalignment
+    pldf["ValueText"] = [fmt.format(v) for v in pldf["Value"].values]
 
-  <g class="node" data-node="Safety">
-    <rect class="pill" x="700" y="300" width="240" height="40" fill="{GREEN}"/>
-    <text class="label" x="820" y="326" text-anchor="middle">Safety</text>
-  </g>
+    fig = px.bar(
+        pldf,
+        x="Value",
+        y="Neighbourhood",
+        color="Group",
+        text="ValueText",
+        hover_data={"ValueText": False, "Group": True},
+        orientation="h",
+        category_orders={"Neighbourhood": pldf["Neighbourhood"].tolist()},
+        template="plotly_white",
+        color_discrete_map={
+            "Veldhuizen A": COL_A,
+            "Veldhuizen B": COL_B,
+        },
+    )
+    fig.update_xaxes(title_text=xlabel, zeroline=False, fixedrange=True)
+    fig.update_yaxes(title_text="", automargin=True, fixedrange=True)
 
-  <!-- PHYSICAL node pill (purple) with blue label, standard white outline -->
-  <g class="node" data-node="PA">
-    <rect class="pill" x="700" y="575" width="320" height="44" fill="{PHYSICAL}"/>
-    <text class="label" x="860" y="602" text-anchor="middle">Physical activity &amp; active lifestyle</text>
-  </g>
+    # Clean hover
+    hover_tmpl = f"%{{y}}<br>{xlabel}: %{{x:.{dec}f}}<extra></extra>"
+    fig.update_traces(hovertemplate=hover_tmpl)
 
-  <!-- Meta arc (dotted), no arrowhead -->
-  <path id="A00_Social_to_Env_arc" class="edge dotted"
-        data-from="SOCIAL" data-to="ENV"
-        d="M120,85 C410,20 820,20 990,68"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
+    _xmax = float(np.nanmax(pldf["Value"]))
+    if np.isfinite(muni_value):
+        _xmax = max(_xmax, float(muni_value))
+    _pad_factor = 0.15 if show_labels else 0.08
+    _xpad = _pad_factor * _xmax if _xmax > 0 else 1.0
+    fig.update_xaxes(range=[x_lower, _xmax + _xpad])
 
-  <!-- Edges (no marker-end attributes) -->
-  <path id="A01" class="edge" data-from="SN" data-to="Purpose"
-        d="M194,195 C60,190 115,560 200,590"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
-  <path id="A02" class="edge" data-from="SN" data-to="ES"
-        d="M194,195 C110,230 130,395 180,490"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
-  <path id="A03" class="edge" data-from="SN" data-to="SA"
-        d="M194,195 C90,210 120,440 180,540"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
-  <path id="A04" class="edge" data-from="CP" data-to="Purpose"
-        d="M456,260 C470,340 440,540 410,590"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
-  <path id="A05" class="edge" data-from="CP" data-to="Downshift"
-        d="M456,260 C490,390 450,610 420,640"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
-  <path id="A06" class="edge" data-from="CP" data-to="PA"
-        d="M456,260 C560,330 640,560 704,595"
-        stroke="{PINK}" stroke-width="3" fill="none"/>
-  <path id="A07" class="edge" data-from="PS" data-to="SN"
-        d="M740,140 C615,125 480,135 406,195"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A08" class="edge" data-from="PS" data-to="SA"
-        d="M740,140 C690,180 520,470 420,520"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A09" class="edge" data-from="GS" data-to="CP"
-        d="M750,185 C620,190 535,255 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A10" class="edge" data-from="GS" data-to="Downshift"
-        d="M750,185 C680,240 520,575 420,640"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A11" class="edge" data-from="MA" data-to="CP"
-        d="M740,230 C610,235 535,268 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A12" class="edge" data-from="SI" data-to="SN"
-        d="M750,275 C620,265 490,190 406,195"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A13" class="edge" data-from="SI" data-to="CP"
-        d="M750,275 C620,280 535,280 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A14" class="edge" data-from="Safety" data-to="CP"
-        d="M700,320 C610,330 540,300 456,260"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A15" class="edge" data-from="Safety" data-to="Downshift"
-        d="M700,320 C640,380 510,600 420,640"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
-  <path id="A16" class="edge" data-from="ENV" data-to="PA"
-        d="M860,380 C835,450 795,520 760,575"
-        stroke="{GREEN}" stroke-width="3" fill="none"/>
+    if show_labels:
+        fig.update_traces(textposition="outside", cliponaxis=False)
+    else:
+        fig.update_traces(text=None)
 
-  <script><![CDATA[
-    (function () {{
-      const svg = document.getElementById('drivers-svg');
-      const nodes = Array.from(svg.querySelectorAll('.node'));
-      const edges = Array.from(svg.querySelectorAll('.edge'));
+    if np.isfinite(muni_value):
+        xavg = float(muni_value)
+        fig.add_vline(x=xavg, line_width=2, line_color=COL_AVG)
+        fig.add_annotation(
+            x=xavg, y=1, xref="x", yref="paper",
+            text=f"Ede average: {fmt.format(xavg)}",
+            showarrow=False, xanchor="left", yanchor="bottom", xshift=6,
+            font=dict(color=COL_AVG),
+        )
 
-      const outgoing = {{}};
-      const incoming = {{}};
+    fig.update_layout(
+        height=height_px,
+        margin=dict(l=160, r=180, t=30, b=50), 
+        showlegend=True,
+        legend=dict(
+            orientation="v",
+            yanchor="top",
+            y=1.0,
+            xanchor="left",
+            x=1.02,  
+            bgcolor="rgba(255,255,255,0.9)",
+        ),
+        legend_title_text="",
+    )
 
-      edges.forEach(e => {{
-        const from = e.getAttribute('data-from');
-        const to   = e.getAttribute('data-to');
-        if (!from || !to) return;
-        (outgoing[from] = outgoing[from] || []).push(e);
-        (incoming[to]   = incoming[to]   || []).push(e);
-      }});
+    st.plotly_chart(fig, use_container_width=True, theme=None, config=dict(displayModeBar=False))
 
-      function clearAll() {{
-        nodes.forEach(n => n.classList.remove('highlight', 'faded'));
-        edges.forEach(e => e.classList.remove('highlight', 'faded'));
-      }}
-      function fadeAll() {{
-        nodes.forEach(n => n.classList.add('faded'));
-        edges.forEach(e => e.classList.add('faded'));
-      }}
-      function highlightNode(nodeId) {{
-        fadeAll();
-        const me = svg.querySelector(`.node[data-node="${{nodeId}}"]`);
-        if (me) me.classList.add('highlight');
-        (outgoing[nodeId] || []).forEach(e => {{
-          e.classList.add('highlight');
-          const tgt = e.getAttribute('data-to');
-          const n   = svg.querySelector(`.node[data-node="${{tgt}}"]`);
-          if (n) n.classList.add('highlight');
-        }});
-        (incoming[nodeId] || []).forEach(e => {{
-          e.classList.add('highlight');
-          const src = e.getAttribute('data-from');
-          const n   = svg.querySelector(`.node[data-node="${{src}}"]`);
-          if (n) n.classList.add('highlight');
-        }});
-      }}
-      nodes.forEach(n => {{
-        const id = n.getAttribute('data-node');
-        n.addEventListener('mouseenter', () => highlightNode(id));
-        n.addEventListener('mouseleave', clearAll);
-        n.addEventListener('click', (ev) => {{
-          ev.stopPropagation();
-          const active = n.classList.contains('highlight');
-          clearAll();
-          if (!active) highlightNode(id);
-        }});
-      }});
-      edges.forEach(e => {{
-        e.addEventListener('mouseenter', () => {{
-          fadeAll();
-          e.classList.add('highlight');
-          const from = e.getAttribute('data-from');
-          const to   = e.getAttribute('data-to');
-          const nf   = svg.querySelector(`.node[data-node="${{from}}"]`);
-          const nt   = svg.querySelector(`.node[data-node="${{to}}"]`);
-          if (nf) nf.classList.add('highlight');
-          if (nt) nt.classList.add('highlight');
-        }});
-        e.addEventListener('mouseleave', clearAll);
-        e.addEventListener('click', (ev) => {{
-          ev.stopPropagation();
-          const isOn = e.classList.contains('highlight');
-          clearAll();
-          if (!isOn) {{
-            e.classList.add('highlight');
-            const from = e.getAttribute('data-from');
-            const to   = e.getAttribute('data-to');
-            const nf   = svg.querySelector(`.node[data-node="${{from}}"]`);
-            const nt   = svg.querySelector(`.node[data-node="${{to}}"]`);
-            if (nf) nf.classList.add('highlight');
-            if (nt) nt.classList.add('highlight');
-          }}
-        }});
-      }});
-      svg.addEventListener('click', clearAll);
-    }})()
-  ]]></script>
-</svg>
+    table_df = pldf.rename(columns={"Neighbourhood": "Neighbourhood", "Value": xlabel})
+    table_df = table_df[["Neighbourhood", "Group", xlabel]]
+    st.dataframe(table_df, use_container_width=True, hide_index=True)
+
+    rendered_interactive = True  
+except Exception:
+    rendered_interactive = False
+
+# ---------- Static chart fallback ----------
+if not rendered_interactive:
+    plt.style.use("default")
+    row_h     = 0.48
+    fig_h     = max(3.6, row_h * n + 1.2) * HEIGHT_SCALE
+    left_mar  = min(0.35, 0.08 + 0.012 * max(len(s) for s in names))
+
+    fig, ax = plt.subplots(figsize=(11.5, fig_h), dpi=140)
+    ypos = np.arange(n)
+    bar_colors = np.where(df["is_A"].to_numpy(), COL_A, COL_B)
+    ax.barh(ypos, vals, height=0.62, color=bar_colors)
+
+    ax.set_yticks(ypos)
+    ax.set_yticklabels(names)
+    ax.invert_yaxis()
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel("")
+    ax.set_xlim(x_lower, x_upper)
+    ax.grid(axis="x", linestyle=":", linewidth=0.8, alpha=0.6)
+    ax.spines["top"].set_visible(False); ax.spines["right"].set_visible(False)
+
+    if show_labels:
+        span = (x_upper - x_lower); thr = 0.15 * span
+        for y, v in zip(ypos, vals):
+            text = fmt.format(v)
+            if v - x_lower > thr:
+                ax.text(v - 0.01*span, y, text, va="center", ha="right",
+                        color="white", fontsize=9, fontweight="semibold")
+            else:
+                ax.text(v + 0.01*span, y, text, va="center", ha="left", color="#222", fontsize=9)
+
+    if np.isfinite(muni_value):
+        xavg = float(muni_value)
+        ax.axvline(x=xavg, color=COL_AVG, linewidth=2)
+        ax.text(xavg, -0.7, f"Ede average: {fmt.format(xavg)}",
+                color=COL_AVG, ha="left", va="bottom", fontsize=10,
+                bbox=dict(facecolor="white", alpha=0.85, edgecolor="none", pad=1.5))
+
+    # Legend for Veldhuizen A/B
+    legend_handles = [
+        Patch(facecolor=COL_A, edgecolor=COL_A, label="Veldhuizen A"),
+        Patch(facecolor=COL_B, edgecolor=COL_B, label="Veldhuizen B"),
+    ]
+    ax.legend(handles=legend_handles, title="", loc="lower right", frameon=False)
+
+    fig.subplots_adjust(left=left_mar, right=0.97, top=0.92, bottom=0.12)
+    st.pyplot(fig)
+
+    # Table
+    tbl = df.rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})[
+        ["LabelName", "Group", var_col]
+    ].rename(columns={"LabelName": "Neighbourhood", var_col: xlabel})
+    st.dataframe(tbl, use_container_width=True, hide_index=True)
+
+# ---------- Caption ----------
+if np.isfinite(muni_value):
+    st.caption(f"Tip: the dark green line marks the Ede municipal average (≈ {fmt.format(float(muni_value))}).")
+else:
+    st.caption("Tip: the dark green line marks the Ede municipal average.")
+
+# ---------- Collapsible notes ----------
+st.divider()
+with st.expander("Notes", expanded=False):
+    st.markdown(
+        """
+**What this view demonstrates.** A single indicator (selected from the catalog) is compared across all neighbourhoods in Veldhuizen, with the Ede municipal value shown as a reference line for context. Neighbourhoods are coloured by a simple display grouping: **Veldhuizen A** (De Horsten, De Burgen) versus **Veldhuizen B** (all others). The grouping affects colour and labels only.
 """
-
-st.components.v1.html(svg, height=860, scrolling=False)
+    )
